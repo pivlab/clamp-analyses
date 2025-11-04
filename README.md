@@ -39,7 +39,6 @@ git clone https://github.com/chikinalab/CLAMP.git "$REPO_PATH"
 
 # Install and check CLAMP using devtools
 Rscript -e "devtools::install_local('$REPO_PATH', force=TRUE, dependencies=FALSE)"
-Rscript -e "library(CLAMP); cat('CLAMP version:', packageVersion('CLAMP'), '\n')"
 ```
 
 ```bash
