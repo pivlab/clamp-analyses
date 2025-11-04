@@ -1,65 +1,66 @@
-# PLIER2: Bigger, Better, and Faster
+# CLAMP analyses
 
-**PLIER2** is a high-performance, scalable reimplementation of the [Pathway-Level Information Extractor (PLIER)](https://doi.org/10.1038/s41592-019-0456-1) framework for latent variable analysis of large-scale transcriptomic datasets.  
-It integrates prior biological knowledge into matrix factorization to generate interpretable latent variables (LVs) that capture meaningful biological pathways while mitigating technical noise.  
 
-This package implements major algorithmic and computational improvements over PLIER, enabling the analysis of modern transcriptomic compendia such as **GTEx**, **recount2**, and **ARCHS4**.
+## 🔧 Dependencies
 
-## Key Features
+CLAMP uses **three Conda environments** to separate core package development, large-scale analyses, and GPU-accelerated workflows:
 
-- **Two-phase modeling**:
-  - **PLIERbase**: Unsupervised factorization without priors for fast initialization.
-  - **PLIERfull**: Integration of prior knowledge via regularized regression (glmnet).
-- **Scalable to massive datasets** using memory-mapped matrices from `bigstatsr`.
-- **Automated per-LV regularization tuning** via internal cross-validation.
-- **Improved biological specificity** in LV–pathway associations.
-- **7×–41× speed improvements** over PLIER.
-- **Full support for very large compendia** (e.g., successful ARCHS4 modeling).
+| Environment | File | Purpose |
+|--------------|------|----------|
+| **`clamp-analyses.yaml`** | `envs/clamp-analyses.yaml` | Default environment for CPU-based modeling, priors, projections, and vignettes. |
+| **`gpu-kmeans.yaml`** | `envs/gpu-kmeans.yaml` | Optional environment for GPU-accelerated clustering and benchmarking. |
 
-## Dependencies
+This separation avoids dependency conflicts between R (Bioconductor) and GPU libraries (`rapids`, `cupy`, `cuml`).
 
-Before running, ensure you have:
+### 🛠️ Install dependencies
 
-1. **Conda environment**  
-   Create the environment using:
-   ```bash
-   conda env create -f envs/plier2-analyses.yaml
-   conda activate plier2-analyses
-   ```
+Recommended steps to install the system-level and Conda tooling required to create the CLAMP environments.
 
-2. **Clone the PLIER2 repository**  
-   ```bash
-   git clone https://github.com/chikinalab/PLIER2.git
-   ```
+1. Install a Conda distribution
+- Install Miniconda or Mambaforge for your platform (Mambaforge is recommended for faster environment solves).
 
-3. **Install PLIER2 in R**  
-   ```r
-   install.packages("devtools")
-   devtools::install("PLIER2")
-   ```
+2. (Optional) Verify GPU drivers for RAPIDS/cuML workflows
+- Ensure a compatible NVIDIA driver / CUDA version is installed before creating the GPU environment:
+```bash
+nvidia-smi
+```
+- Check RAPIDS compatibility matrix for the correct CUDA version (match driver/CUDA with RAPIDS/cuML requirements).
 
-All required input data will be downloaded automatically by the provided scripts.
-
-## How to Run
-
-Once dependencies are installed and the environment is set up:
+3. Create environments using conda
 
 ```bash
-conda activate plier2-analyses
+conda env create -f envs/clamp-analyses.yaml
+conda activate clamp-analyses
 
-# Example: running a notebook or analysis script
-jupyter nbconvert --to notebook --execute nbs/01_model_building/archs4/00_archs4.ipynb --inplace
+# Clone CLAMP the repo into REPO_PATH (adjust path as needed)
+export REPO_PATH=~/path/to/CLAMP
+mkdir -p "$(dirname "$REPO_PATH")"
+git clone https://github.com/chikinalab/CLAMP.git "$REPO_PATH"
+
+# Install and check CLAMP using devtools
+Rscript -e "devtools::install_local('$REPO_PATH', force=TRUE, dependencies=FALSE)"
+Rscript -e "library(CLAMP); cat('CLAMP version:', packageVersion('CLAMP'), '\n')"
 ```
 
-The scripts automatically handle downloading all necessary datasets and generating intermediate results.
+```bash
+conda env create -f envs/envs/gpu-kmeans.yaml
+conda activate gpu-kmeans.yaml
+
+# Clone CLAMP the repo into REPO_PATH (adjust path as needed)
+export REPO_PATH=~/path/to/CLAMP
+mkdir -p "$(dirname "$REPO_PATH")"
+git clone https://github.com/chikinalab/CLAMP.git "$REPO_PATH"
+
+# Install and check CLAMP using devtools
+Rscript -e "devtools::install_local('$REPO_PATH', force=TRUE, dependencies=FALSE)"
+Rscript -e "library(CLAMP); cat('CLAMP version:', packageVersion('CLAMP'), '\n')"
+```
+
+## 📘 Notebook Headers
+
+Each notebook explicitly states which environment to use in the first Markdown cell.
 
 ## Citation
-
-If you use **PLIER2**, please cite:
-
-> Subirana-Granés M, Nandi S, Zhang H, Chikina M, Pividori M.  
-> *PLIER2: bigger, better and faster*. bioRxiv, 2025.  
-> doi: [10.1101/2025.06.05.658122](https://doi.org/10.1101/2025.06.05.658122)
 
 ## License
 

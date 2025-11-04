@@ -1,0 +1,70 @@
+name: clamp-analyses
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base=4.4.*
+  - hdf5
+  - r-hdf5r
+  - bioconductor-rhdf5
+
+  # Core R packages
+  - r-bigstatsr
+  - r-data.table
+  - r-dplyr
+  - r-rsvd
+  - r-glmnet
+  - r-matrix
+  - r-knitr
+  - r-here
+  - r-tibble
+  - r-tidyr
+  - r-devtools
+  - r-irkernel
+  - r-pkgdown
+  - r-remotes
+
+  # Jupyter support
+  - jupyterlab
+  - notebook
+  - nb_conda_kernels
+
+  # Bioconductor and bioinformatics
+  - bioconductor-qvalue
+  - bioconductor-biomart
+  - bioconductor-recount3
+  - bioconductor-preprocesscore
+  - bioconductor-fgsea
+  - bioconda::r-archr
+  - bioconductor-org.Hs.eg.db
+  - bioconductor-clusterprofiler
+  - bioconductor-go.db
+  - bioconductor-annotationdbi
+  - bioconductor-genomicsupersignature
+  - bioconductor-mofa2
+
+  # Other R utilities
+  - r-plyr
+  - r-randomforest
+  - r-bitops
+  - r-gtools
+  - r-kernsmooth
+  - r-gplots
+  - r-diagrammer
+  - r-nmf
+  - r-factoextra
+  - r-cluster
+  - r-msigdbr
+
+  # Ensure compatible SSL and curl for hdf5r in RStudio Server
+  - openssl
+  - libcurl
+
+  # Python + data science
+  - python=3.11
+  - pandas
+  - pyprojroot
+  - numpy
+  - matplotlib
+  - scikit-learn

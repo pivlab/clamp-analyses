@@ -1,0 +1,142 @@
+# GTEx with different parameters
+
+Load libraries
+```{r}
+library(bigstatsr)
+library(data.table)
+library(dplyr)
+library(rsvd)
+library(glmnet)
+library(Matrix)
+library(knitr)
+library(here)
+```
+
+Output 
+
+```{r}
+output_nb_path <- here("output/vignettes/plier2_testing/gtex/params")
+dir.create(output_nb_path, showWarnings = FALSE, recursive = TRUE)
+```
+
+Load the local files
+```{r}
+source(here("R/solvers.R"))
+source(here("R/utilsNew.R"))
+```
+
+Run PLIER2 with different `multiplier` and `max.U.updates`
+
+```{r}
+output_nb_path_gtex <- here("output/vignettes/plier2_testing/gtex")
+
+fbm_file              <- file.path(output_nb_path_gtex, "FBMgtex")
+fbm_filtered_prefix   <- paste0(fbm_file, "_filtered")   
+meta_file             <- paste0(fbm_file, "_meta.RDS")   
+
+meta <- readRDS(meta_file)
+n_genes   <- length(meta$rowNames)
+n_samples <- length(meta$colNames)
+
+gtexFBMfiltered <- FBM(
+  nrow        = n_genes,
+  ncol        = n_samples,
+  backingfile = fbm_filtered_prefix,
+  create_bk   = FALSE
+)
+
+gtex.sdres <- readRDS(file.path(output_nb_path_gtex, "gtexSimpleDecompResult.RDS"))
+k = 200
+
+gmtList=list()
+
+gmt_dir <- here("output/vignettes/plier2_testing/pathways")
+dir.create(gmt_dir, recursive = TRUE, showWarnings = FALSE)
+
+if (!file.exists(file.path(gmt_dir, "WikiPathway_2021_Human.gmt"))) {
+  download.file(
+    "https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=WikiPathway_2021_Human",
+    file.path(gmt_dir, "WikiPathway_2021_Human.gmt"),
+    method = "wget", quiet = TRUE
+  )
+}
+if (!file.exists(file.path(gmt_dir, "MGI_Mammalian_Phenotype_Level_4_2021.gmt"))) {
+  download.file(
+    "https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=MGI_Mammalian_Phenotype_Level_4_2021",
+    file.path(gmt_dir, "MGI_Mammalian_Phenotype_Level_4_2021.gmt"),
+    method = "wget", quiet = TRUE
+  )
+}
+if (!file.exists(file.path(gmt_dir, "GO_Biological_Process_2023.gmt"))) {
+  download.file(
+    "https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=GO_Biological_Process_2023",
+    file.path(gmt_dir, "GO_Biological_Process_2023.gmt"),
+    method = "wget", quiet = TRUE
+  )
+}
+if (!file.exists(file.path(gmt_dir, "Reactome_2022.gmt"))) {
+  download.file(
+    "https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=Reactome_2022",
+    file.path(gmt_dir, "Reactome_2022.gmt"),
+    method = "wget", quiet = TRUE
+  )
+}
+if (!file.exists(file.path(gmt_dir, "CellMarker_2024.gmt"))) {
+  download.file(
+    "https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=CellMarker_2024",
+    file.path(gmt_dir, "CellMarker_2024.gmt"),
+    method = "wget", quiet = TRUE
+  )
+}
+
+gmtList <- list()
+gmtList[["Wiki"]]        <- getGMT(gmt_dir, "WikiPathway_2021_Human")
+gmtList[["MGI"]]         <- getGMT(gmt_dir, "MGI_Mammalian_Phenotype_Level_4_2021")
+gmtList[["GO"]]          <- getGMT(gmt_dir, "GO_Biological_Process_2023")
+gmtList[["Reactome"]]    <- getGMT(gmt_dir, "Reactome_2022")
+gmtList[["CellMarkers"]] <- getGMT(gmt_dir, "CellMarker_2024")
+
+pathMat = gmtListToSparseMat(gmtList[c(5)])
+
+matchedPaths=getMatchedPathwayMat(pathMat, meta$rowNames)
+Chat=getChat(matchedPaths, method = "fast")
+
+# Define parameter grid
+param_grid <- expand.grid(
+  multiplier = c(3),
+  max_U_updates = c(19, 100)
+)
+
+# Run PLIER2 across all combinations
+for (i in seq_len(nrow(param_grid))) {
+  mult <- param_grid$multiplier[i]
+  maxU <- param_grid$max_U_updates[i]
+  
+  cat(sprintf("Running PLIER2 with multiplier = %d, max.U.updates = %d\n", mult, maxU))
+  
+  model_outfile <- file.path(output_nb_path, sprintf("gtex_PLIER2_mult%d_maxU%d.rds", mult, maxU))
+  time_outfile  <- file.path(output_nb_path, sprintf("gtex_PLIER2_time_mult%d_maxU%d.rds", mult, maxU))
+
+  if (!file.exists(model_outfile)) {
+    time_taken <- system.time({
+      plier2_model <- PLIERv2(
+        gtexFBMfiltered,
+        matchedPaths,
+        sdres = gtex.sdres,
+        Chat = Chat,
+        doCrossval = TRUE,
+        multiplier = mult,
+        max.U.updates = maxU,
+        max.iter = 350,
+        k = k
+      )
+    })
+
+    saveRDS(plier2_model, model_outfile)
+    saveRDS(time_taken, time_outfile)
+  } else {
+    cat("Model already exists. Skipping...\n")
+  }
+}
+```
+
