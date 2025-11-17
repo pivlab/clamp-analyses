@@ -43,6 +43,7 @@ dependencies:
   - bioconductor-annotationdbi
   - bioconductor-genomicsupersignature
   - bioconductor-mofa2
+  - bioconductor-cogaps
 
   # Other R utilities
   - r-plyr
