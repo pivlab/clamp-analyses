@@ -1,0 +1,24 @@
+name: gpu-kmeans
+channels:
+  - rapidsai
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python
+  - cupy
+  - rapids
+  - cuml
+  - numpy
+  - pandas
+  - scikit-learn
+  - pyprojroot
+  - statannotations
+  - pip
+  - pip:
+      - pyprojroot
+
+  # Jupyter support
+  - jupyterlab
+  - notebook
+  - nb_conda_kernels
