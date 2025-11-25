@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=plierv2
-#SBATCH --output=logPLIER2.%j.log
-#SBATCH --error=logPLIER2.%j.err
+#SBATCH --job-name=archs4_download
+#SBATCH --output=log_ARCHS4_download.%j.log
+#SBATCH --error=log_ARCHS4_download.%j.err
 #SBATCH --time=300:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=30
@@ -11,7 +11,7 @@
 
 MINIFORGE="/pividori_lab/software/miniforge3"
 source "${MINIFORGE}/etc/profile.d/conda.sh"
-source /pividori_lab/marc_projects/conda_env/plier2/bin/activate
+source /pividori_lab/marc_projects/conda_env/clamp-analyses/bin/activate
 
 n_jobs=30
 export NUMBA_NUM_THREADS=$n_jobs
@@ -21,7 +21,7 @@ export NUMEXPR_NUM_THREADS=$n_jobs
 export OMP_NUM_THREADS=$n_jobs
 
 start=$(date +%s)
-jupyter nbconvert --to notebook --execute "nbs/01_model_building/archs4/00_archs4_download_preprocess.ipynb" --output 00_archs4_download_preprocess_executed.ipynb
+jupyter nbconvert --to notebook --execute "nbs/01_model_building/04_archs4/00_archs4_download.ipynb" --output 00_archs4_download.ipynb
 end=$(date +%s)
 echo "Elapsed seconds: $((end - start))"
 echo "End: $(date)"
