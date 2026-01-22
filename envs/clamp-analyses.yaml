@@ -1,8 +1,11 @@
 name: clamp-analyses
 channels:
+  - pytorch
+  - nvidia
   - conda-forge
   - bioconda
   - defaults
+
 dependencies:
   - r-base=4.4.*
   - hdf5
@@ -57,6 +60,7 @@ dependencies:
   - r-factoextra
   - r-cluster
   - r-msigdbr
+  - r-matrixtests
 
   # Ensure compatible SSL and curl for hdf5r in RStudio Server
   - openssl
@@ -69,3 +73,14 @@ dependencies:
   - numpy
   - matplotlib
   - scikit-learn
+  - scipy
+  - h5py
+
+  # PyTorch with CUDA support
+  - pytorch
+  - pytorch-cuda=12.1
+
+  - pip
+  - pip:
+      - mofaflex
+      - anndata
