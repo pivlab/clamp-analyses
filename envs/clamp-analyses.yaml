@@ -27,6 +27,7 @@ dependencies:
   - r-irkernel
   - r-pkgdown
   - r-remotes
+  - r-wgcna
 
   # Jupyter support
   - jupyterlab

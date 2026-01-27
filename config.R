@@ -32,16 +32,15 @@ config$ARCHS4=list(
 
 config$GTEx=list(
   DATASET_NAME="gtex",
-  DATASET_FOLDER=here(
-    file.path(config$GENERAL$DATA_DIR, "gtex")
-  ),
+  DATASET_FOLDER=file.path(config$GENERAL$DATA_DIR, "gtex"),
   URL="https://storage.googleapis.com/adult-gtex/bulk-gex/v8/rna-seq/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz",
   DATASET_FILE=here(file.path("data", "gtex", "bulk-gex_v8_rna-seq_GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.rds")),
   GENES_MEAN_CUTOFF=0.5,
   GENES_VAR_CUTOFF=0.1,
   RANDOM_SVD_SEED=123,
   MAX_U_UPDATES=50,
-  N_CORES=1
+  N_CORES=1,
+  OUTPUT_DIR=file.path(config$GENERAL$OUTPUT_DIR, "gtex")
   )
 
 config$recount2 <- list(

@@ -28,3 +28,5 @@ dependencies:
   - nb_conda_kernels
 
   - pip
+  - pyreadr
+  - rpy2
