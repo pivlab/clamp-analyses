@@ -3,22 +3,30 @@ channels:
   - rapidsai
   - nvidia
   - conda-forge
-  - defaults
+  - nodefaults
 dependencies:
-  - python
-  - cupy
+  - python=3.13
+
+  # RAPIDS
   - rapids
   - cuml
+  - cupy
+
+  # Core
   - numpy
   - pandas
-  - scikit-learn
+  - scikit-learn>=1.7
+
+  # Utilities
   - pyprojroot
   - statannotations
-  - pip
-  - pip:
-      - pyprojroot
 
   # Jupyter support
   - jupyterlab
   - notebook
+  - ipykernel
   - nb_conda_kernels
+
+  - pip
+  - pyreadr
+  - rpy2
