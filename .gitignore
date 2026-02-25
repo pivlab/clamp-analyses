@@ -7,3 +7,4 @@ output
 *.swp
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
+.claude

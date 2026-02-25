@@ -28,6 +28,7 @@ dependencies:
   - r-pkgdown
   - r-remotes
   - r-wgcna
+  - r-tidyverse
 
   # Jupyter support
   - jupyterlab
@@ -76,6 +77,11 @@ dependencies:
   - scikit-learn
   - scipy
   - h5py
+  - seaborn
+  - rpy2
+  - shap
+
+
 
   # PyTorch with CUDA support
   - pytorch

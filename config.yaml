@@ -1,0 +1,31 @@
+MODEL_COLORS:
+  # CLAMP models
+  CLAMP_BP: "#0077BB"
+  CLAMP_base: "#ee8533"
+  CLAMP_KEGG: "#009988"
+  CLAMP_CellMarker: "#7B68EE"
+  CLAMP_GTEx: "#006400"
+  CLAMP_all: "#8B0000"
+
+  # Other informed methods
+  PLIER: "#EE7733"
+  GenomicSuperSignature: "#AA3377"
+
+  # Unsupervised methods
+  RNA-Seq: "#CC3311"
+  PCA: "#EE3377"
+  ICA: "#888888"
+  NMF: "#DDCC77"
+  Flashier: "#44AA99"
+  MOFA-FLEX_base: "#882255"
+  MOFA-FLEX_BP: "#117733"
+  WGCNA: "#999933"
+
+RNASEQ_FRACTION_COLORS:
+  "100%": "#332288"
+  "75%": "#6699CC"
+  "50%": "#661100"
+  "25%": "#BBBBBB"
+  "10%": "#88CCEE"
+  "5%":  "#AA4499"
+  "1%":  "#117733"
