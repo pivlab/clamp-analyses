@@ -29,6 +29,7 @@ dependencies:
   - r-remotes
   - r-wgcna
   - r-tidyverse
+  - r-psych
 
   # Jupyter support
   - jupyterlab
@@ -49,7 +50,8 @@ dependencies:
   - bioconductor-genomicsupersignature
   - bioconductor-mofa2
   - bioconductor-cogaps
-
+  - bioconductor-pcatools
+  
   # Other R utilities
   - r-plyr
   - r-randomforest
@@ -80,6 +82,7 @@ dependencies:
   - seaborn
   - rpy2
   - shap
+  - pytables
 
 
 
