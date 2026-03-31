@@ -7,4 +7,7 @@ output
 *.swp
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
-.claude
+.clauderesults/
+*.parquet
+*.gz
+omnipathr-log/

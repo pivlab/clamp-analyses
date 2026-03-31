@@ -16,6 +16,11 @@ dependencies:
   - numpy
   - pandas
   - scikit-learn>=1.7
+  - scipy
+  - matplotlib
+  - seaborn
+  - shap
+  - h5py
 
   # Utilities
   - pyprojroot

@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=archs4_c2cp_cov_10
-#SBATCH --output=log_ARCHS4_c2cp_coverage_10.%j.log
-#SBATCH --error=log_ARCHS4_c2cp_coverage_10.%j.err
+#SBATCH --job-name=archs4_c2cp_cov_nrs_10
+#SBATCH --output=log_ARCHS4_c2cp_coverage_nrs_10.%j.log
+#SBATCH --error=log_ARCHS4_c2cp_coverage_nrs_10.%j.err
 #SBATCH --time=96:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=16
