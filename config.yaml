@@ -4,6 +4,7 @@ MODEL_COLORS:
   PLIER: "#EE7733"
   GenomicSuperSignature: "#AA3377"
   RNA-Seq: "#CC3311"
+  RNA-Seq null: "#BBBBBB"
   PCA: "#EE3377"
   ICA: "#888888"
   NMF: "#DDCC77"

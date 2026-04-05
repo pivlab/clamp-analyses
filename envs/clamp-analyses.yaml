@@ -84,8 +84,6 @@ dependencies:
   - shap
   - pytables
 
-
-
   # PyTorch with CUDA support
   - pytorch
   - pytorch-cuda=12.1
@@ -94,3 +92,4 @@ dependencies:
   - pip:
       - mofaflex
       - anndata
+      - archs4py
