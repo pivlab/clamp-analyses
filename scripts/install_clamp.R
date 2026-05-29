@@ -4,7 +4,7 @@ if (!requireNamespace("remotes", quietly = TRUE)) {
 
 remotes::install_github(
     repo = "chikinalab/CLAMP",
-    ref = "4a6a32006624b942c847becd71f73baf7dedfed6",
+    ref = "818e13ba55d66840e0710c3f1ac15f6d97e1dd8b",
     upgrade = "never",
     dependencies = FALSE
 )
