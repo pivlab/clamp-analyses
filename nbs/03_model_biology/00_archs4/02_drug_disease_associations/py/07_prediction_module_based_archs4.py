@@ -14,7 +14,7 @@
 # ---
 
 # %% [markdown]
-# 💡 **Environment:** `clamp-analyses`  
+# 💡 **Environment:** `clamp-analyses`
 #
 
 # %% [markdown]
@@ -143,6 +143,7 @@ for spredixcan_file in spredixcan_file_list:
     # Load CLAMP-projected tissue-specific S-PrediXcan
     tissue_proj = pd.read_pickle(spredixcan_file)
     print(f'  shape: {tissue_proj.shape}')
+    assert tissue_proj.index.equals(lincs_projection.index)
 
     for ntc in N_TOP_LVS_LIST:
         predict_dotprod_neg(

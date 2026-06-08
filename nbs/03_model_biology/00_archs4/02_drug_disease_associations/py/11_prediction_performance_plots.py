@@ -14,7 +14,7 @@
 # ---
 
 # %% [markdown]
-# 💡 **Environment:** `clamp-analyses`  
+# 💡 **Environment:** `clamp-analyses`
 #
 
 # %% [markdown]
@@ -83,11 +83,15 @@ METHOD_ORDER = (
     'recount2 LV-based',
 )
 
+predictions_avg['method'] = predictions_avg['method'].astype('string')
 predictions_avg = predictions_avg.replace({'method': _method_rename})
+
 predictions_avg = predictions_avg[predictions_avg['method'].isin(METHOD_ORDER)].copy()
+
 predictions_avg['method'] = pd.Categorical(
     predictions_avg['method'], categories=METHOD_ORDER, ordered=True
 )
+
 predictions_avg = predictions_avg.sort_values('method')
 display(predictions_avg['method'].unique())
 
@@ -202,7 +206,7 @@ def plot_pr_for_methods(selected_methods, fig, ax):
         random_label,
         estimator='mean',
         ax=ax,
-        errorbar='sd', 
+        errorbar='sd',
         color='gray',
     )
 
