@@ -1,0 +1,62 @@
+Building DAG of jobs...
+Job stats:
+job                count    min threads    max threads
+---------------  -------  -------------  -------------
+all                    1              1              1
+benchmark              1              1              1
+clamp                  6              1              1
+cogaps                 6              1              1
+flashier               6              1              1
+gss                    7              1              1
+mofa_flex_prior        7              1              1
+pca_nmf_ica            7              1              1
+plier                  6              1              1
+preprocess             4              1              1
+project_archs4         7              1              1
+wgcna                  6              1              1
+total                 64              1              1
+
+
+[Tue May 26 13:35:41 2026]
+rule pca_nmf_ica:
+    input: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/PCA/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/NMF/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/ICA/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/PBMC_Perez2022/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/PBMC_Perez2022/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/03_PCA_NMF_ICA.ipynb
+    jobid: 28
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+
+[Tue May 26 13:35:41 2026]
+rule preprocess:
+    input: data/pseudobulk/CRC_Pelka2021/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/CRC_Pelka2021/norm.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/k.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/notebooks/00_preprocess.ipynb
+    jobid: 4
+    wildcards: dataset=CRC_Pelka2021
+    resources: tmpdir=/tmp
+
+
+[Tue May 26 13:35:41 2026]
+rule plier:
+    input: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/PLIER/B.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/PLIER/PLIER.rds, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/02_PLIER.ipynb
+    jobid: 20
+    wildcards: dataset=PBMC_1k1k
+    resources: tmpdir=/tmp
+
+
+[Tue May 26 13:35:41 2026]
+rule mofa_flex_prior:
+    input: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/MOFA_FLEX_PRIOR/B_matrix.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/MOFA_FLEX_PRIOR/model.pkl, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/05_MOFA_FLEX_PRIOR.ipynb
+    jobid: 36
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+
+[Tue May 26 13:35:41 2026]
+rule project_archs4:
+    input: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv, output/01_model_building/04_archs4/06_bp_coverage_rshall/06_bp_coverage_hall_rs_100/hall_coverage_rs100_seed_1/CLAMPfull_hall.rds
+    output: output/03_model_biology/00_archs4/04_pseudobulk/PBMC_Perez2022/projection.csv, output/03_model_biology/00_archs4/04_pseudobulk/PBMC_Perez2022/notebooks/projection.ipynb
+    jobid: 70
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp

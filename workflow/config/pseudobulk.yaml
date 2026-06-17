@@ -1,0 +1,31 @@
+datasets:
+  - Brain_Mathys2023
+  - Brain_Xiong2023
+  - BRCA_Bassez2021
+  - CRC_Pelka2021
+  - PBMC_1k1k
+  - PBMC_Perez2022
+
+paths:
+  data:         "data/pseudobulk"
+  models:       "output/01_model_building/05_pseudobulk"
+  benchmark:    "output/03_model_biology/02_pseudobulk"
+  projection:   "output/03_model_biology/00_archs4/04_pseudobulk"
+  archs4_model: "output/01_model_building/04_archs4/06_bp_coverage_rshall/06_bp_coverage_hall_rs_100/hall_coverage_rs100_seed_1/CLAMPfull_hall.rds"
+
+preprocess:
+  mean_cutoff: 0.5
+  var_cutoff:  0.1
+
+clamp:
+  max_iter: 500
+
+flashier:
+  backfit_maxiter: 10
+
+mofa_flex:
+  max_epochs: 200
+  seed: 123
+
+cogaps:
+  n_iterations: 5000

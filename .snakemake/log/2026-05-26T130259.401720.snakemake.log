@@ -1,0 +1,4 @@
+WorkflowError in line 3 of /home/msubirana/Documents/pivlab/clamp-analyses/workflow/Snakefile:
+Failed to open source file /home/msubirana/Documents/pivlab/clamp-analyses/workflow/workflow/rules/pseudobulk.smk
+FileNotFoundError: [Errno 2] No such file or directory: '/home/msubirana/Documents/pivlab/clamp-analyses/workflow/workflow/rules/pseudobulk.smk'
+  File "/home/msubirana/Documents/pivlab/clamp-analyses/workflow/Snakefile", line 3, in <module>

@@ -1,0 +1,76 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 4
+Rules claiming more threads will be scaled down.
+Job stats:
+job                count    min threads    max threads
+---------------  -------  -------------  -------------
+all                    1              1              1
+benchmark              1              1              1
+clamp                  6              1              1
+cogaps                 6              1              1
+flashier               5              1              1
+gss                    6              1              1
+mofa_flex_prior        7              1              1
+pca_nmf_ica            6              1              1
+plier                  6              1              1
+preprocess             3              1              1
+project_archs4         7              1              1
+wgcna                  6              1              1
+total                 60              1              1
+
+Select jobs to execute...
+
+[Tue May 26 13:38:44 2026]
+rule wgcna:
+    input: output/01_model_building/05_pseudobulk/CRC_Pelka2021/norm.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/k.csv
+    output: output/01_model_building/05_pseudobulk/CRC_Pelka2021/WGCNA/B.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/WGCNA/wgcna_network.rds, output/01_model_building/05_pseudobulk/CRC_Pelka2021/notebooks/06_WGCNA.ipynb
+    jobid: 46
+    wildcards: dataset=CRC_Pelka2021
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+
+[Tue May 26 13:38:44 2026]
+rule clamp:
+    input: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/PBMC_1k1k/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/01_CLAMP.ipynb
+    jobid: 13
+    wildcards: dataset=PBMC_1k1k
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+
+[Tue May 26 13:38:44 2026]
+rule cogaps:
+    input: output/01_model_building/05_pseudobulk/CRC_Pelka2021/norm.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/k.csv
+    output: output/01_model_building/05_pseudobulk/CRC_Pelka2021/CoGAPS/B.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/CoGAPS/cogaps_model.rds, output/01_model_building/05_pseudobulk/CRC_Pelka2021/notebooks/07_CoGAPS.ipynb
+    jobid: 53
+    wildcards: dataset=CRC_Pelka2021
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+
+[Tue May 26 13:38:44 2026]
+rule mofa_flex_prior:
+    input: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/MOFA_FLEX_PRIOR/B_matrix.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/MOFA_FLEX_PRIOR/model.pkl, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/05_MOFA_FLEX_PRIOR.ipynb
+    jobid: 41
+    wildcards: dataset=PBMC_1k1k
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+[Tue May 26 13:41:15 2026]
+Finished job 53.
+1 of 60 steps (2%) done
+Select jobs to execute...
+
+[Tue May 26 13:41:15 2026]
+rule plier:
+    input: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/PLIER/B.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/PLIER/PLIER.rds, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/02_PLIER.ipynb
+    jobid: 20
+    wildcards: dataset=PBMC_1k1k
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses

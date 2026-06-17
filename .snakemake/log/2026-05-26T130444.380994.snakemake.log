@@ -1,0 +1,108 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 4
+Rules claiming more threads will be scaled down.
+Job stats:
+job                count    min threads    max threads
+---------------  -------  -------------  -------------
+all                    1              1              1
+benchmark              1              1              1
+clamp                  7              1              1
+cogaps                 7              1              1
+flashier               7              1              1
+gss                    7              1              1
+mofa_flex_prior        7              1              1
+pca_nmf_ica            7              1              1
+plier                  7              1              1
+preprocess             7              1              1
+project_archs4         7              1              1
+wgcna                  7              1              1
+total                 72              1              1
+
+Select jobs to execute...
+
+[Tue May 26 13:04:45 2026]
+rule preprocess:
+    input: data/pseudobulk/BRCA_Bassez2021/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/norm.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/k.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/notebooks/00_preprocess.ipynb
+    jobid: 3
+    wildcards: dataset=BRCA_Bassez2021
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+
+[Tue May 26 13:04:45 2026]
+rule preprocess:
+    input: data/pseudobulk/Brain_Mathys2023/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/00_preprocess.ipynb
+    jobid: 1
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+
+[Tue May 26 13:04:45 2026]
+rule preprocess:
+    input: data/pseudobulk/CRC_Pelka2021/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/CRC_Pelka2021/norm.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/k.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/notebooks/00_preprocess.ipynb
+    jobid: 4
+    wildcards: dataset=CRC_Pelka2021
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+
+[Tue May 26 13:04:45 2026]
+rule preprocess:
+    input: data/pseudobulk/PBMC_1k1k/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/00_preprocess.ipynb
+    jobid: 6
+    wildcards: dataset=PBMC_1k1k
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+Terminating processes on user request, this might take some time.
+[Tue May 26 13:04:54 2026]
+Error in rule preprocess:
+    jobid: 3
+    output: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/norm.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/k.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/notebooks/00_preprocess.ipynb
+    conda-env: clamp-analyses
+    shell:
+        
+        papermill nbs/01_model_building/05_pseudobulk/00_preprocess.ipynb output/01_model_building/05_pseudobulk/BRCA_Bassez2021/notebooks/00_preprocess.ipynb           -p DATASET BRCA_Bassez2021           -p MEAN_CUTOFF 0.5           -p VAR_CUTOFF 0.1           -k ir
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Tue May 26 13:04:54 2026]
+Error in rule preprocess:
+    jobid: 4
+    output: output/01_model_building/05_pseudobulk/CRC_Pelka2021/norm.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/k.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/notebooks/00_preprocess.ipynb
+    conda-env: clamp-analyses
+    shell:
+        
+        papermill nbs/01_model_building/05_pseudobulk/00_preprocess.ipynb output/01_model_building/05_pseudobulk/CRC_Pelka2021/notebooks/00_preprocess.ipynb           -p DATASET CRC_Pelka2021           -p MEAN_CUTOFF 0.5           -p VAR_CUTOFF 0.1           -k ir
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Tue May 26 13:04:54 2026]
+Error in rule preprocess:
+    jobid: 1
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/00_preprocess.ipynb
+    conda-env: clamp-analyses
+    shell:
+        
+        papermill nbs/01_model_building/05_pseudobulk/00_preprocess.ipynb output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/00_preprocess.ipynb           -p DATASET Brain_Mathys2023           -p MEAN_CUTOFF 0.5           -p VAR_CUTOFF 0.1           -k ir
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Tue May 26 13:04:54 2026]
+Error in rule preprocess:
+    jobid: 6
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/00_preprocess.ipynb
+    conda-env: clamp-analyses
+    shell:
+        
+        papermill nbs/01_model_building/05_pseudobulk/00_preprocess.ipynb output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/00_preprocess.ipynb           -p DATASET PBMC_1k1k           -p MEAN_CUTOFF 0.5           -p VAR_CUTOFF 0.1           -k ir
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Complete log: /home/msubirana/Documents/pivlab/clamp-analyses/.snakemake/log/2026-05-26T130444.380994.snakemake.log

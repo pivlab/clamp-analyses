@@ -1,0 +1,142 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 4
+Rules claiming more threads will be scaled down.
+Conda environments: ignored
+Job stats:
+job            count    min threads    max threads
+-----------  -------  -------------  -------------
+clamp              7              1              1
+flashier           7              1              1
+pca_nmf_ica        7              1              1
+plier              7              1              1
+preprocess         7              1              1
+wgcna              7              1              1
+total             42              1              1
+
+Select jobs to execute...
+
+[Wed May 27 10:20:10 2026]
+rule preprocess:
+    input: data/pseudobulk/Brain_Mathys2023/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/00_preprocess.ipynb
+    jobid: 3
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+
+[Wed May 27 10:20:10 2026]
+rule preprocess:
+    input: data/pseudobulk/PBMC_Perez2022/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/00_preprocess.ipynb
+    jobid: 1
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+
+[Wed May 27 10:20:10 2026]
+rule preprocess:
+    input: data/pseudobulk/BRCA_Bassez2021/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/norm.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/k.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/notebooks/00_preprocess.ipynb
+    jobid: 5
+    wildcards: dataset=BRCA_Bassez2021
+    resources: tmpdir=/tmp
+
+
+[Wed May 27 10:20:10 2026]
+rule preprocess:
+    input: data/pseudobulk/Brain_Xiong2023/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Xiong2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/k.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/notebooks/00_preprocess.ipynb
+    jobid: 7
+    wildcards: dataset=Brain_Xiong2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:20:17 2026]
+Finished job 5.
+1 of 42 steps (2%) done
+Select jobs to execute...
+
+[Wed May 27 10:20:17 2026]
+rule preprocess:
+    input: data/pseudobulk/LUAD_Kim2020/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/LUAD_Kim2020/norm.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/k.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/notebooks/00_preprocess.ipynb
+    jobid: 20
+    wildcards: dataset=LUAD_Kim2020
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:20:18 2026]
+Finished job 3.
+2 of 42 steps (5%) done
+Select jobs to execute...
+
+[Wed May 27 10:20:18 2026]
+rule flashier:
+    input: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/flashier/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/flashier/flashier_model.rds, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/04_flashier.ipynb
+    jobid: 10
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:20:19 2026]
+Finished job 7.
+3 of 42 steps (7%) done
+Select jobs to execute...
+
+[Wed May 27 10:20:19 2026]
+rule clamp:
+    input: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/Brain_Mathys2023/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/01_CLAMP.ipynb
+    jobid: 2
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:20:21 2026]
+Finished job 1.
+4 of 42 steps (10%) done
+Select jobs to execute...
+
+[Wed May 27 10:20:21 2026]
+rule pca_nmf_ica:
+    input: output/01_model_building/05_pseudobulk/Brain_Xiong2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Xiong2023/PCA/B.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/NMF/B.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/ICA/B.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/Brain_Xiong2023/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/Brain_Xiong2023/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/Brain_Xiong2023/notebooks/03_PCA_NMF_ICA.ipynb
+    jobid: 6
+    wildcards: dataset=Brain_Xiong2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:20:24 2026]
+Finished job 20.
+5 of 42 steps (12%) done
+Select jobs to execute...
+
+[Wed May 27 10:20:24 2026]
+rule wgcna:
+    input: output/01_model_building/05_pseudobulk/Brain_Xiong2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Xiong2023/WGCNA/B.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/WGCNA/wgcna_network.rds, output/01_model_building/05_pseudobulk/Brain_Xiong2023/notebooks/06_WGCNA.ipynb
+    jobid: 37
+    wildcards: dataset=Brain_Xiong2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:20:34 2026]
+Error in rule clamp:
+    jobid: 2
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/Brain_Mathys2023/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/01_CLAMP.ipynb
+    shell:
+        
+        papermill nbs/01_model_building/05_pseudobulk/01_CLAMP.ipynb output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/01_CLAMP.ipynb           -p DATASET Brain_Mathys2023           -p MAX_ITER 500           -k ir
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Removing output files of failed job clamp since they might be corrupted:
+output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/01_CLAMP.ipynb
+[Wed May 27 10:20:56 2026]
+Finished job 6.
+6 of 42 steps (14%) done
+[Wed May 27 10:22:01 2026]
+Finished job 10.
+7 of 42 steps (17%) done
+[Wed May 27 10:24:47 2026]
+Finished job 37.
+8 of 42 steps (19%) done
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /home/msubirana/Documents/pivlab/clamp-analyses/.snakemake/log/2026-05-27T102009.907454.snakemake.log

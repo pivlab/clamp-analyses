@@ -1,0 +1,97 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 4
+Rules claiming more threads will be scaled down.
+Job stats:
+job                count    min threads    max threads
+---------------  -------  -------------  -------------
+all                    1              1              1
+benchmark              1              1              1
+clamp                  7              1              1
+cogaps                 7              1              1
+flashier               7              1              1
+gss                    7              1              1
+mofa_flex_prior        7              1              1
+pca_nmf_ica            7              1              1
+plier                  7              1              1
+preprocess             5              1              1
+project_archs4         7              1              1
+wgcna                  7              1              1
+total                 70              1              1
+
+Select jobs to execute...
+
+[Tue May 26 13:28:53 2026]
+rule cogaps:
+    input: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/CoGAPS/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/CoGAPS/cogaps_model.rds, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/07_CoGAPS.ipynb
+    jobid: 50
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+
+[Tue May 26 13:28:53 2026]
+rule clamp:
+    input: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/01_CLAMP.ipynb
+    jobid: 14
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+
+[Tue May 26 13:28:53 2026]
+rule preprocess:
+    input: data/pseudobulk/PBMC_1k1k/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/00_preprocess.ipynb
+    jobid: 6
+    wildcards: dataset=PBMC_1k1k
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+
+[Tue May 26 13:28:53 2026]
+rule pca_nmf_ica:
+    input: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/PCA/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/NMF/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/ICA/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/Brain_Mathys2023/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/Brain_Mathys2023/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/03_PCA_NMF_ICA.ipynb
+    jobid: 22
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+[Tue May 26 13:28:54 2026]
+Error in rule pca_nmf_ica:
+    jobid: 22
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/PCA/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/NMF/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/ICA/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/Brain_Mathys2023/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/Brain_Mathys2023/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/03_PCA_NMF_ICA.ipynb
+    conda-env: clamp-analyses
+    shell:
+        
+        papermill nbs/01_model_building/05_pseudobulk/03_PCA_NMF_ICA.ipynb output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/03_PCA_NMF_ICA.ipynb           -p DATASET Brain_Mathys2023           -k python3
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Removing output files of failed job pca_nmf_ica since they might be corrupted:
+output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/03_PCA_NMF_ICA.ipynb
+[Tue May 26 13:29:09 2026]
+Error in rule clamp:
+    jobid: 14
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/01_CLAMP.ipynb
+    conda-env: clamp-analyses
+    shell:
+        
+        papermill nbs/01_model_building/05_pseudobulk/01_CLAMP.ipynb output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/01_CLAMP.ipynb           -p DATASET PBMC_Perez2022           -p MAX_ITER 500           -k ir
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Removing output files of failed job clamp since they might be corrupted:
+output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/01_CLAMP.ipynb
+[Tue May 26 13:29:30 2026]
+Finished job 6.
+1 of 70 steps (1%) done
+[Tue May 26 13:30:14 2026]
+Finished job 50.
+2 of 70 steps (3%) done
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /home/msubirana/Documents/pivlab/clamp-analyses/.snakemake/log/2026-05-26T132852.697158.snakemake.log

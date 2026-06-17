@@ -1,0 +1,101 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 4
+Rules claiming more threads will be scaled down.
+Job stats:
+job                count    min threads    max threads
+---------------  -------  -------------  -------------
+all                    1              1              1
+benchmark              1              1              1
+clamp                  7              1              1
+cogaps                 6              1              1
+flashier               7              1              1
+gss                    7              1              1
+mofa_flex_prior        7              1              1
+pca_nmf_ica            7              1              1
+plier                  7              1              1
+preprocess             4              1              1
+project_archs4         7              1              1
+wgcna                  7              1              1
+total                 68              1              1
+
+Select jobs to execute...
+
+[Tue May 26 13:31:04 2026]
+rule flashier:
+    input: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/flashier/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/flashier/flashier_model.rds, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/04_flashier.ipynb
+    jobid: 29
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+
+[Tue May 26 13:31:04 2026]
+rule clamp:
+    input: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/01_CLAMP.ipynb
+    jobid: 14
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+
+[Tue May 26 13:31:04 2026]
+rule wgcna:
+    input: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/WGCNA/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/WGCNA/wgcna_network.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/06_WGCNA.ipynb
+    jobid: 49
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+
+[Tue May 26 13:31:04 2026]
+rule plier:
+    input: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/PLIER/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/PLIER/PLIER.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/02_PLIER.ipynb
+    jobid: 21
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+[Tue May 26 13:31:30 2026]
+Finished job 29.
+1 of 68 steps (1%) done
+Select jobs to execute...
+
+[Tue May 26 13:31:30 2026]
+rule pca_nmf_ica:
+    input: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/PCA/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/NMF/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/ICA/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/PBMC_Perez2022/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/PBMC_Perez2022/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/03_PCA_NMF_ICA.ipynb
+    jobid: 28
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+[Tue May 26 13:31:31 2026]
+Error in rule pca_nmf_ica:
+    jobid: 28
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/PCA/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/NMF/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/ICA/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/PBMC_Perez2022/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/PBMC_Perez2022/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/03_PCA_NMF_ICA.ipynb
+    conda-env: clamp-analyses
+    shell:
+        
+        papermill nbs/01_model_building/05_pseudobulk/03_PCA_NMF_ICA.ipynb output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/03_PCA_NMF_ICA.ipynb           -p DATASET PBMC_Perez2022           -k python3
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Removing output files of failed job pca_nmf_ica since they might be corrupted:
+output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/03_PCA_NMF_ICA.ipynb
+[Tue May 26 13:31:59 2026]
+Finished job 21.
+2 of 68 steps (3%) done
+[Tue May 26 13:33:02 2026]
+Finished job 49.
+3 of 68 steps (4%) done
+[Tue May 26 13:33:15 2026]
+Finished job 14.
+4 of 68 steps (6%) done
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /home/msubirana/Documents/pivlab/clamp-analyses/.snakemake/log/2026-05-26T133103.465563.snakemake.log

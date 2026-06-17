@@ -1,0 +1,31 @@
+configfile: "workflow/config/pseudobulk.yaml"
+
+include: "rules/pseudobulk.smk"
+
+DATASETS = config["datasets"]
+MODELS   = config["paths"]["models"]
+BENCH    = config["paths"]["benchmark"]
+PROJ     = config["paths"]["projection"]
+
+
+rule all:
+    input:
+        # Preprocessing
+        expand(f"{MODELS}/{{ds}}/norm.csv", ds=DATASETS),
+        # Models — B matrices
+        expand(f"{MODELS}/{{ds}}/CLAMPbase/B.csv",              ds=DATASETS),
+        expand(f"{MODELS}/{{ds}}/CLAMPfull/B.csv",              ds=DATASETS),
+        expand(f"{MODELS}/{{ds}}/PLIER/B.csv",                  ds=DATASETS),
+        expand(f"{MODELS}/{{ds}}/PCA/B.csv",                    ds=DATASETS),
+        expand(f"{MODELS}/{{ds}}/NMF/B.csv",                    ds=DATASETS),
+        expand(f"{MODELS}/{{ds}}/ICA/B.csv",                    ds=DATASETS),
+        expand(f"{MODELS}/{{ds}}/flashier/B.csv",               ds=DATASETS),
+        expand(f"{MODELS}/{{ds}}/MOFA_FLEX_PRIOR/B_matrix.csv", ds=DATASETS),
+        # expand(f"{MODELS}/{{ds}}/CoGAPS/B.csv",                 ds=DATASETS),  # disabled: slow
+        expand(f"{MODELS}/{{ds}}/GSS/B.csv",                    ds=DATASETS),
+        # ARCHS4 projections
+        expand(f"{PROJ}/{{ds}}/projection.csv",                 ds=DATASETS),
+        # QC check + Benchmark
+        f"{BENCH}/check_outputs.ipynb",
+        f"{BENCH}/benchmark_long.csv",
+        f"{BENCH}/benchmark_summary.csv",

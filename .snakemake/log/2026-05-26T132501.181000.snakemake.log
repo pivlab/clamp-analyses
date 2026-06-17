@@ -1,0 +1,25 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 1 (use --cores to define parallelism)
+Rules claiming more threads will be scaled down.
+Job stats:
+job           count    min threads    max threads
+----------  -------  -------------  -------------
+preprocess        1              1              1
+total             1              1              1
+
+Select jobs to execute...
+
+[Tue May 26 13:25:02 2026]
+rule preprocess:
+    input: data/pseudobulk/PBMC_Perez2022/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/00_preprocess.ipynb
+    jobid: 0
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+Activating conda environment: clamp-analyses
+[Tue May 26 13:25:24 2026]
+Finished job 0.
+1 of 1 steps (100%) done
+Complete log: /home/msubirana/Documents/pivlab/clamp-analyses/.snakemake/log/2026-05-26T132501.181000.snakemake.log

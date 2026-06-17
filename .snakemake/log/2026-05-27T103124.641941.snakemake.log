@@ -1,0 +1,560 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 4
+Rules claiming more threads will be scaled down.
+Conda environments: ignored
+Job stats:
+job            count    min threads    max threads
+-----------  -------  -------------  -------------
+clamp              7              1              1
+flashier           7              1              1
+pca_nmf_ica        7              1              1
+plier              7              1              1
+preprocess         7              1              1
+wgcna              7              1              1
+total             42              1              1
+
+Select jobs to execute...
+
+[Wed May 27 10:31:25 2026]
+rule preprocess:
+    input: data/pseudobulk/LUAD_Kim2020/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/LUAD_Kim2020/norm.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/k.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/notebooks/00_preprocess.ipynb
+    jobid: 16
+    wildcards: dataset=LUAD_Kim2020
+    resources: tmpdir=/tmp
+
+
+[Wed May 27 10:31:25 2026]
+rule preprocess:
+    input: data/pseudobulk/CRC_Pelka2021/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/CRC_Pelka2021/norm.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/k.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/notebooks/00_preprocess.ipynb
+    jobid: 11
+    wildcards: dataset=CRC_Pelka2021
+    resources: tmpdir=/tmp
+
+
+[Wed May 27 10:31:25 2026]
+rule preprocess:
+    input: data/pseudobulk/BRCA_Bassez2021/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/norm.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/k.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/notebooks/00_preprocess.ipynb
+    jobid: 5
+    wildcards: dataset=BRCA_Bassez2021
+    resources: tmpdir=/tmp
+
+
+[Wed May 27 10:31:25 2026]
+rule preprocess:
+    input: data/pseudobulk/Brain_Mathys2023/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/00_preprocess.ipynb
+    jobid: 9
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:31:32 2026]
+Finished job 16.
+1 of 42 steps (2%) done
+Select jobs to execute...
+
+[Wed May 27 10:31:32 2026]
+rule plier:
+    input: output/01_model_building/05_pseudobulk/LUAD_Kim2020/norm.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/k.csv
+    output: output/01_model_building/05_pseudobulk/LUAD_Kim2020/PLIER/B.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/PLIER/PLIER.rds, output/01_model_building/05_pseudobulk/LUAD_Kim2020/notebooks/02_PLIER.ipynb
+    jobid: 30
+    wildcards: dataset=LUAD_Kim2020
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:31:32 2026]
+Finished job 5.
+2 of 42 steps (5%) done
+Select jobs to execute...
+
+[Wed May 27 10:31:32 2026]
+rule pca_nmf_ica:
+    input: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/norm.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/k.csv
+    output: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/PCA/B.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/NMF/B.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/ICA/B.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/notebooks/03_PCA_NMF_ICA.ipynb
+    jobid: 6
+    wildcards: dataset=BRCA_Bassez2021
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:31:33 2026]
+Finished job 11.
+3 of 42 steps (7%) done
+Select jobs to execute...
+
+[Wed May 27 10:31:33 2026]
+rule clamp:
+    input: output/01_model_building/05_pseudobulk/CRC_Pelka2021/norm.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/k.csv
+    output: output/01_model_building/05_pseudobulk/CRC_Pelka2021/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/CRC_Pelka2021/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/CRC_Pelka2021/notebooks/01_CLAMP.ipynb
+    jobid: 33
+    wildcards: dataset=CRC_Pelka2021
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:31:33 2026]
+Finished job 9.
+4 of 42 steps (10%) done
+Select jobs to execute...
+
+[Wed May 27 10:31:33 2026]
+rule plier:
+    input: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/PLIER/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/PLIER/PLIER.rds, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/02_PLIER.ipynb
+    jobid: 37
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:31:35 2026]
+Finished job 6.
+5 of 42 steps (12%) done
+Select jobs to execute...
+
+[Wed May 27 10:31:36 2026]
+rule flashier:
+    input: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/norm.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/k.csv
+    output: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/flashier/B.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/flashier/flashier_model.rds, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/notebooks/04_flashier.ipynb
+    jobid: 4
+    wildcards: dataset=BRCA_Bassez2021
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:32:03 2026]
+Finished job 4.
+6 of 42 steps (14%) done
+Select jobs to execute...
+
+[Wed May 27 10:32:03 2026]
+rule wgcna:
+    input: output/01_model_building/05_pseudobulk/LUAD_Kim2020/norm.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/k.csv
+    output: output/01_model_building/05_pseudobulk/LUAD_Kim2020/WGCNA/B.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/WGCNA/wgcna_network.rds, output/01_model_building/05_pseudobulk/LUAD_Kim2020/notebooks/06_WGCNA.ipynb
+    jobid: 15
+    wildcards: dataset=LUAD_Kim2020
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:32:42 2026]
+Finished job 30.
+7 of 42 steps (17%) done
+Select jobs to execute...
+
+[Wed May 27 10:32:42 2026]
+rule clamp:
+    input: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/Brain_Mathys2023/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/01_CLAMP.ipynb
+    jobid: 29
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:34:22 2026]
+Finished job 33.
+8 of 42 steps (19%) done
+Select jobs to execute...
+
+[Wed May 27 10:34:22 2026]
+rule flashier:
+    input: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/flashier/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/flashier/flashier_model.rds, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/04_flashier.ipynb
+    jobid: 23
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:34:29 2026]
+Finished job 15.
+9 of 42 steps (21%) done
+Select jobs to execute...
+
+[Wed May 27 10:34:29 2026]
+rule wgcna:
+    input: output/01_model_building/05_pseudobulk/CRC_Pelka2021/norm.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/k.csv
+    output: output/01_model_building/05_pseudobulk/CRC_Pelka2021/WGCNA/B.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/WGCNA/wgcna_network.rds, output/01_model_building/05_pseudobulk/CRC_Pelka2021/notebooks/06_WGCNA.ipynb
+    jobid: 32
+    wildcards: dataset=CRC_Pelka2021
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:35:00 2026]
+Finished job 23.
+10 of 42 steps (24%) done
+Select jobs to execute...
+
+[Wed May 27 10:35:00 2026]
+rule preprocess:
+    input: data/pseudobulk/PBMC_1k1k/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/00_preprocess.ipynb
+    jobid: 18
+    wildcards: dataset=PBMC_1k1k
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:35:33 2026]
+Finished job 18.
+11 of 42 steps (26%) done
+Select jobs to execute...
+
+[Wed May 27 10:35:33 2026]
+rule clamp:
+    input: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/PBMC_1k1k/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/01_CLAMP.ipynb
+    jobid: 21
+    wildcards: dataset=PBMC_1k1k
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:36:22 2026]
+Finished job 29.
+12 of 42 steps (29%) done
+Select jobs to execute...
+
+[Wed May 27 10:36:22 2026]
+rule clamp:
+    input: output/01_model_building/05_pseudobulk/LUAD_Kim2020/norm.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/k.csv
+    output: output/01_model_building/05_pseudobulk/LUAD_Kim2020/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/LUAD_Kim2020/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/LUAD_Kim2020/notebooks/01_CLAMP.ipynb
+    jobid: 25
+    wildcards: dataset=LUAD_Kim2020
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:36:27 2026]
+Finished job 37.
+13 of 42 steps (31%) done
+Select jobs to execute...
+
+[Wed May 27 10:36:27 2026]
+rule pca_nmf_ica:
+    input: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/PCA/B.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/NMF/B.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/ICA/B.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/PBMC_1k1k/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/PBMC_1k1k/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/03_PCA_NMF_ICA.ipynb
+    jobid: 17
+    wildcards: dataset=PBMC_1k1k
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:37:19 2026]
+Finished job 32.
+14 of 42 steps (33%) done
+Select jobs to execute...
+
+[Wed May 27 10:37:19 2026]
+rule preprocess:
+    input: data/pseudobulk/PBMC_Perez2022/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/00_preprocess.ipynb
+    jobid: 1
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:37:31 2026]
+Finished job 1.
+15 of 42 steps (36%) done
+Select jobs to execute...
+
+[Wed May 27 10:37:31 2026]
+rule wgcna:
+    input: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/WGCNA/B.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/WGCNA/wgcna_network.rds, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/06_WGCNA.ipynb
+    jobid: 22
+    wildcards: dataset=PBMC_1k1k
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:38:41 2026]
+Finished job 17.
+16 of 42 steps (38%) done
+Select jobs to execute...
+
+[Wed May 27 10:38:41 2026]
+rule clamp:
+    input: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/01_CLAMP.ipynb
+    jobid: 0
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:39:34 2026]
+Finished job 22.
+17 of 42 steps (40%) done
+Select jobs to execute...
+
+[Wed May 27 10:39:34 2026]
+rule pca_nmf_ica:
+    input: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/PCA/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/NMF/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/ICA/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/PBMC_Perez2022/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/PBMC_Perez2022/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/03_PCA_NMF_ICA.ipynb
+    jobid: 7
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:39:52 2026]
+Finished job 25.
+18 of 42 steps (43%) done
+Select jobs to execute...
+
+[Wed May 27 10:39:52 2026]
+rule pca_nmf_ica:
+    input: output/01_model_building/05_pseudobulk/LUAD_Kim2020/norm.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/k.csv
+    output: output/01_model_building/05_pseudobulk/LUAD_Kim2020/PCA/B.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/NMF/B.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/ICA/B.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/LUAD_Kim2020/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/LUAD_Kim2020/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/LUAD_Kim2020/notebooks/03_PCA_NMF_ICA.ipynb
+    jobid: 27
+    wildcards: dataset=LUAD_Kim2020
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:39:56 2026]
+Finished job 27.
+19 of 42 steps (45%) done
+Select jobs to execute...
+
+[Wed May 27 10:39:56 2026]
+rule flashier:
+    input: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/flashier/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/flashier/flashier_model.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/04_flashier.ipynb
+    jobid: 26
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:40:09 2026]
+Finished job 7.
+20 of 42 steps (48%) done
+Select jobs to execute...
+
+[Wed May 27 10:40:09 2026]
+rule plier:
+    input: output/01_model_building/05_pseudobulk/CRC_Pelka2021/norm.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/k.csv
+    output: output/01_model_building/05_pseudobulk/CRC_Pelka2021/PLIER/B.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/PLIER/PLIER.rds, output/01_model_building/05_pseudobulk/CRC_Pelka2021/notebooks/02_PLIER.ipynb
+    jobid: 34
+    wildcards: dataset=CRC_Pelka2021
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:41:48 2026]
+Finished job 34.
+21 of 42 steps (50%) done
+Select jobs to execute...
+
+[Wed May 27 10:41:48 2026]
+rule preprocess:
+    input: data/pseudobulk/Brain_Xiong2023/bulk_expr.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Xiong2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/k.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/notebooks/00_preprocess.ipynb
+    jobid: 3
+    wildcards: dataset=Brain_Xiong2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:41:54 2026]
+Finished job 0.
+22 of 42 steps (52%) done
+Select jobs to execute...
+
+[Wed May 27 10:41:54 2026]
+rule plier:
+    input: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/norm.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/k.csv
+    output: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/PLIER/B.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/PLIER/PLIER.rds, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/notebooks/02_PLIER.ipynb
+    jobid: 28
+    wildcards: dataset=BRCA_Bassez2021
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:41:58 2026]
+Finished job 3.
+23 of 42 steps (55%) done
+Select jobs to execute...
+
+[Wed May 27 10:41:58 2026]
+rule plier:
+    input: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/PLIER/B.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/PLIER/PLIER.rds, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/02_PLIER.ipynb
+    jobid: 31
+    wildcards: dataset=PBMC_1k1k
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:42:05 2026]
+Finished job 21.
+24 of 42 steps (57%) done
+Select jobs to execute...
+
+[Wed May 27 10:42:05 2026]
+rule flashier:
+    input: output/01_model_building/05_pseudobulk/LUAD_Kim2020/norm.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/k.csv
+    output: output/01_model_building/05_pseudobulk/LUAD_Kim2020/flashier/B.csv, output/01_model_building/05_pseudobulk/LUAD_Kim2020/flashier/flashier_model.rds, output/01_model_building/05_pseudobulk/LUAD_Kim2020/notebooks/04_flashier.ipynb
+    jobid: 24
+    wildcards: dataset=LUAD_Kim2020
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:42:17 2026]
+Finished job 26.
+25 of 42 steps (60%) done
+Select jobs to execute...
+
+[Wed May 27 10:42:17 2026]
+rule flashier:
+    input: output/01_model_building/05_pseudobulk/CRC_Pelka2021/norm.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/k.csv
+    output: output/01_model_building/05_pseudobulk/CRC_Pelka2021/flashier/B.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/flashier/flashier_model.rds, output/01_model_building/05_pseudobulk/CRC_Pelka2021/notebooks/04_flashier.ipynb
+    jobid: 40
+    wildcards: dataset=CRC_Pelka2021
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:42:19 2026]
+Finished job 24.
+26 of 42 steps (62%) done
+Select jobs to execute...
+
+[Wed May 27 10:42:19 2026]
+rule pca_nmf_ica:
+    input: output/01_model_building/05_pseudobulk/CRC_Pelka2021/norm.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/k.csv
+    output: output/01_model_building/05_pseudobulk/CRC_Pelka2021/PCA/B.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/NMF/B.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/ICA/B.csv, output/01_model_building/05_pseudobulk/CRC_Pelka2021/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/CRC_Pelka2021/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/CRC_Pelka2021/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/CRC_Pelka2021/notebooks/03_PCA_NMF_ICA.ipynb
+    jobid: 10
+    wildcards: dataset=CRC_Pelka2021
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:42:24 2026]
+Finished job 10.
+27 of 42 steps (64%) done
+Select jobs to execute...
+
+[Wed May 27 10:42:24 2026]
+rule wgcna:
+    input: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/WGCNA/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/WGCNA/wgcna_network.rds, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/06_WGCNA.ipynb
+    jobid: 12
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:42:41 2026]
+Finished job 40.
+28 of 42 steps (67%) done
+Select jobs to execute...
+
+[Wed May 27 10:42:41 2026]
+rule flashier:
+    input: output/01_model_building/05_pseudobulk/PBMC_1k1k/norm.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_1k1k/flashier/B.csv, output/01_model_building/05_pseudobulk/PBMC_1k1k/flashier/flashier_model.rds, output/01_model_building/05_pseudobulk/PBMC_1k1k/notebooks/04_flashier.ipynb
+    jobid: 20
+    wildcards: dataset=PBMC_1k1k
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:43:58 2026]
+Finished job 28.
+29 of 42 steps (69%) done
+Select jobs to execute...
+
+[Wed May 27 10:43:58 2026]
+rule plier:
+    input: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/PLIER/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/PLIER/PLIER.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/02_PLIER.ipynb
+    jobid: 36
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:45:18 2026]
+Finished job 12.
+30 of 42 steps (71%) done
+Select jobs to execute...
+
+[Wed May 27 10:45:18 2026]
+rule pca_nmf_ica:
+    input: output/01_model_building/05_pseudobulk/Brain_Mathys2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Mathys2023/PCA/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/NMF/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/ICA/B.csv, output/01_model_building/05_pseudobulk/Brain_Mathys2023/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/Brain_Mathys2023/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/Brain_Mathys2023/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/Brain_Mathys2023/notebooks/03_PCA_NMF_ICA.ipynb
+    jobid: 8
+    wildcards: dataset=Brain_Mathys2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:45:28 2026]
+Finished job 8.
+31 of 42 steps (74%) done
+Select jobs to execute...
+
+[Wed May 27 10:45:28 2026]
+rule flashier:
+    input: output/01_model_building/05_pseudobulk/Brain_Xiong2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Xiong2023/flashier/B.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/flashier/flashier_model.rds, output/01_model_building/05_pseudobulk/Brain_Xiong2023/notebooks/04_flashier.ipynb
+    jobid: 38
+    wildcards: dataset=Brain_Xiong2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:46:23 2026]
+Finished job 38.
+32 of 42 steps (76%) done
+Select jobs to execute...
+
+[Wed May 27 10:46:23 2026]
+rule wgcna:
+    input: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/norm.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/k.csv
+    output: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/WGCNA/B.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/WGCNA/wgcna_network.rds, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/notebooks/06_WGCNA.ipynb
+    jobid: 14
+    wildcards: dataset=BRCA_Bassez2021
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:50:20 2026]
+Finished job 14.
+33 of 42 steps (79%) done
+Select jobs to execute...
+
+[Wed May 27 10:50:20 2026]
+rule wgcna:
+    input: output/01_model_building/05_pseudobulk/PBMC_Perez2022/norm.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/k.csv
+    output: output/01_model_building/05_pseudobulk/PBMC_Perez2022/WGCNA/B.csv, output/01_model_building/05_pseudobulk/PBMC_Perez2022/WGCNA/wgcna_network.rds, output/01_model_building/05_pseudobulk/PBMC_Perez2022/notebooks/06_WGCNA.ipynb
+    jobid: 35
+    wildcards: dataset=PBMC_Perez2022
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:52:38 2026]
+Finished job 35.
+34 of 42 steps (81%) done
+Select jobs to execute...
+
+[Wed May 27 10:52:38 2026]
+rule plier:
+    input: output/01_model_building/05_pseudobulk/Brain_Xiong2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Xiong2023/PLIER/B.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/PLIER/PLIER.rds, output/01_model_building/05_pseudobulk/Brain_Xiong2023/notebooks/02_PLIER.ipynb
+    jobid: 41
+    wildcards: dataset=Brain_Xiong2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:53:42 2026]
+Finished job 36.
+35 of 42 steps (83%) done
+Select jobs to execute...
+
+[Wed May 27 10:53:42 2026]
+rule wgcna:
+    input: output/01_model_building/05_pseudobulk/Brain_Xiong2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Xiong2023/WGCNA/B.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/WGCNA/wgcna_network.rds, output/01_model_building/05_pseudobulk/Brain_Xiong2023/notebooks/06_WGCNA.ipynb
+    jobid: 39
+    wildcards: dataset=Brain_Xiong2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:56:36 2026]
+Finished job 20.
+36 of 42 steps (86%) done
+Select jobs to execute...
+
+[Wed May 27 10:56:36 2026]
+rule pca_nmf_ica:
+    input: output/01_model_building/05_pseudobulk/Brain_Xiong2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Xiong2023/PCA/B.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/NMF/B.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/ICA/B.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/PCA/pca_model.pkl, output/01_model_building/05_pseudobulk/Brain_Xiong2023/NMF/nmf_model.pkl, output/01_model_building/05_pseudobulk/Brain_Xiong2023/ICA/ica_model.pkl, output/01_model_building/05_pseudobulk/Brain_Xiong2023/notebooks/03_PCA_NMF_ICA.ipynb
+    jobid: 13
+    wildcards: dataset=Brain_Xiong2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:56:48 2026]
+Finished job 13.
+37 of 42 steps (88%) done
+Select jobs to execute...
+
+[Wed May 27 10:56:48 2026]
+rule clamp:
+    input: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/norm.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/k.csv
+    output: output/01_model_building/05_pseudobulk/BRCA_Bassez2021/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/BRCA_Bassez2021/notebooks/01_CLAMP.ipynb
+    jobid: 19
+    wildcards: dataset=BRCA_Bassez2021
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:59:20 2026]
+Finished job 19.
+38 of 42 steps (90%) done
+Select jobs to execute...
+
+[Wed May 27 10:59:20 2026]
+rule clamp:
+    input: output/01_model_building/05_pseudobulk/Brain_Xiong2023/norm.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/k.csv
+    output: output/01_model_building/05_pseudobulk/Brain_Xiong2023/CLAMPbase/B.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/CLAMPfull/B.csv, output/01_model_building/05_pseudobulk/Brain_Xiong2023/CLAMPbase/CLAMPbase.rds, output/01_model_building/05_pseudobulk/Brain_Xiong2023/CLAMPfull/CLAMPfull.rds, output/01_model_building/05_pseudobulk/Brain_Xiong2023/notebooks/01_CLAMP.ipynb
+    jobid: 2
+    wildcards: dataset=Brain_Xiong2023
+    resources: tmpdir=/tmp
+
+[Wed May 27 10:59:21 2026]
+Finished job 39.
+39 of 42 steps (93%) done
+[Wed May 27 11:00:26 2026]
+Finished job 41.
+40 of 42 steps (95%) done
+[Wed May 27 11:04:56 2026]
+Finished job 2.
+41 of 42 steps (98%) done
+[Wed May 27 11:07:49 2026]
+Finished job 31.
+42 of 42 steps (100%) done
+Complete log: /home/msubirana/Documents/pivlab/clamp-analyses/.snakemake/log/2026-05-27T103124.641941.snakemake.log

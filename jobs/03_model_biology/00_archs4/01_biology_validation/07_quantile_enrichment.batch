@@ -1,0 +1,36 @@
+#!/bin/bash
+#SBATCH --job-name=archs4_quantile_enrichment
+#SBATCH --output=log_ARCHS4_quantile_enrichment.%j.log
+#SBATCH --error=log_ARCHS4_quantile_enrichment.%j.err
+#SBATCH --nodes=1
+#SBATCH --ntasks=8
+#SBATCH --mem=150GB
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=marc.subiranagranes@cuanschutz.edu
+
+MINIFORGE="/pividori_lab/software/miniforge3"
+REPO_ROOT="/pividori_lab/marc_projects/clamp-analyses"
+
+source "${MINIFORGE}/etc/profile.d/conda.sh"
+source /pividori_lab/marc_projects/conda_env/clamp-analyses/bin/activate
+
+cd "${REPO_ROOT}"
+
+THREADS="${SLURM_NTASKS:-8}"
+export NUMBA_NUM_THREADS="${THREADS}"
+export MKL_NUM_THREADS="${THREADS}"
+export OPENBLAS_NUM_THREADS="${THREADS}"
+export NUMEXPR_NUM_THREADS="${THREADS}"
+export OMP_NUM_THREADS="${THREADS}"
+export PYTHONUNBUFFERED=1
+
+start=$(date +%s)
+jupyter nbconvert \
+  --to notebook \
+  --execute "nbs/03_model_biology/00_archs4/01_biology_validation/07_quantile_enrichment.ipynb" \
+  --ExecutePreprocessor.timeout=-1 \
+  --output "07_quantile_enrichment_executed.ipynb" \
+  --output-dir "nbs/03_model_biology/00_archs4/01_biology_validation"
+end=$(date +%s)
+echo "Elapsed seconds: $((end - start))"
+echo "End: $(date)"

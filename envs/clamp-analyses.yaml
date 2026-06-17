@@ -51,6 +51,11 @@ dependencies:
   - bioconductor-mofa2
   - bioconductor-cogaps
   - bioconductor-pcatools
+<<<<<<< Updated upstream
+=======
+  - bioconductor-limma
+  - bioconductor-deseq2
+>>>>>>> Stashed changes
   
   # Other R utilities
   - r-plyr
@@ -65,6 +70,10 @@ dependencies:
   - r-cluster
   - r-msigdbr
   - r-matrixtests
+<<<<<<< Updated upstream
+=======
+  - r-svglite
+>>>>>>> Stashed changes
 
   # Ensure compatible SSL and curl for hdf5r in RStudio Server
   - openssl
@@ -92,4 +101,9 @@ dependencies:
   - pip:
       - mofaflex
       - anndata
+<<<<<<< Updated upstream
       - archs4py
+=======
+      - archs4py
+      - lightgbm
+>>>>>>> Stashed changes

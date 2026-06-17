@@ -4,7 +4,7 @@ library(here)
 config <- list()
 
 config$GENERAL <- list(
-  N_CORES=10, #max(nb_cores() %/% 4, 1),
+  N_CORES=10,
   CHUNK_SIZE=100,
   DATA_DIR=here(file.path("data")),
   OUTPUT_DIR=here(file.path("output"))
@@ -13,7 +13,7 @@ config$GENERAL <- list(
 config$ARCHS4=list(
   DATASET_NAME="archs4",
   DATASET_FOLDER=here(
-    file.path(config$GENERAL$OUTPUT_DIR, "archs4")
+    file.path(config$GENERAL$OUTPUT_DIR, "01_model_building", "04_archs4")
   ),
   DATASET_ENSEMBL_VERSION=107,
   URL="https://s3.dev.maayanlab.cloud/archs4/files/human_gene_v2.5.h5",
@@ -40,12 +40,21 @@ config$GTEx=list(
   RANDOM_SVD_SEED=123,
   MAX_U_UPDATES=50,
   N_CORES=1,
+<<<<<<< Updated upstream
   OUTPUT_DIR=file.path(config$GENERAL$OUTPUT_DIR, "gtex")
+=======
+  OUTPUT_DIR=file.path(config$GENERAL$OUTPUT_DIR, "01_model_building", "02_gtex", "01_CLAMP"),
+  CLAMP_HALL_DIR=file.path(config$GENERAL$OUTPUT_DIR, "01_model_building", "02_gtex", "10_CLAMP_hall")
+>>>>>>> Stashed changes
   )
 
 config$recount2 <- list(
   DATASET_NAME = "recount2",
+<<<<<<< Updated upstream
   DATASET_FOLDER = here(file.path(config$GENERAL$DATA_DIR, "recount2")),
+=======
+  DATASET_FOLDER = here(file.path(config$GENERAL$OUTPUT_DIR, "01_model_building", "03_recount2")),
+>>>>>>> Stashed changes
   URL = "https://ndownloader.figshare.com/files/10881866",
   DATASET_FILE = here(file.path("data", "recount2", "recount_data_prep_CLAMP.RDS")),
   GENES_MEAN_CUTOFF=0.5,
