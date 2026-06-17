@@ -1,64 +1,117 @@
 # CLAMP analyses
 
+This repository contains the analysis code used for CLAMP benchmarking, projections, biological validation, and downstream analyses.
 
 ## 🔧 Dependencies
 
-CLAMP uses **three Conda environments** to separate core package development, large-scale analyses, and GPU-accelerated workflows:
+This repository uses separate Conda environments to avoid dependency conflicts between CPU-based analyses, R/Bioconductor packages, and GPU-accelerated workflows.
 
 | Environment | File | Purpose |
-|--------------|------|----------|
-| **`clamp-analyses.yaml`** | `envs/clamp-analyses.yaml` | Default environment for CPU-based modeling, priors, projections, and vignettes. |
-| **`gpu-kmeans.yaml`** | `envs/gpu-kmeans.yaml` | Optional environment for GPU-accelerated clustering and benchmarking. |
+|------------|------|---------|
+| `clamp-analyses` | `envs/clamp-analyses.lock` | Frozen environment for reproducing the main CPU-based analyses. |
+| `gpu-kmeans` | `envs/gpu-kmeans.lock` | Frozen environment for GPU-accelerated clustering and benchmarking. |
 
-This separation avoids dependency conflicts between R (Bioconductor) and GPU libraries (`rapids`, `cupy`, `cuml`).
+The environments are provided as frozen Conda spec files. This allows collaborators to recreate the same package versions used for the analyses.
 
-### 🛠️ Install dependencies
+## 🛠️ Install dependencies
 
-Recommended steps to install the system-level and Conda tooling required to create the CLAMP environments.
+### 1. Install Conda
 
-1. Install a Conda distribution
-- Install Miniconda or Mambaforge for your platform (Mambaforge is recommended for faster environment solves).
+Install Miniconda, Mambaforge, or Miniforge for your platform.
 
-2. (Optional) Verify GPU drivers for RAPIDS/cuML workflows
-- Ensure a compatible NVIDIA driver / CUDA version is installed before creating the GPU environment:
+### 2. Create the main analysis environment
+
+Create the main frozen analysis environment:
+
+```bash
+conda create -n clamp-analyses --file envs/clamp-analyses.lock
+conda activate clamp-analyses
+```
+
+### 3. Install the pinned CLAMP version
+
+This analysis repository used this pinned CLAMP version while waiting for the Bioconductor submission.
+
+Install CLAMP with the provided script:
+
+```bash
+Rscript scripts/install_clamp.R
+```
+
+The script installs CLAMP from this pinned commit:
+
+```text
+4a6a32006624b942c847becd71f73baf7dedfed6
+```
+
+Check that CLAMP loads correctly:
+
+```bash
+Rscript -e "library(CLAMP); packageVersion('CLAMP'); sessionInfo()"
+```
+
+## Optional: GPU environment
+
+Some clustering and benchmarking workflows can use GPU acceleration through RAPIDS/cuML.
+
+Before creating the GPU environment, verify that a compatible NVIDIA driver and CUDA version are available:
+
 ```bash
 nvidia-smi
 ```
-- Check RAPIDS compatibility matrix for the correct CUDA version (match driver/CUDA with RAPIDS/cuML requirements).
 
-3. Create environments using conda
+Create the frozen GPU environment:
 
 ```bash
-conda env create -f envs/clamp-analyses.yaml
+conda create -n gpu-kmeans --file envs/gpu-kmeans.lock
+conda activate gpu-kmeans
+```
+
+Install the same pinned CLAMP version if needed:
+
+```bash
+Rscript scripts/install_clamp.R
+```
+
+## Updating frozen environments
+
+The frozen environment files should be regenerated whenever packages are added or updated.
+
+### Update the main analysis environment lock file
+
+```bash
 conda activate clamp-analyses
-
-# Clone CLAMP the repo into REPO_PATH (adjust path as needed)
-export REPO_PATH=~/path/to/CLAMP
-mkdir -p "$(dirname "$REPO_PATH")"
-git clone https://github.com/chikinalab/CLAMP.git "$REPO_PATH"
-
-# Install and check CLAMP using devtools
-Rscript -e "devtools::install_local('$REPO_PATH', force=TRUE, dependencies=FALSE)"
+conda list --explicit > envs/clamp-analyses.lock
+conda deactivate
 ```
+
+### Update the GPU environment lock file
 
 ```bash
-conda env create -f envs/envs/gpu-kmeans.yaml
-conda activate gpu-kmeans.yaml
-
-# Clone CLAMP the repo into REPO_PATH (adjust path as needed)
-export REPO_PATH=~/path/to/CLAMP
-mkdir -p "$(dirname "$REPO_PATH")"
-git clone https://github.com/chikinalab/CLAMP.git "$REPO_PATH"
-
-# Install and check CLAMP using devtools
-Rscript -e "devtools::install_local('$REPO_PATH', force=TRUE, dependencies=FALSE)"
+conda activate gpu-kmeans
+conda list --explicit > envs/gpu-kmeans.lock
+conda deactivate
 ```
 
-## 📘 Notebook Headers
+## 📘 Notebook headers
 
-Each notebook explicitly states which environment to use in the first Markdown cell.
+Each notebook should state which Conda environment is required in the first Markdown cell.
+
+Example:
+
+```markdown
+Environment: `clamp-analyses`
+```
+
+or:
+
+```markdown
+Environment: `gpu-kmeans`
+```
 
 ## Citation
+
+Citation information will be added once available.
 
 ## License
 
@@ -67,5 +120,5 @@ This project is licensed under the [CC-BY 4.0 License](http://creativecommons.or
 ## Acknowledgments
 
 Supported by the National Human Genome Research Institute,  
-The Eunice Kennedy Shriver National Institute of Child Health and Human Development,  
+the Eunice Kennedy Shriver National Institute of Child Health and Human Development,  
 the National Science Foundation, and the National Eye Institute.
