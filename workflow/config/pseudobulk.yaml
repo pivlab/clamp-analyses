@@ -1,0 +1,197 @@
+datasets:
+  Brain_Mathys2023:
+    build_pseudobulk: false
+    pseudobulk_dir: data/pseudobulk/Brain_Mathys2023
+    kind: matrix_market
+    raw: data/pseudobulk/raw/Brain_Mathys2023/ad430_matrix.mtx.gz
+    features: data/pseudobulk/raw/Brain_Mathys2023/ad430_features.tsv.gz
+    barcodes: data/pseudobulk/raw/Brain_Mathys2023/ad430_barcodes.tsv.gz
+    metadata: data/pseudobulk/raw/Brain_Mathys2023/meta.tsv
+    cell_id_col: cellName
+    sample_col: Individual
+    sample_transform: identity
+    truth_v0_col: Major_Cell_Type
+    truth_v1_col: Cell_Type
+    raw_cell_type_col: Major_Cell_Type
+    projection_label_col: Major_Cell_Type
+    cohort_manifest: data/pseudobulk/Brain_Mathys2023/patient_info.csv
+
+  Brain_Xiong2023:
+    build_pseudobulk: false
+    pseudobulk_dir: data/pseudobulk/Brain_Xiong2023
+    kind: matrix_market
+    raw: data/pseudobulk/raw/Brain_Xiong2023/matrix.mtx.gz
+    features: data/pseudobulk/raw/Brain_Xiong2023/features.tsv.gz
+    barcodes: data/pseudobulk/raw/Brain_Xiong2023/barcodes.tsv.gz
+    metadata: data/pseudobulk/raw/Brain_Xiong2023/meta.tsv
+    cell_id_col: cellId
+    sample_col: Individual
+    sample_transform: hyphen_to_underscore
+    truth_v0_col: Celltype
+    truth_v1_col: Subcelltype
+    raw_cell_type_col: Celltype
+    projection_label_col: Celltype
+    cohort_manifest: data/pseudobulk/Brain_Xiong2023/patient_info.csv
+
+  Heart_Datar2026:
+    build_pseudobulk: true
+    kind: h5ad
+    raw: data/pseudobulk/Heart_Datar2026/HeartMap_V1.0_raw_counts.h5ad
+    matrix: X
+    sample_col: donor_id
+    sample_transform: identity
+    truth_v0_col: cell_type__ontology_label
+    raw_cell_type_col: cell_type__ontology_label
+    projection_label_col: cell_type__ontology_label
+    min_cells: 400
+    exclude:
+      cell_type__ontology_label: [cell]
+    truth_v0_map: &heart_map
+      adipocyte: Adipocyte
+      regular atrial cardiac myocyte: AtrialCM
+      endocardial cell: Endocardial
+      cardiac endothelial cell: Endothelial
+      mesothelial cell of epicardium: Epicardial
+      fibroblast of cardiac tissue: Fibroblast
+      endothelial cell of lymphatic vessel: LymphaticEndothelial
+      lymphocyte: Lymphocyte
+      macrophage: Macrophage
+      mast cell: Mast
+      cardiac neuron: Neuronal
+      pericyte: Pericyte
+      vascular associated smooth muscle cell: VSMC
+      regular ventricular cardiac myocyte: VentricularCM
+    projection_label_map: *heart_map
+
+  PBMC_1k1k:
+    build_pseudobulk: false
+    pseudobulk_dir: data/pseudobulk/PBMC_1k1k
+    kind: h5ad
+    raw: data/pseudobulk/raw/PBMC_1k1k/PBMC_1k1k_raw.h5ad
+    matrix: X
+    sample_col: donor_id
+    sample_transform: sample_prefix_hyphen_to_underscore
+    truth_v0_col: predicted.celltype.l2
+    raw_cell_type_col: predicted.celltype.l2
+    projection_label_col: predicted.celltype.l2
+    cohort_manifest: data/pseudobulk/PBMC_1k1k/patient_info.csv
+    truth_v0_map: &pbmc_1k1k_map
+      CD4 CTL: CD4_T
+      CD4 Naive: CD4_T
+      CD4 Proliferating: CD4_T
+      CD4 TCM: CD4_T
+      CD4 TEM: CD4_T
+      Treg: CD4_T
+      CD8 Naive: CD8_T
+      CD8 Proliferating: CD8_T
+      CD8 TCM: CD8_T
+      CD8 TEM: CD8_T
+      gdT: gd_T
+      B intermediate: B_cell
+      B memory: B_cell
+      B naive: B_cell
+      Plasmablast: Plasma_B
+      CD14 Mono: CD14_Mono
+      CD16 Mono: CD16_Mono
+      cDC1: DC
+      cDC2: DC
+      ASDC: DC
+      NK: NK
+      NK Proliferating: NK
+      NK_CD56bright: NK
+    projection_label_map: *pbmc_1k1k_map
+
+  PBMC_Perez2022:
+    build_pseudobulk: false
+    pseudobulk_dir: data/pseudobulk/PBMC_Perez2022
+    kind: h5ad
+    raw: data/pseudobulk/raw/PBMC_Perez2022/PBMC_Perez2022_raw.h5ad
+    matrix: raw.X
+    sample_col: ind_cov
+    sample_transform: sample_prefix_hyphen_to_underscore
+    truth_v0_col: cell_type
+    raw_cell_type_col: cell_type
+    projection_label_col: cell_type
+    cohort_manifest: data/pseudobulk/PBMC_Perez2022/patient_info.csv
+    truth_v0_map: &pbmc_perez_map
+      B cell: B_cell
+      plasmablast: B_cell
+      classical monocyte: Myeloid
+      non-classical monocyte: Myeloid
+      conventional dendritic cell: Myeloid
+      plasmacytoid dendritic cell: Myeloid
+      progenitor cell: Myeloid
+      natural killer cell: NK
+      CD4-positive, alpha-beta T cell: T_cell
+      CD8-positive, alpha-beta T cell: T_cell
+      lymphocyte: T_cell
+    projection_label_map: *pbmc_perez_map
+
+  Lung_Sikkema2023:
+    build_pseudobulk: true
+    kind: h5ad
+    raw: data/pseudobulk/Lung_Sikkema2023/lung_HLCA.h5ad
+    matrix: raw.X
+    sample_col: donor_id
+    sample_transform: identity
+    truth_v0_col: ann_level_2
+    truth_v1_col: ann_finest_level
+    raw_cell_type_col: ann_level_3
+    projection_label_col: ann_level_2
+    min_cells: 400
+
+methods:
+  CLAMPbase: CLAMPbase/B.csv
+  CLAMPfull: CLAMPfull/B.csv
+  PLIER: PLIER/B.csv
+  PCA: PCA/B.csv
+  NMF: NMF/B.csv
+  ICA: ICA/B.csv
+  Flashier: flashier/B.csv
+  MOFA-FLEX: MOFA_FLEX_PRIOR/B.csv
+  GSSig: GSS/B.csv
+  CoGAPS: CoGAPS/B.csv
+
+paths:
+  production: output/01_model_building/00_pseudobulk
+  biology: output/03_model_biology/00_pseudobulk
+  model_notebooks: nbs/01_model_building/00_pseudobulk
+  biology_notebooks: nbs/03_model_biology/00_pseudobulk
+  panels: output/99_panels
+  panels_notebooks: nbs/99_panels
+
+references:
+  go_bp_url: https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=GO_Biological_Process_2025
+  go_bp_file: output/01_model_building/00_pseudobulk/references/GO_Biological_Process_2025.gmt
+  go_bp_sha256: 0fc02458765cfce6c9348dce9f7a9397c6caf7c09ba318f468135d7ac60342ee
+  cell_marker_file: data/pathways/Cell_marker_Human.xlsx
+  allen_brain_gmt_file: data/pathways/Allen_Brain_Atlas_10x_scRNA_2021.gmt
+  brain_datasets: [Brain_Mathys2023, Brain_Xiong2023]
+
+preprocess:
+  mean_cutoff: 0.5
+  var_cutoff: 0.1
+  seed: 123
+clamp:
+  max_iter: 500
+  seed: 123
+grouped_cv:
+  n_folds: 5
+  group_col: sample
+  split_seed: 42
+  min_train_lv_cor: 0.5
+  bootstrap_seed: 123
+  bootstrap_replicates: 10000
+flashier:
+  backfit_maxiter: 10
+cogaps:
+  n_iterations: 5000
+  n_threads: 4
+  seed: 123
+mofa_flex:
+  max_epochs: 200
+  seed: 123
+projection:
+  chunk_cells: 20000
+  chunk_nnz: 20000000
+  top_fraction: 0.01
