@@ -32,7 +32,7 @@ nvidia-smi
 3. Create environments using conda
 
 ```bash
-conda env create -f envs/clamp-analyses.yaml
+conda create --name clamp-analyses --file envs/clamp-analyses.lock
 conda activate clamp-analyses
 
 # Clone CLAMP the repo into REPO_PATH (adjust path as needed)
@@ -45,8 +45,8 @@ Rscript -e "devtools::install_local('$REPO_PATH', force=TRUE, dependencies=FALSE
 ```
 
 ```bash
-conda env create -f envs/envs/gpu-kmeans.yaml
-conda activate gpu-kmeans.yaml
+conda create --name gpu-kmeans --file envs/gpu-kmeans.lock
+conda activate gpu-kmeans
 
 # Clone CLAMP the repo into REPO_PATH (adjust path as needed)
 export REPO_PATH=~/path/to/CLAMP
@@ -122,46 +122,46 @@ Runs in this order; each stage consumes the previous stage's outputs:
 Run everything end to end:
 
 ```bash
-snakemake --cores 4 --use-conda --configfile workflow/config/pseudobulk.yaml biology_pseudobulk panels_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile --configfile workflow/config/pseudobulk.yaml biology_pseudobulk panels_pseudobulk
 ```
 
 Or work through it stage by stage:
 
 ```bash
 # Preview the DAG without running anything
-snakemake --cores 4 --use-conda -n biology_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -n biology_pseudobulk
 
 # 1. Build pseudobulk expression matrices for all datasets
-snakemake --cores 4 --use-conda pseudobulk_data
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile pseudobulk_data
 
 # 2. Fit all 10 methods for all datasets (each dataset/method pair runs
 #    independently, so this parallelizes well with a higher --cores value
 #    or a cluster profile)
-snakemake --cores 4 --use-conda full_models_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile full_models_pseudobulk
 
 # QC report (Python) - sanity-checks the outputs of steps 1-2
-snakemake --cores 4 --use-conda model_building_qc_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile model_building_qc_pseudobulk
 
 # 3. Grouped 5-fold cross-validation of CLAMPfull (sample-level holdout)
-snakemake --cores 4 --use-conda grouped_cv_models_pseudobulk
-snakemake --cores 4 --use-conda grouped_cv_analysis_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile grouped_cv_models_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile grouped_cv_analysis_pseudobulk
 
 # 4. Project individual cells onto the CLAMPfull latent variables
-snakemake --cores 4 --use-conda single_cell_projections
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile single_cell_projections
 
 # 5. Biology reports, run individually
-snakemake --cores 4 --use-conda benchmark_pseudobulk
-snakemake --cores 4 --use-conda holdout_report_pseudobulk
-snakemake --cores 4 --use-conda disentangle_pseudobulk
-snakemake --cores 4 --use-conda single_cell_recovery_pseudobulk
-snakemake --cores 4 --use-conda hard_cell_types_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile benchmark_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile holdout_report_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile disentangle_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile single_cell_recovery_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile hard_cell_types_pseudobulk
 
 # ...or all 5 biology reports in one go, via the umbrella rule at the
 # bottom of pseudobulk.smk (it depends on all five .complete outputs)
-snakemake --cores 4 --use-conda biology_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile biology_pseudobulk
 
 # 6. Build the figure panels from the biology report outputs
-snakemake --cores 4 --use-conda panels_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile panels_pseudobulk
 ```
 
 Snakemake skips a rule if its declared outputs already exist and are newer than its
@@ -171,13 +171,13 @@ notebook file isn't a tracked input for most rules, only the upstream data files
 To force a rule to run again regardless, add `-f`/`--forcerun`:
 
 ```bash
-snakemake --cores 4 --use-conda -f holdout_report_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -f holdout_report_pseudobulk
 ```
 
 Or force that rule and everything downstream of it with `-R`/`--forceall` on the target:
 
 ```bash
-snakemake --cores 4 --use-conda -R holdout_report_pseudobulk
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -R holdout_report_pseudobulk
 ```
 
 ### Outputs

@@ -29,7 +29,7 @@ norm <- CLAMP::zscoreCLAMP(prep$Y_filtered, prep$rowStats)
 # SVD
 n_genes <- nrow(norm)
 n_samples <- ncol(norm)
-svd_k <- floor((min(n_genes, n_samples) - 1) / 4)
+svd_k <- max(floor((min(n_genes, n_samples) - 1) / 4), 2L)
 svdres <- rsvd::rsvd(norm, k = svd_k)
 
 # model number of components
