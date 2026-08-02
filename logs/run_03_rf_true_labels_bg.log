@@ -1,0 +1,28 @@
+RUN_START Wed Jun 24 14:50:43 MDT 2026
+===== START nbs/03_model_biology/01_gtex/03_rf_true_labels/00_LV_importance_true_labels.ipynb Wed Jun 24 14:50:43 MDT 2026 =====
+[NbConvertApp] Converting notebook nbs/03_model_biology/01_gtex/03_rf_true_labels/00_LV_importance_true_labels.ipynb to notebook
+[NbConvertApp] Writing 2026864 bytes to nbs/03_model_biology/01_gtex/03_rf_true_labels/00_LV_importance_true_labels.ipynb
+===== END nbs/03_model_biology/01_gtex/03_rf_true_labels/00_LV_importance_true_labels.ipynb status=0 Thu Jun 25 01:34:09 MDT 2026 =====
+===== START nbs/03_model_biology/01_gtex/03_rf_true_labels/01_LV_importance_true_labels_biology.ipynb Thu Jun 25 01:34:09 MDT 2026 =====
+[NbConvertApp] Converting notebook nbs/03_model_biology/01_gtex/03_rf_true_labels/01_LV_importance_true_labels_biology.ipynb to notebook
+[NbConvertApp] Writing 10068535 bytes to nbs/03_model_biology/01_gtex/03_rf_true_labels/01_LV_importance_true_labels_biology.ipynb
+===== END nbs/03_model_biology/01_gtex/03_rf_true_labels/01_LV_importance_true_labels_biology.ipynb status=0 Thu Jun 25 01:34:32 MDT 2026 =====
+===== START nbs/03_model_biology/01_gtex/03_rf_true_labels/02_LV_importance_true_labels_tissue.ipynb Thu Jun 25 01:34:32 MDT 2026 =====
+[NbConvertApp] Converting notebook nbs/03_model_biology/01_gtex/03_rf_true_labels/02_LV_importance_true_labels_tissue.ipynb to notebook
+/home/marc/Documents/pivlab/clamp-analyses/.conda/envs/clamp-analyses/lib/python3.11/site-packages/nbformat/__init__.py:96: MissingIDFieldWarning: Cell is missing an id field, this will become a hard error in future nbformat versions. You may want to use `normalize()` on your notebooks before validations (available since nbformat 5.1.4). Previous versions of nbformat are fixing this issue transparently, and will stop doing so in the future.
+  validate(nb)
+[NbConvertApp] Writing 7693862 bytes to nbs/03_model_biology/01_gtex/03_rf_true_labels/02_LV_importance_true_labels_tissue.ipynb
+===== END nbs/03_model_biology/01_gtex/03_rf_true_labels/02_LV_importance_true_labels_tissue.ipynb status=0 Thu Jun 25 01:35:55 MDT 2026 =====
+===== START nbs/03_model_biology/01_gtex/03_rf_true_labels/03_global_alignment.ipynb Thu Jun 25 01:35:55 MDT 2026 =====
+[NbConvertApp] Converting notebook nbs/03_model_biology/01_gtex/03_rf_true_labels/03_global_alignment.ipynb to notebook
+[NbConvertApp] Writing 540010 bytes to nbs/03_model_biology/01_gtex/03_rf_true_labels/03_global_alignment.ipynb
+===== END nbs/03_model_biology/01_gtex/03_rf_true_labels/03_global_alignment.ipynb status=0 Thu Jun 25 01:36:16 MDT 2026 =====
+===== START nbs/03_model_biology/01_gtex/03_rf_true_labels/04_tissue_cellmarker_validation.ipynb Thu Jun 25 01:36:16 MDT 2026 =====
+[NbConvertApp] Converting notebook nbs/03_model_biology/01_gtex/03_rf_true_labels/04_tissue_cellmarker_validation.ipynb to notebook
+[NbConvertApp] Writing 294660 bytes to nbs/03_model_biology/01_gtex/03_rf_true_labels/04_tissue_cellmarker_validation.ipynb
+===== END nbs/03_model_biology/01_gtex/03_rf_true_labels/04_tissue_cellmarker_validation.ipynb status=0 Thu Jun 25 01:36:36 MDT 2026 =====
+===== START nbs/03_model_biology/01_gtex/03_rf_true_labels/05_tissue_validation_multi_resource.ipynb Thu Jun 25 01:36:36 MDT 2026 =====
+[NbConvertApp] Converting notebook nbs/03_model_biology/01_gtex/03_rf_true_labels/05_tissue_validation_multi_resource.ipynb to notebook
+[NbConvertApp] Writing 171660 bytes to nbs/03_model_biology/01_gtex/03_rf_true_labels/05_tissue_validation_multi_resource.ipynb
+===== END nbs/03_model_biology/01_gtex/03_rf_true_labels/05_tissue_validation_multi_resource.ipynb status=0 Thu Jun 25 01:37:30 MDT 2026 =====
+RUN_DONE Thu Jun 25 01:37:30 MDT 2026

@@ -1,31 +1,28 @@
+import os
+
 configfile: "workflow/config/pseudobulk.yaml"
+configfile: "workflow/config/gtex.yaml"
+
+# Anchor for repo-root-relative config paths (e.g. notebook locations), so
+# they resolve the same way regardless of which included .smk file consumes
+# them or what directory snakemake is invoked from -- notebook:/script:
+# directives resolve relative paths against the file that defines the rule,
+# not against the top-level Snakefile or the invocation cwd.
+REPO_ROOT = os.path.dirname(workflow.basedir)
 
 include: "rules/pseudobulk.smk"
-
-DATASETS = config["datasets"]
-MODELS   = config["paths"]["models"]
-BENCH    = config["paths"]["benchmark"]
-PROJ     = config["paths"]["projection"]
-
+include: "rules/gtex.smk"
+include: "rules/panels.smk"
 
 rule all:
     input:
-        # Preprocessing
-        expand(f"{MODELS}/{{ds}}/norm.csv", ds=DATASETS),
-        # Models — B matrices
-        expand(f"{MODELS}/{{ds}}/CLAMPbase/B.csv",              ds=DATASETS),
-        expand(f"{MODELS}/{{ds}}/CLAMPfull/B.csv",              ds=DATASETS),
-        expand(f"{MODELS}/{{ds}}/PLIER/B.csv",                  ds=DATASETS),
-        expand(f"{MODELS}/{{ds}}/PCA/B.csv",                    ds=DATASETS),
-        expand(f"{MODELS}/{{ds}}/NMF/B.csv",                    ds=DATASETS),
-        expand(f"{MODELS}/{{ds}}/ICA/B.csv",                    ds=DATASETS),
-        expand(f"{MODELS}/{{ds}}/flashier/B.csv",               ds=DATASETS),
-        expand(f"{MODELS}/{{ds}}/MOFA_FLEX_PRIOR/B_matrix.csv", ds=DATASETS),
-        # expand(f"{MODELS}/{{ds}}/CoGAPS/B.csv",                 ds=DATASETS),  # disabled: slow
-        expand(f"{MODELS}/{{ds}}/GSS/B.csv",                    ds=DATASETS),
-        # ARCHS4 projections
-        expand(f"{PROJ}/{{ds}}/projection.csv",                 ds=DATASETS),
-        # QC check + Benchmark
-        f"{BENCH}/check_outputs.ipynb",
-        f"{BENCH}/benchmark_long.csv",
-        f"{BENCH}/benchmark_summary.csv",
+        rules.pseudobulk_data.input,
+        rules.full_models_pseudobulk.input,
+        rules.grouped_cv_models_pseudobulk.input,
+        rules.single_cell_projections.input,
+        rules.model_building_qc_pseudobulk.output.complete,
+        rules.biology_pseudobulk.input,
+        rules.panels_pseudobulk.input,
+        rules.full_models_gtex.input,
+        rules.model_building_qc_gtex.output.complete,
+        rules.biology_gtex.input,

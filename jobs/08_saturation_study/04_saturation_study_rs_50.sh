@@ -2,7 +2,7 @@
 #SBATCH --job-name=archs4_sat_study_50
 #SBATCH --output=log_ARCHS4_saturation_study_50.%j.log
 #SBATCH --error=log_ARCHS4_saturation_study_50.%j.err
-#SBATCH --time=96:00:00
+#SBATCH --time=240:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=16
 #SBATCH --mem=100GB

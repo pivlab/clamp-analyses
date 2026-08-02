@@ -1,13 +1,45 @@
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
 data
 output
 *.swp
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
-.clauderesults/
 *.parquet
 *.gz
 omnipathr-log/
+
+# R
+.Rproj.user/
+**/.Rproj.user/
+.Rhistory
+**/.Rhistory
+.RData
+**/.RData
+.Ruserdata
+**/.Ruserdata
+.Rprofile
+renv/library/
+renv/staging/
+*.Rout
+
+# Snakemake
+.snakemake/
+**/.snakemake/
+.snakemake_timestamp
+
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# AI assistant folders/files
+.clauderesults/
+.claude/
+**/.claude/
+.chatgpt/
+**/.chatgpt/
+.cursor/
+**/.cursor/
+.codex
+.codex/
+**/.codex/

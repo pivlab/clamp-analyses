@@ -1,0 +1,27 @@
+#!/bin/bash
+#SBATCH --job-name=bp_ora_study_rs_05
+#SBATCH --output=log_bp_ora_study_rs_05.%j.log
+#SBATCH --error=log_bp_ora_study_rs_05.%j.err
+#SBATCH --time=96:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=4
+#SBATCH --mem=100GB
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=marc.subiranagranes@cuanschutz.edu
+
+MINIFORGE="/pividori_lab/software/miniforge3"
+source "${MINIFORGE}/etc/profile.d/conda.sh"
+source /pividori_lab/marc_projects/conda_env/clamp-analyses/bin/activate
+
+n_jobs=4
+export NUMBA_NUM_THREADS=$n_jobs
+export MKL_NUM_THREADS=$n_jobs
+export OPENBLAS_NUM_THREADS=$n_jobs
+export NUMEXPR_NUM_THREADS=$n_jobs
+export OMP_NUM_THREADS=$n_jobs
+
+start=$(date +%s)
+jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=-1 nbs/03_model_biology/00_archs4/00_pathway_coverage_bp_study/by_level/00_bp_ora_rs_05.ipynb --output 00_bp_ora_rs_05_executed.ipynb
+end=$(date +%s)
+echo "Elapsed seconds: $((end - start))"
+echo "End: $(date)"

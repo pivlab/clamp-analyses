@@ -2,9 +2,10 @@
 #SBATCH --job-name=archs4_study_cov_100
 #SBATCH --output=log_ARCHS4_study_coverage_100.%j.log
 #SBATCH --error=log_ARCHS4_study_coverage_100.%j.err
+#SBATCH --time=240:00:00
 #SBATCH --nodes=1
 #SBATCH --ntasks=16
-#SBATCH --mem=100GB
+#SBATCH --mem=400GB
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=marc.subiranagranes@cuanschutz.edu
 
