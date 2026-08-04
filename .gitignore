@@ -1,4 +1,9 @@
 data
+!data/
+data/*
+!data/gtex/
+data/gtex/*
+!data/gtex/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt
 output
 *.swp
 .ipynb_checkpoints/
