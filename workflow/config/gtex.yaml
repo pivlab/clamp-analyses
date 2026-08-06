@@ -25,11 +25,6 @@ gtex:
   flashier:
     backfit_maxiter: 20
 
-  mofa_flex_base:
-    max_epochs: 2000
-    batch_size: 1000
-    seed: 123
-
   mofa_flex_prior:
     msigdb_category: c5.go.bp
     msigdb_dbver: "2026.1.Hs"
@@ -52,6 +47,11 @@ gtex:
 
   kmeans_clustering:
     min_samples: 50
+    # ARI benchmark only (kmeans_clustering_gtex): no lower bound, so every
+    # GTEx-labeled tissue subtype counts, not just the well-sampled ones.
+    # min_samples above stays 50 for lv_importance/subtissue_inference,
+    # which are unrelated analyses that happen to read the same block.
+    ari_min_samples: 1
     base_seed: 10000
     n_reps_per_k: 50
     gene_fractions: [1.0, 0.75, 0.50, 0.25, 0.10, 0.05, 0.01]

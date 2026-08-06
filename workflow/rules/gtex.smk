@@ -128,22 +128,6 @@ rule flashier_gtex:
         "--out-dir {GTEX_PROD}/flashier --backfit-maxiter {params.backfit_maxiter} --seed {params.seed}"
 
 
-rule mofa_flex_base_gtex:
-    input:
-        df_gtex_fbm_filt=rules.clamp_gtex.output.df_rds,
-        k=rules.clamp_gtex.output.k_rds,
-    output:
-        B=f"{GTEX_PROD}/MOFA_FLEX_BASE/gtex_B.csv",
-        model=f"{GTEX_PROD}/MOFA_FLEX_BASE/mofaflex_model.pkl",
-    params:
-        seed=config["gtex"]["mofa_flex_base"]["seed"],
-    resources: mem_mb=64000, runtime=1440
-    conda: "clamp-analyses"
-    shell:
-        "Rscript scripts/gtex/mofa_flex_base.R --df-gtex-fbm-filt {input.df_gtex_fbm_filt} --k {input.k} "
-        "--out-dir {GTEX_PROD}/MOFA_FLEX_BASE --seed {params.seed}"
-
-
 rule mofa_flex_prior_gtex:
     input:
         df_gtex_fbm_filt=rules.clamp_gtex.output.df_csv,
@@ -240,9 +224,6 @@ rule full_models_gtex:
         # nIterations=5000 does not converge in practical time on this dataset.
         # Rule kept and fully runnable on demand (`snakemake cogaps_gtex`), just
         # not part of the default pipeline.
-        # mofa_flex_base_gtex intentionally excluded: only the pathway-prior
-        # variant (mofa_flex_prior_gtex) is needed for this analysis. Rule kept
-        # and fully runnable on demand (`snakemake mofa_flex_base_gtex`).
 
 
 rule model_building_qc_gtex:
@@ -284,7 +265,7 @@ rule kmeans_clustering_gtex:
         cache=directory(f"{GTEX_BIO}/00_kmeans_clustering/kmeans_results"),
         model=f"{GTEX_BIO}/00_kmeans_clustering/kmeans_models/gtex_CLAMPfull_kmeans_model.pkl",
     params:
-        min_samples=config["gtex"]["kmeans_clustering"]["min_samples"],
+        min_samples=config["gtex"]["kmeans_clustering"]["ari_min_samples"],
         base_seed=config["gtex"]["kmeans_clustering"]["base_seed"],
         n_reps_per_k=config["gtex"]["kmeans_clustering"]["n_reps_per_k"],
         gene_fractions=" ".join(str(x) for x in config["gtex"]["kmeans_clustering"]["gene_fractions"]),
@@ -312,6 +293,8 @@ rule kmeans_clustering_report_gtex:
     output:
         ari_data=f"output/99_panels/fig3/ari_data.csv",
         ari_comparisons=f"output/99_panels/fig3/ari_comparisons.csv",
+        gene_fraction_ari_data=f"output/99_panels/fig3/gene_fraction_ari_data.csv",
+        gene_fraction_ari_comparisons=f"output/99_panels/fig3/gene_fraction_ari_comparisons.csv",
         complete=touch(f"{GTEX_BIO}/00_kmeans_clustering/notebook.complete"),
     log:
         notebook=f"{GTEX_BIO_NB}/00_kmeans_clustering.executed.ipynb",
@@ -369,6 +352,8 @@ rule lv_importance_rf_true_labels_biology_gtex:
         notebook=f"{GTEX_BIO_NB}/02_b_matrix.ipynb",
     output:
         tissue_concordance=f"{GTEX_BIO}/02_LV_importance_rf_true_labels_biology/tissue_concordance.csv",
+        tissue_group_heatmap=f"{GTEX_BIO}/02_LV_importance_rf_true_labels_biology/tissue_group_heatmap.csv",
+        tissue_subtissue_heatmap=f"{GTEX_BIO}/02_LV_importance_rf_true_labels_biology/tissue_subtissue_heatmap.csv",
         complete=touch(f"{GTEX_BIO}/02_LV_importance_rf_true_labels_biology/notebook.complete"),
     log:
         notebook=f"{GTEX_BIO_NB}/02_b_matrix.executed.ipynb",
@@ -382,6 +367,8 @@ rule global_alignment_rf_true_labels_gtex:
         shap_dir=rules.lv_importance_rf_true_labels_gtex.output.out_dir,
         notebook=f"{GTEX_BIO_NB}/03_global_alignment.ipynb",
     output:
+        grouped_summary=f"{GTEX_BIO}/07_global_alignment_rf_true_labels/gtex_global_alignment_grouped_summary.csv",
+        subtissue_summary=f"{GTEX_BIO}/07_global_alignment_rf_true_labels/cumulative20/gtex_global_alignment_summary.csv",
         complete=touch(f"{GTEX_BIO}/07_global_alignment_rf_true_labels/notebook.complete"),
     log:
         notebook=f"{GTEX_BIO_NB}/03_global_alignment.executed.ipynb",
@@ -396,6 +383,7 @@ rule liver_disentangle_xcell_rf_true_labels_gtex:
         notebook=f"{GTEX_BIO_NB}/05_liver_disentangle_xcell.ipynb",
     output:
         xcell_scatter=f"{GTEX_BIO}/04_liver_disentangle_xcell_rf_true_labels/liver_xcell_scatter.csv",
+        lv_pathways=f"{GTEX_BIO}/04_liver_disentangle_xcell_rf_true_labels/liver_lv_pathways.csv",
         complete=touch(f"{GTEX_BIO}/04_liver_disentangle_xcell_rf_true_labels/notebook.complete"),
     log:
         notebook=f"{GTEX_BIO_NB}/05_liver_disentangle_xcell.executed.ipynb",
@@ -522,24 +510,6 @@ rule subtissues_report_gtex:
         fold_audit=rules.subtissue_lr_eval_gtex.output.fold_audit,
         notebook=f"{GTEX_BIO_NB}/04_subtissues.ipynb",
     output:
-        main_png=f"{GTEX_BIO}/04_subtissues/figures/anatomical_subtissue_panel.png",
-        main_pdf=f"{GTEX_BIO}/04_subtissues/figures/anatomical_subtissue_panel.pdf",
-        main_svg=f"{GTEX_BIO}/04_subtissues/figures/anatomical_subtissue_panel.svg",
-        supp1_png=f"{GTEX_BIO}/04_subtissues/figures/supp1_all_smtsd_performance.png",
-        supp1_pdf=f"{GTEX_BIO}/04_subtissues/figures/supp1_all_smtsd_performance.pdf",
-        supp1_svg=f"{GTEX_BIO}/04_subtissues/figures/supp1_all_smtsd_performance.svg",
-        supp2_png=f"{GTEX_BIO}/04_subtissues/figures/supp2_metrics.png",
-        supp2_pdf=f"{GTEX_BIO}/04_subtissues/figures/supp2_metrics.pdf",
-        supp2_svg=f"{GTEX_BIO}/04_subtissues/figures/supp2_metrics.svg",
-        supp3_png=f"{GTEX_BIO}/04_subtissues/figures/supp3_confusion_matrices.png",
-        supp3_pdf=f"{GTEX_BIO}/04_subtissues/figures/supp3_confusion_matrices.pdf",
-        supp3_svg=f"{GTEX_BIO}/04_subtissues/figures/supp3_confusion_matrices.svg",
-        supp4_png=f"{GTEX_BIO}/04_subtissues/figures/supp4_permutation_nulls.png",
-        supp4_pdf=f"{GTEX_BIO}/04_subtissues/figures/supp4_permutation_nulls.pdf",
-        supp4_svg=f"{GTEX_BIO}/04_subtissues/figures/supp4_permutation_nulls.svg",
-        supp5_png=f"{GTEX_BIO}/04_subtissues/figures/supp5_subtissue_counts.png",
-        supp5_pdf=f"{GTEX_BIO}/04_subtissues/figures/supp5_subtissue_counts.pdf",
-        supp5_svg=f"{GTEX_BIO}/04_subtissues/figures/supp5_subtissue_counts.svg",
         complete=touch(f"{GTEX_BIO}/04_subtissues/notebook.complete"),
     log:
         notebook=f"{GTEX_BIO_NB}/04_subtissues.executed.ipynb",
