@@ -2,60 +2,71 @@
 
 ## 🔧 Dependencies
 
-CLAMP uses **three Conda environments** to separate core package development, large-scale analyses, and GPU-accelerated workflows:
+CLAMP uses **three Conda environments** to separate core package development, large-scale analyses, GPU-accelerated workflows, and the Snakemake orchestrator itself:
 
 | Environment | File | Purpose |
 |--------------|------|----------|
-| **`clamp-analyses.yaml`** | `envs/clamp-analyses.yaml` | Default environment for CPU-based modeling, priors, projections, and vignettes. |
-| **`gpu-kmeans.yaml`** | `envs/gpu-kmeans.yaml` | Optional environment for GPU-accelerated clustering and benchmarking. |
+| **`clamp-analyses`** | `envs/clamp-analyses.yaml` (`.lock`) | Default environment for CPU-based modeling, priors, projections, and vignettes. |
+| **`gpu-kmeans`** | `envs/gpu-kmeans.yaml` (`.lock`) | Optional environment for GPU-accelerated clustering and benchmarking. |
+| **`snakemake`** | `envs/snakemake.yaml` | Runs the pipeline (`--use-conda` activates the two envs above per rule). Kept separate so the orchestrator's Snakemake version doesn't drift with either compute env's dependency set. |
 
-This separation avoids dependency conflicts between R (Bioconductor) and GPU libraries (`rapids`, `cupy`, `cuml`).
+This separation avoids dependency conflicts between R (Bioconductor) and GPU libraries (`rapids`, `cupy`, `cuml`), and between the pipeline orchestrator and the code it runs.
 
 ### 🛠️ Install dependencies
 
-Recommended steps to install the system-level and Conda tooling required to create the CLAMP environments.
-
-1. Install a Conda distribution
-
-- Install Miniconda or Mambaforge for your platform (Mambaforge is recommended for faster environment solves).
-
-2. (Optional) Verify GPU drivers for RAPIDS/cuML workflows
-
-- Ensure a compatible NVIDIA driver / CUDA version is installed before creating the GPU environment:
-
 ```bash
-nvidia-smi
+./setup.sh
 ```
 
-- Check RAPIDS compatibility matrix for the correct CUDA version (match driver/CUDA with RAPIDS/cuML requirements).
+Installs Conda (Miniconda) if it isn't already on `PATH`, then creates the three
+environments above from their lock/yaml files and installs the external
+[`chikinalab/CLAMP`](https://github.com/chikinalab/CLAMP) R package into `clamp-analyses`.
+Safe to re-run: existing environments are not recreated, and CLAMP is reinstalled only
+when its recorded revision is missing or differs from the required pin (remove an
+environment with `conda env remove -n <name>` first to recreate it from scratch).
+Currently supports Linux x86_64 only, matching the platform-pinned `.lock` files.
 
-3. Create environments using conda
+> [!WARNING]
+> These analyses currently require CLAMP commit
+> [`818e13ba55d66840e0710c3f1ac15f6d97e1dd8b`](https://github.com/chikinalab/CLAMP/commit/818e13ba55d66840e0710c3f1ac15f6d97e1dd8b).
+> Do not install CLAMP from its latest branch or update it independently: newer revisions
+> are not yet guaranteed to be compatible with this workflow. A follow-up PR will update
+> the analyses for the latest compatible CLAMP release and remove this temporary pin.
 
-```bash
-conda create --name clamp-analyses --file envs/clamp-analyses.lock
-conda activate clamp-analyses
+Verify the result with `nbs/00_setup/00_check_setup.ipynb`: a read-only diagnostic
+notebook that checks Conda, all three environments, Snakemake, and the data files each
+rule expects (see `data/README.md` for what's auto-downloaded vs. manual).
 
-# Clone CLAMP the repo into REPO_PATH (adjust path as needed)
-export REPO_PATH=~/path/to/CLAMP
-mkdir -p "$(dirname "$REPO_PATH")"
-git clone https://github.com/chikinalab/CLAMP.git "$REPO_PATH"
+<details>
+<summary>What <code>setup.sh</code> does, step by step (for manual setup)</summary>
 
-# Install and check CLAMP using devtools
-Rscript -e "devtools::install_local('$REPO_PATH', force=TRUE, dependencies=FALSE)"
-```
+1. Install a Conda distribution (Miniconda or Mambaforge, either works; `setup.sh`
+   installs Miniconda only if neither is already present).
+2. (Optional) Verify GPU drivers for RAPIDS/cuML workflows before creating `gpu-kmeans`:
 
-```bash
-conda create --name gpu-kmeans --file envs/gpu-kmeans.lock
-conda activate gpu-kmeans
+   ```bash
+   nvidia-smi
+   ```
 
-# Clone CLAMP the repo into REPO_PATH (adjust path as needed)
-export REPO_PATH=~/path/to/CLAMP
-mkdir -p "$(dirname "$REPO_PATH")"
-git clone https://github.com/chikinalab/CLAMP.git "$REPO_PATH"
+   Check the RAPIDS compatibility matrix for the correct CUDA version.
+3. Create the environments:
 
-# Install and check CLAMP using devtools
-Rscript -e "devtools::install_local('$REPO_PATH', force=TRUE, dependencies=FALSE)"
-```
+   ```bash
+   conda create --name clamp-analyses --file envs/clamp-analyses.lock
+   conda create --name gpu-kmeans --file envs/gpu-kmeans.lock
+   conda env create -n snakemake -f envs/snakemake.yaml
+   ```
+4. Install the CLAMP R package into `clamp-analyses`:
+
+   ```bash
+   conda activate clamp-analyses
+   Rscript scripts/install_clamp.R
+
+   # Read-only verification of the required revision
+   Rscript scripts/install_clamp.R --check
+   ```
+
+</details>
 
 ## 📘 Notebook Headers
 
@@ -97,12 +108,6 @@ mappings) lives in `workflow/config/pseudobulk.yaml` under `datasets:`.
 | GSSig (GSS) | `models/GSS/B.csv` | GenomicSuperSignature |
 | CoGAPS | `models/CoGAPS/B.csv` | Bayesian NMF (CoGAPS) |
 
-### Prerequisites
-
-- The `clamp-analyses` Conda environment (see Dependencies above) - pass `--use-conda` so
-   Snakemake activates it automatically per rule.
-- Run all commands from the repo root, so relative paths in the config resolve correctly.
-
 ### Pipeline stages
 
 Runs in this order; each stage consumes the previous stage's outputs:
@@ -117,68 +122,7 @@ Runs in this order; each stage consumes the previous stage's outputs:
 8. __Biology reports__ (`biology_pseudobulk`) - five notebooks: `benchmark_pseudobulk` (method comparison), `holdout_report_pseudobulk` (grouped-CV results), `disentangle_pseudobulk` (LV ↔ cell-type mapping + pathway enrichment), `single_cell_recovery_pseudobulk` (single-cell projection recovery), `hard_cell_types_pseudobulk` (cell types poorly captured by any LV).
 9. __Panels__ (`panels_pseudobulk`) - figure 2 and supplementary figure 1, built from the biology report outputs.
 
-### Running it
-
-Run everything end to end:
-
-```bash
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile --configfile workflow/config/pseudobulk.yaml biology_pseudobulk panels_pseudobulk
-```
-
-Or work through it stage by stage:
-
-```bash
-# Preview the DAG without running anything
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -n biology_pseudobulk
-
-# 1. Build pseudobulk expression matrices for all datasets
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile pseudobulk_data
-
-# 2. Fit all 10 methods for all datasets (each dataset/method pair runs
-#    independently, so this parallelizes well with a higher --cores value
-#    or a cluster profile)
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile full_models_pseudobulk
-
-# QC report (Python) - sanity-checks the outputs of steps 1-2
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile model_building_qc_pseudobulk
-
-# 3. Grouped 5-fold cross-validation of CLAMPfull (sample-level holdout)
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile grouped_cv_models_pseudobulk
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile grouped_cv_analysis_pseudobulk
-
-# 4. Project individual cells onto the CLAMPfull latent variables
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile single_cell_projections
-
-# 5. Biology reports, run individually
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile benchmark_pseudobulk
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile holdout_report_pseudobulk
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile disentangle_pseudobulk
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile single_cell_recovery_pseudobulk
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile hard_cell_types_pseudobulk
-
-# ...or all 5 biology reports in one go, via the umbrella rule at the
-# bottom of pseudobulk.smk (it depends on all five .complete outputs)
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile biology_pseudobulk
-
-# 6. Build the figure panels from the biology report outputs
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile panels_pseudobulk
-```
-
-Snakemake skips a rule if its declared outputs already exist and are newer than its
-inputs (`Nothing to be done (all requested files are present and up to date).`). This
-means editing a notebook's cells is *not* by itself enough to trigger a re-run - the
-notebook file isn't a tracked input for most rules, only the upstream data files are.
-To force a rule to run again regardless, add `-f`/`--forcerun`:
-
-```bash
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -f holdout_report_pseudobulk
-```
-
-Or force that rule and everything downstream of it with `-R`/`--forceall` on the target:
-
-```bash
-snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -R holdout_report_pseudobulk
-```
+See "▶️ Running Snakemake" below for how to run these.
 
 ### Outputs
 
@@ -193,6 +137,141 @@ All pipeline parameters (preprocessing cutoffs, CLAMP/CoGAPS/MOFA-FLEX/grouped-C
 hyperparameters and seeds, projection chunk sizes, dataset ingestion metadata, and
 pathway reference files) live in `workflow/config/pseudobulk.yaml`. Adding a new dataset
 means adding an entry under `datasets:` there - no rule changes needed.
+
+## 🧬 GTEx bulk tissue pipeline
+
+This Snakemake pipeline fits CLAMP and comparison methods on bulk RNA-seq expression
+across GTEx v8 tissues, then evaluates whether the resulting latent variables recover
+known tissue/subtissue structure (clustering, tissue-predictive LV importance,
+subtissue inference) and specific biology (e.g. liver cell-type composition via xCell).
+
+### Tissues
+
+All GTEx v8 sampled tissues go into model building (one whole-body panel, not
+per-tissue models). Subtissue-recovery evaluation (`subtissue_lr_eval_gtex`) is
+restricted to a 9-tissue subset with multiple annotated subtissues: Adipose Tissue,
+Blood, Blood Vessel, Brain, Colon, Esophagus, Heart, Kidney, Skin
+(`workflow/config/gtex.yaml` → `subtissue_inference.tissues`).
+
+### Methods benchmarked
+
+| Method | Output | Approach |
+|---|---|---|
+| CLAMPbase | `CLAMPbase/B.csv` | CLAMP without pathway priors |
+| CLAMPfull | `CLAMPfull/B.csv` | CLAMP with GO-BP pathway priors |
+| PLIER | `PLIER/B.csv` | Pathway-level latent variable regression |
+| PCA | `PCA/gtex_pca_B.pkl` | Principal component analysis |
+| NMF | `NMF/gtex_nmf_B.pkl` | Non-negative matrix factorization |
+| ICA | `ICA/gtex_ica_B.pkl` | Independent component analysis |
+| Flashier | `flashier/gtex_B.csv` | Empirical Bayes matrix factorization |
+| MOFA-FLEX | `MOFA_FLEX_PRIOR/B_matrix.csv` | Multi-omics factor analysis, with priors |
+| GSSig (GSS) | `GSS/gtex_B.csv` | GenomicSuperSignature |
+| CoGAPS | `CoGAPS/gtex_B.csv` | Bayesian NMF (CoGAPS), excluded by default |
+
+Paths are relative to `output/01_model_building/01_gtex/`.
+
+### Pipeline stages
+
+1. **Build models** (`full_models_gtex`) - downloads/filters the GTEx v8 bulk TPM matrix
+   (`download_gtex_raw` → `clamp_gtex`), then fits CLAMP (base + pathway-prior) and
+   comparison methods (PLIER, PCA/NMF/ICA, Flashier, MOFA-FLEX, GSSig; CoGAPS is excluded
+   by default - see the note in `gtex.smk`).
+2. **QC report** (`model_building_qc_gtex`).
+3. **Clustering** (`kmeans_clustering_gtex` → `kmeans_clustering_report_gtex`) - GPU
+   k-means ensemble across methods and gene subsampling fractions (`gpu-kmeans` env).
+4. **LV importance** (`lv_importance_rf_true_labels_gtex` → report) - random forest +
+   SHAP, tissue labels as ground truth.
+5. **Biology reports** (`biology_gtex`) - LV↔tissue concordance (`02_b_matrix`), global
+   alignment across methods (`03_global_alignment`), liver cell-type disentangling via
+   xCell (`05_liver_disentangle_xcell`), and out-of-fold subtissue recovery
+   (`04_subtissues`).
+
+See "▶️ Running Snakemake" below for how to run these.
+
+### Outputs
+
+- Model-building artifacts: `output/01_model_building/01_gtex/`
+- Biology reports: `output/03_model_biology/01_gtex/`, executed notebooks (with plots) at
+  `nbs/03_model_biology/01_gtex/<name>.executed.ipynb`
+- Figure panels combining GTEx and pseudobulk results: `output/99_panels/` (same
+  `panels_pseudobulk` target as above)
+
+### Configuration
+
+All pipeline parameters (preprocessing cutoffs, per-method hyperparameters and seeds,
+clustering settings, subtissue-inference settings) live in `workflow/config/gtex.yaml`.
+
+## ▶️ Running Snakemake
+
+Applies to both pipelines above.
+
+### Prerequisites
+
+- `conda activate snakemake`, plus `clamp-analyses` created (see Dependencies above);
+  pass `--use-conda` so Snakemake activates `clamp-analyses`/`gpu-kmeans` per rule.
+- Run all commands from the repo root, so relative paths in the config resolve correctly.
+
+### Basic pattern
+
+```bash
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile <target>
+```
+
+Preview the DAG without running anything by adding `-n`:
+
+```bash
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -n <target>
+```
+
+### Main targets
+
+```bash
+# Pseudobulk, end to end
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile biology_pseudobulk panels_pseudobulk
+
+# GTEx, end to end
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile biology_gtex
+```
+
+Or target any individual rule named in the "Pipeline stages" lists above, e.g.
+`full_models_pseudobulk`, `kmeans_clustering_gtex`; each dataset/method/rule runs
+independently where possible, so this parallelizes well with a higher `--cores`.
+
+### Running a single notebook
+
+Each notebook-backed rule (`notebook:` directive) runs one specific notebook and writes
+the executed copy to its `log.notebook` path. Target it by rule name like any other rule:
+
+```bash
+snakemake --cores 1 --use-conda --snakefile workflow/Snakefile liver_disentangle_xcell_rf_true_labels_gtex
+```
+
+This runs `nbs/03_model_biology/01_gtex/05_liver_disentangle_xcell.ipynb`, writing its CSV
+outputs under `output/03_model_biology/01_gtex/04_liver_disentangle_xcell_rf_true_labels/`
+and the executed notebook (with plots) to
+`nbs/03_model_biology/01_gtex/05_liver_disentangle_xcell.executed.ipynb`.
+
+To develop/debug interactively instead of just running it, use `--edit-notebook` with one
+of that rule's output files; Snakemake infers the rule from it, injects its inputs/params,
+and opens a live Jupyter session, saving your edits back into the source notebook on exit:
+
+```bash
+snakemake --cores 1 --use-conda --snakefile workflow/Snakefile --edit-notebook \
+  output/03_model_biology/01_gtex/04_liver_disentangle_xcell_rf_true_labels/notebook.complete
+```
+
+### Forcing a re-run
+
+Snakemake skips a rule if its declared outputs already exist and are newer than its
+inputs. Editing a notebook's cells is *not* by itself enough to trigger a re-run, since
+the notebook file isn't a tracked input for most rules, only the upstream data files are.
+To force a rule to run again regardless, add `-f`/`--forcerun`; add `-R`/`--forceall`
+instead to also force everything downstream of it:
+
+```bash
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -f <target>
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -R <target>
+```
 
 ## Citation
 
