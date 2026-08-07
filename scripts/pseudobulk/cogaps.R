@@ -9,6 +9,11 @@ args <- parse_cli()
 loaded <- read_norm_and_k(required_arg(args, "cpm_filt"), required_arg(args, "k"))
 n_iterations <- as.integer(args$n_iterations %||% 5000L)
 n_threads <- as.integer(args$n_threads %||% 4L)
+parallel_workers <- if (!is.null(args$parallel_workers)) {
+  as.integer(args$parallel_workers)
+} else {
+  NULL
+}
 seed <- as.integer(args$seed %||% 123L)
 
 # cpm_filt is already non-negative (CLAMP::cpmCLAMP + preprocessCLAMP, pre-z-score).
@@ -26,9 +31,21 @@ params <- CogapsParams(
   distributed = "genome-wide"
 )
 params <- setDistributedParams(params, nSets = nSets)
-message("nPatterns=", loaded$k, " nSets=", nSets, " nIterations=", n_iterations)
+message("nPatterns=", loaded$k, " nSets=", nSets, " nIterations=", n_iterations,
+        " parallelWorkers=", parallel_workers %||% nSets)
 
-cogapsresult <- CoGAPS(mat, params, nThreads = n_threads, outputFrequency = 10000)
+bpparam <- if (is.null(parallel_workers)) {
+  NULL
+} else {
+  BiocParallel::MulticoreParam(workers = parallel_workers)
+}
+cogapsresult <- CoGAPS(
+  mat,
+  params,
+  nThreads = n_threads,
+  BPPARAM = bpparam,
+  outputFrequency = 10000
+)
 
 # LVs x samples / genes x LVs, matching CLAMP's B/Z convention
 B <- t(cogapsresult@sampleFactors)

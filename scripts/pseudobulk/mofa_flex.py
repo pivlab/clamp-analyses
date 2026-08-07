@@ -11,6 +11,7 @@ import anndata as ad
 import mofaflex as mfl
 from mofaflex._core.feature_sets import FeatureSets
 import pandas as pd
+import torch
 
 
 def main() -> None:
@@ -21,7 +22,16 @@ def main() -> None:
     parser.add_argument("--out-dir", required=True)
     parser.add_argument("--max-epochs", type=int, default=200)
     parser.add_argument("--seed", type=int, default=123)
+    parser.add_argument(
+        "--threads",
+        type=int,
+        default=None,
+        help="Optionally cap PyTorch intra-op and inter-op thread pools.",
+    )
     args = parser.parse_args()
+    if args.threads is not None:
+        torch.set_num_threads(args.threads)
+        torch.set_num_interop_threads(args.threads)
     norm = pd.read_csv(args.norm, index_col=0).astype("float32")
     k = int(pd.read_csv(args.k)["k"].iloc[0])
     genes, samples = norm.index.astype(str).tolist(), norm.columns.astype(str).tolist()

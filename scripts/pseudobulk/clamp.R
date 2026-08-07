@@ -11,12 +11,14 @@ source(file.path(script_dir, "common.R"))
 args <- parse_cli()
 norm <- read_csv_matrix(required_arg(args, "norm"))
 k <- read_k(required_arg(args, "k"))
-gmt <- read_gmt_file(required_arg(args, "gmt"))
-pathways <- CLAMP::gmtListToSparseMat(list(BP = gmt))
 base_dir <- required_arg(args, "base_dir")
 full_dir <- required_arg(args, "full_dir")
 max_iter <- as.integer(args$max_iter %||% 500L)
 seed <- as.integer(args$seed %||% 123L)
+model <- tolower(as.character(args$model %||% "both"))
+if (!model %in% c("base", "full", "both")) {
+  stop("--model must be one of: base, full, both")
+}
 set.seed(seed)
 
 genes <- rownames(norm)
@@ -30,19 +32,28 @@ n_samples <- ncol(norm)
 svd_k <- max(floor((min(n_genes, n_samples) - 1) / 4), k, 2L)
 svdres <- rsvd::rsvd(norm, k = svd_k)
 
-# CLAMPbase
+# CLAMPfull uses the fitted CLAMPbase object, so the base fit is always
+# computed for a full run.  --model controls which requested model artifacts
+# are written and lets the timing workflow invoke the two published methods
+# independently.  The default, both, preserves the production behavior.
 message("Running CLAMPbase ...")
 base <- CLAMP::CLAMPbase(Y = norm, svdres = svdres, clamp_k = k, trace = FALSE)
 base$Z <- data.frame(base$Z); rownames(base$Z) <- genes
 base$B <- data.frame(base$B); colnames(base$B) <- samples
 
-dir.create(base_dir, recursive = TRUE, showWarnings = FALSE)
-write.csv(base$B, file.path(base_dir, "B.csv"))
-write.csv(base$Z, file.path(base_dir, "Z.csv"))
-saveRDS(base, file.path(base_dir, "CLAMPbase.rds"))
-message("CLAMPbase saved -> ", base_dir)
+if (model %in% c("base", "both")) {
+  dir.create(base_dir, recursive = TRUE, showWarnings = FALSE)
+  write.csv(base$B, file.path(base_dir, "B.csv"))
+  write.csv(base$Z, file.path(base_dir, "Z.csv"))
+  saveRDS(base, file.path(base_dir, "CLAMPbase.rds"))
+  message("CLAMPbase saved -> ", base_dir)
+}
+
+if (model == "base") quit(save = "no", status = 0L)
 
 # Match BP prior to dataset genes
+gmt <- read_gmt_file(required_arg(args, "gmt"))
+pathways <- CLAMP::gmtListToSparseMat(list(BP = gmt))
 matched <- CLAMP::getMatchedPathwayMat(pathways, genes)
 message("Prior matched: ", nrow(matched), " genes x ", ncol(matched), " pathways")
 
@@ -67,9 +78,12 @@ write.csv(full$Z, file.path(full_dir, "Z.csv"))
 fwrite(data.frame(L2 = as.numeric(full$L2)), file.path(full_dir, "L2.csv"))
 
 if (!is.null(full$summary)) {
-  sumdf <- as.data.frame(full$summary) %>%
-    dplyr::rename(LV = LV_index) %>%
-    dplyr::mutate(LV = paste0("LV", LV))
+  sumdf <- as.data.frame(full$summary)
+  lv_column <- intersect(c("LV_index", "LV index", "LV"), names(sumdf))
+  if (length(lv_column) > 0L) {
+    names(sumdf)[names(sumdf) == lv_column[[1L]]] <- "LV"
+    sumdf <- sumdf %>% dplyr::mutate(LV = paste0("LV", LV))
+  }
 } else {
   sumdf <- data.frame()
 }
