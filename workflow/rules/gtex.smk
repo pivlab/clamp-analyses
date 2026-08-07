@@ -392,6 +392,29 @@ rule liver_disentangle_xcell_rf_true_labels_gtex:
         f"{GTEX_BIO_NB}/05_liver_disentangle_xcell.ipynb"
 
 
+rule multitissue_xcell_recovery_gtex:
+    input:
+        shap_dir=rules.lv_importance_rf_true_labels_gtex.output.out_dir,
+        clamp_model=rules.clamp_gtex.output.full_rds,
+        z_matrix=rules.clamp_gtex.output.full_Z,
+        xcell=config["gtex"]["xcell_scores"],
+        cell_marker_file=config["references"]["cell_marker_file"],
+        notebook=f"{GTEX_BIO_NB}/06_multitissue_xcell_recovery.ipynb",
+    output:
+        panel_ready=f"{GTEX_BIO}/06_multitissue_xcell_recovery/multitissue_recovery_panel_ready.csv",
+        shap_by_model=f"{GTEX_BIO}/06_multitissue_xcell_recovery/multitissue_shap_by_model.csv",
+        ora_top1=f"{GTEX_BIO}/06_multitissue_xcell_recovery/cellmarker_ora_top1_per_lv.csv",
+        summary=f"{GTEX_BIO}/06_multitissue_xcell_recovery/multitissue_recovery_summary.csv",
+        complete=touch(f"{GTEX_BIO}/06_multitissue_xcell_recovery/notebook.complete"),
+    log:
+        notebook=f"{GTEX_BIO_NB}/06_multitissue_xcell_recovery.executed.ipynb",
+    params:
+        out_dir=f"{GTEX_BIO}/06_multitissue_xcell_recovery",
+    conda: "clamp-analyses"
+    notebook:
+        f"{GTEX_BIO_NB}/06_multitissue_xcell_recovery.ipynb"
+
+
 # ============================================================
 # Step 5: subtissue recovery from out-of-fold RF/SHAP (independent
 # of the true-labels chain above: this RF is always trained blind
@@ -525,4 +548,5 @@ rule biology_gtex:
         rules.lv_importance_rf_true_labels_biology_gtex.output.complete,
         rules.global_alignment_rf_true_labels_gtex.output.complete,
         rules.liver_disentangle_xcell_rf_true_labels_gtex.output.complete,
+        rules.multitissue_xcell_recovery_gtex.output.complete,
         rules.subtissues_report_gtex.output.complete,
