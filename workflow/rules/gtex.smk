@@ -415,6 +415,28 @@ rule multitissue_xcell_recovery_gtex:
         f"{GTEX_BIO_NB}/06_multitissue_xcell_recovery.ipynb"
 
 
+# Measures the shared GO:BP prior rather than anything GTEx-specific; it lives in
+# this rule file because the GTEx supplement is what consumes the output.
+rule geneset_orthogonality_gtex:
+    input:
+        go_bp_file=GTEX_GMT,
+        cell_marker_file=config["references"]["cell_marker_file"],
+        allen_brain_gmt_file=config["references"]["allen_brain_gmt_file"],
+        gtex_tissues_pathmat=config["references"]["gtex_tissues_pathmat"],
+        notebook=f"{GTEX_BIO_NB}/07_geneset_orthogonality.ipynb",
+    output:
+        per_term=f"{GTEX_BIO}/07_geneset_orthogonality/orthogonality_per_term.csv",
+        summary=f"{GTEX_BIO}/07_geneset_orthogonality/orthogonality_summary.csv",
+        complete=touch(f"{GTEX_BIO}/07_geneset_orthogonality/notebook.complete"),
+    log:
+        notebook=f"{GTEX_BIO_NB}/07_geneset_orthogonality.executed.ipynb",
+    params:
+        out_dir=f"{GTEX_BIO}/07_geneset_orthogonality",
+    conda: "clamp-analyses"
+    notebook:
+        f"{GTEX_BIO_NB}/07_geneset_orthogonality.ipynb"
+
+
 # ============================================================
 # Step 5: subtissue recovery from out-of-fold RF/SHAP (independent
 # of the true-labels chain above: this RF is always trained blind
@@ -549,4 +571,5 @@ rule biology_gtex:
         rules.global_alignment_rf_true_labels_gtex.output.complete,
         rules.liver_disentangle_xcell_rf_true_labels_gtex.output.complete,
         rules.multitissue_xcell_recovery_gtex.output.complete,
+        rules.geneset_orthogonality_gtex.output.complete,
         rules.subtissues_report_gtex.output.complete,
