@@ -73,9 +73,6 @@ rule computational_timing_report_pseudobulk:
         long=f"{RUNTIME_ROOT}/runtime_long.csv",
         seed_totals=f"{RUNTIME_ROOT}/runtime_seed_totals.csv",
         summary=f"{RUNTIME_ROOT}/runtime_summary.csv",
-        png=f"{RUNTIME_ROOT}/computational_timing.png",
-        pdf=f"{RUNTIME_ROOT}/computational_timing.pdf",
-        svg=f"{RUNTIME_ROOT}/computational_timing.svg",
         complete=touch(f"{RUNTIME_ROOT}/notebook.complete"),
     log:
         notebook=f"{RUNTIME_ROOT}/00_computational_timing.executed.ipynb"

@@ -129,7 +129,7 @@ See "▶️ Running Snakemake" below for how to run these.
 
 - Model-building artifacts: `output/01_model_building/00_pseudobulk/<dataset>/{pseudobulk,preprocessing,models,grouped_cv,single_cell_projection}/`
 - QC: `output/01_model_building/00_pseudobulk/qc/`, executed notebook (with plots) at `nbs/01_model_building/00_pseudobulk/00_model_building_qc.executed.ipynb`
-- Computational timing: `output/02_model_performance/00_pseudobulk/00_computational_timing/` (isolated models, per-fit logs and timing records, pooled CSVs, and standalone plot)
+- Computational timing: `output/02_model_performance/00_pseudobulk/00_computational_timing/` (isolated models, per-fit logs and timing records, pooled CSVs, and the executed report notebook with its embedded plot)
 - Biology reports: `output/03_model_biology/00_pseudobulk/{00_benchmark,01_holdout80,02_disentangle,03_b_matrix_singlecell,04_hard_cell_types}/`, executed notebooks (with plots) at `nbs/03_model_biology/00_pseudobulk/<name>.executed.ipynb`
 - Panels: `output/99_panels/`
 
