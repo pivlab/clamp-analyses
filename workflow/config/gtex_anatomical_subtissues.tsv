@@ -1,0 +1,28 @@
+Tissue	SMTSD	Tissue_Display	Class_Display	Tissue_Order	Class_Order
+Adipose Tissue	Adipose - Subcutaneous	Adipose Tissue (2 depots)	Subcutaneous	1	1
+Adipose Tissue	Adipose - Visceral (Omentum)	Adipose Tissue (2 depots)	Visceral (omentum)	1	2
+Blood Vessel	Artery - Aorta	Blood Vessel (3 arterial sites)	Aorta	2	1
+Blood Vessel	Artery - Coronary	Blood Vessel (3 arterial sites)	Coronary	2	2
+Blood Vessel	Artery - Tibial	Blood Vessel (3 arterial sites)	Tibial	2	3
+Brain	Brain - Cortex	Brain (13 regions)	Cortex	3	1
+Brain	Brain - Caudate (basal ganglia)	Brain (13 regions)	Caudate	3	2
+Brain	Brain - Nucleus accumbens (basal ganglia)	Brain (13 regions)	Nucleus accumbens	3	3
+Brain	Brain - Cerebellum	Brain (13 regions)	Cerebellum	3	4
+Brain	Brain - Cerebellar Hemisphere	Brain (13 regions)	Cerebellar hemisphere	3	5
+Brain	Brain - Frontal Cortex (BA9)	Brain (13 regions)	Frontal cortex (BA9)	3	6
+Brain	Brain - Putamen (basal ganglia)	Brain (13 regions)	Putamen	3	7
+Brain	Brain - Hypothalamus	Brain (13 regions)	Hypothalamus	3	8
+Brain	Brain - Hippocampus	Brain (13 regions)	Hippocampus	3	9
+Brain	Brain - Anterior cingulate cortex (BA24)	Brain (13 regions)	ACC (BA24)	3	10
+Brain	Brain - Spinal cord (cervical c-1)	Brain (13 regions)	Cervical spinal cord	3	11
+Brain	Brain - Amygdala	Brain (13 regions)	Amygdala	3	12
+Brain	Brain - Substantia nigra	Brain (13 regions)	Substantia nigra	3	13
+Colon	Colon - Transverse	Colon (2 regions)	Transverse	4	1
+Colon	Colon - Sigmoid	Colon (2 regions)	Sigmoid	4	2
+Esophagus	Esophagus - Mucosa	Esophagus (3 compartments)	Mucosa	5	1
+Esophagus	Esophagus - Muscularis	Esophagus (3 compartments)	Muscularis	5	2
+Esophagus	Esophagus - Gastroesophageal Junction	Esophagus (3 compartments)	Gastroesophageal junction	5	3
+Heart	Heart - Left Ventricle	Heart (2 regions)	Left ventricle	6	1
+Heart	Heart - Atrial Appendage	Heart (2 regions)	Atrial appendage	6	2
+Skin	Skin - Sun Exposed (Lower leg)	Skin (2 sites)	Sun exposed (lower leg)	7	1
+Skin	Skin - Not Sun Exposed (Suprapubic)	Skin (2 sites)	Not sun exposed (suprapubic)	7	2

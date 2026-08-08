@@ -1,0 +1,75 @@
+gtex:
+  raw_url: https://storage.googleapis.com/adult-gtex/bulk-gex/v8/rna-seq/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz
+  raw_gz: data/gtex/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz
+  metadata: data/gtex/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt
+
+  paths:
+    production: output/01_model_building/01_gtex
+    biology: output/03_model_biology/01_gtex
+    model_notebooks: nbs/01_model_building/01_gtex
+    biology_notebooks: nbs/03_model_biology/01_gtex
+
+  raw_data:
+    chunk_size: 100
+    n_cores: 1
+
+  preprocess:
+    mean_cutoff: 0.5
+    var_cutoff: 0.1
+    seed: 123
+
+  clamp:
+    max_iter: 500
+    seed: 123
+
+  flashier:
+    backfit_maxiter: 20
+
+  mofa_flex_prior:
+    msigdb_category: c5.go.bp
+    msigdb_dbver: "2026.1.Hs"
+    min_fraction: 0.4
+    min_count: 40
+    max_count: 200
+    similarity_threshold: 0.8
+    max_epochs: 1000
+    seed: 123
+
+  cogaps:
+    n_iterations: 5000
+    n_threads: 4
+    seed: 123
+    timeout_days: 7
+
+  gss:
+    d_cluster: 4
+    seed: 123
+
+  kmeans_clustering:
+    min_samples: 50
+    # ARI benchmark only (kmeans_clustering_gtex): no lower bound, so every
+    # GTEx-labeled tissue subtype counts, not just the well-sampled ones.
+    # min_samples above stays 50 for lv_importance/subtissue_inference,
+    # which are unrelated analyses that happen to read the same block.
+    ari_min_samples: 1
+    base_seed: 10000
+    n_reps_per_k: 50
+    gene_fractions: [1.0, 0.75, 0.50, 0.25, 0.10, 0.05, 0.01]
+
+  lv_importance:
+    global_seed: 42
+    min_rf_accuracy: 0.9
+
+  subtissue_inference:
+    n_folds: 5
+    global_seed: 42
+    min_rf_accuracy: 0.85   # slightly below the main pipeline's 0.9: donor-grouped OOF removes a
+                             # leakage channel ungrouped CV can exploit, and folds have less data
+    min_subtissue_samples: 20
+    n_jobs_per_fold: 8       # RandomizedSearchCV n_jobs, explicit (never -1) so parallel folds don't
+                             # each grab every core
+    anatomical_spec: workflow/config/gtex_anatomical_subtissues.tsv
+    permutation_repeats: 1000
+    bootstrap_repeats: 1000
+    evaluation_jobs: 8
+    tissues: [Adipose Tissue, Blood, Blood Vessel, Brain, Colon, Esophagus, Heart, Kidney, Skin]

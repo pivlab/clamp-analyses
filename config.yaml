@@ -22,3 +22,41 @@ RNASEQ_FRACTION_COLORS:
   "10%": "#88CCEE"
   "5%":  "#AA4499"
   "1%":  "#117733"
+
+DATASET_COLORS:
+  "PBMC 1k1k": "#1B9E77"
+  "PBMC Perez": "#D95F02"
+  "Heart Datar": "#7570B3"
+  "Brain Xiong": "#E7298A"
+  "Brain Mathys": "#66A61E"
+  "Lung Sikkema": "#E6AB02"
+
+CT_COLORS_LIVER:
+  Adipocytes: "#FC8D62"
+  Epithelial_cells: "#8DA0CB"
+  Hepatocytes: "#66C2A5"
+  Keratinocytes: "#E78AC3"
+  Myocytes: "#A6D854"
+  Neurons: "#FFD92F"
+  Neutrophils: "#E5C494"
+
+CT_LABELS_LIVER:
+  Adipocytes: "Adipocytes"
+  Epithelial_cells: "Epithelial"
+  Hepatocytes: "Hepatocytes"
+  Keratinocytes: "Keratinocytes"
+  Myocytes: "Myocytes"
+  Neurons: "Neurons"
+  Neutrophils: "Neutrophils"
+
+GRID_COLORS: ["#b2182b", "#f4a582", "#f7f7f7", "#a1d99b", "#007a33"]
+GRID_VALUES: [0, 0.35, 0.5, 0.65, 1]
+
+CONFUSION_COLORS: ["#FFFFE5", "#F7FCB9", "#D9F0A3", "#ADDD8E", "#78C679", "#41AB5D", "#238443", "#006837", "#004529"]
+
+GREEN_PATHWAY: ["#d9e6e2", "#4bc17c", "#007a33"]
+
+GREEN_SCALE: ["white", "#f7fbf7", "#a1d99b", "#007a33"]
+
+DIVERGING_COLORS: ["#b2182b", "#fdf7f7", "white", "#f7fbf7", "#007a33"]
+DIVERGING_VALUES: [0, 0.25, 0.5, 0.75, 1]
