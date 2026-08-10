@@ -291,10 +291,10 @@ rule kmeans_clustering_report_gtex:
         model=rules.kmeans_clustering_gtex.output.model,
         notebook=f"{GTEX_BIO_NB}/00_kmeans_clustering.ipynb",
     output:
-        ari_data=f"output/99_panels/fig3/ari_data.csv",
-        ari_comparisons=f"output/99_panels/fig3/ari_comparisons.csv",
-        gene_fraction_ari_data=f"output/99_panels/fig3/gene_fraction_ari_data.csv",
-        gene_fraction_ari_comparisons=f"output/99_panels/fig3/gene_fraction_ari_comparisons.csv",
+        ari_data=f"{GTEX_BIO}/00_kmeans_clustering/ari_data.csv",
+        ari_comparisons=f"{GTEX_BIO}/00_kmeans_clustering/ari_comparisons.csv",
+        gene_fraction_ari_data=f"{GTEX_BIO}/00_kmeans_clustering/gene_fraction_ari_data.csv",
+        gene_fraction_ari_comparisons=f"{GTEX_BIO}/00_kmeans_clustering/gene_fraction_ari_comparisons.csv",
         complete=touch(f"{GTEX_BIO}/00_kmeans_clustering/notebook.complete"),
     log:
         notebook=f"{GTEX_BIO_NB}/00_kmeans_clustering.executed.ipynb",
