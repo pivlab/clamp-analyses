@@ -53,6 +53,7 @@ rule expects (see `data/README.md` for what's auto-downloaded vs. manual).
 
    ```bash
    conda create --name clamp-analyses --file envs/clamp-analyses.lock
+   conda run -n clamp-analyses python -m pip install -r envs/clamp-analyses.pip.lock
    conda create --name gpu-kmeans --file envs/gpu-kmeans.lock
    conda env create -n snakemake -f envs/snakemake.yaml
    ```
@@ -121,7 +122,7 @@ Runs in this order; each stage consumes the previous stage's outputs:
 7. __Single-cell projection__ (`single_cell_projections`) - projects each individual cell onto the CLAMPfull latent variables learned from pseudobulk.
 8. __Biology reports__ (`biology_pseudobulk`) - six notebooks: `benchmark_pseudobulk` (method comparison), `holdout_report_pseudobulk` (grouped-CV results), `disentangle_pseudobulk` (LV ↔ cell-type mapping + pathway enrichment), `single_cell_recovery_pseudobulk` (single-cell projection recovery), `hard_cell_types_pseudobulk` (cell types poorly captured by any LV), and `hard_pair_loadings_pseudobulk` (gene-loading separation for difficult cell-type pairs).
 9. __Computational timing__ (`computational_timing_analysis`) - a separate analysis that reuses the six preprocessed pseudobulk matrices, fits each method with seeds 123, 456, and 789, and aggregates wall time across datasets. Its models never overwrite the production models.
-10. __Panels__ (`panels_pseudobulk`) - Figure 2 and Supplementary Figures 1 and 2, built from the biology and timing report outputs.
+10. __Panels__ (`panels_pseudobulk`) - Figure 2 and Supplementary Figures 1–3, built from the biology and timing report outputs.
 11. __Donor-bulk extension__ (`donor_bulk_report`) - sums the same retained raw
     single-cell counts into one library per donor, fits six full CLAMPfull models plus
     donor-grouped CV and exact-cell mean-CPM controls, projects the original cells, and
@@ -244,11 +245,15 @@ snakemake --cores 4 --use-conda --snakefile workflow/Snakefile biology_pseudobul
 snakemake --cores 4 --use-conda --snakefile workflow/Snakefile computational_timing_analysis
 
 # Donor-level bulk-like RNA-seq extension and its Figure 2 row
-snakemake --cores 8 --use-conda --snakefile workflow/Snakefile donor_bulk_report donor_bulk_figure2
+snakemake --cores 8 --resources donor_bulk_io=1 --use-conda \
+  --snakefile workflow/Snakefile donor_bulk_report donor_bulk_figure2
 
 # GTEx, end to end
 snakemake --cores 4 --use-conda --snakefile workflow/Snakefile biology_gtex
 ```
+
+`donor_bulk_io=1` serializes the large raw-matrix aggregation and projection scans.
+Keep this resource limit when running donor-bulk targets on a workstation.
 
 Or target any individual rule named in the "Pipeline stages" lists above, e.g.
 `full_models_pseudobulk`, `kmeans_clustering_gtex`; each dataset/method/rule runs

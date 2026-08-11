@@ -290,7 +290,11 @@ def single_cell_analysis(
         selected = selected.set_index("cell_type").loc[cell_types].reset_index()
         projection = production / dataset / "single_cell_projection/single_cell_lv_scores.h5"
         with h5py.File(projection, "r") as h5:
-            labels = decode(h5["mapped_cell_type"][:])
+            projected_labels = decode(h5["mapped_cell_type"][:])
+            annotated = projected_labels != ""
+            labels = projected_labels[annotated]
+            if not len(labels):
+                raise ValueError(f"{dataset}: projection contains no mapped cell annotations")
             lv_names = decode(h5["lv_names"][:])
             lv_lookup = {name: index for index, name in enumerate(lv_names)}
             n_cells = len(labels)
@@ -299,7 +303,7 @@ def single_cell_analysis(
             positives = {cell_type: labels == cell_type for cell_type in cell_types}
             dataset_specificity = []
             for assigned_order, record in enumerate(selected.itertuples(index=False), start=1):
-                scores = h5["scores"][:, lv_lookup[record.LV]].astype(np.float64)
+                scores = h5["scores"][:, lv_lookup[record.LV]].astype(np.float64)[annotated]
                 top = np.argpartition(scores, len(scores) - n_top)[-n_top:]
                 diagonal = int(np.sum(labels[top] == record.cell_type))
                 n_true = int(population[record.cell_type])
@@ -317,6 +321,8 @@ def single_cell_analysis(
                         "recovery_pct": purity * 100,
                         "n_true_cells": n_true,
                         "n_population": n_cells,
+                        "n_projected_cells": len(projected_labels),
+                        "n_unmapped_cells": int((~annotated).sum()),
                         "prevalence": prevalence,
                         "max_achievable_purity": maximum,
                         "purity_ratio": purity / maximum if maximum else np.nan,

@@ -10,7 +10,6 @@ PANELS_NB = os.path.join(REPO_ROOT, config["paths"]["panels_notebooks"])
 rule fig2_panel:
     input:
         benchmark_long=rules.benchmark_pseudobulk.output.long,
-        runtime_seed_totals=rules.computational_timing_report_pseudobulk.output.seed_totals,
         holdout_predictions=rules.grouped_cv_analysis_pseudobulk.output.predictions,
         holdout_thresholded_metrics=rules.grouped_cv_analysis_pseudobulk.output.thresholded_metrics,
         holdout_thresholded_summary=rules.grouped_cv_analysis_pseudobulk.output.thresholded_summary,
@@ -52,6 +51,7 @@ rule supp1_panel:
     input:
         benchmark_long=rules.benchmark_pseudobulk.output.long,
         bootstrap=rules.benchmark_pseudobulk.output.bootstrap,
+        runtime_seed_totals=rules.computational_timing_report_pseudobulk.output.seed_totals,
         heatmap_long=rules.single_cell_recovery_pseudobulk.output.heatmap,
         corr_full=rules.benchmark_pseudobulk.output.corr,
         assignments=rules.benchmark_pseudobulk.output.assignments,

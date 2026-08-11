@@ -129,6 +129,7 @@ def main() -> None:
                 "n_sampled_umap_cells": len(umap),
                 "full_rank": rank,
                 "n_projected_cells": n_projected,
+                "n_mapped_projection_cells": int(projection_summary.n_cells_mapped),
                 "projection_lvs": projection_rank,
                 "truth_denominator_exact": True,
                 "folds_leakage_free": True,
@@ -140,6 +141,15 @@ def main() -> None:
     metrics = pd.read_csv(analysis / "oof_metrics.csv")
     valid = metrics[metrics.valid_all_folds]
     recovery = pd.read_csv(analysis / "single_cell_recovery.csv")
+    expected_mapped = {
+        row["dataset"]: row["n_mapped_projection_cells"] for row in rows
+    }
+    for dataset, group in recovery.groupby("dataset", sort=False):
+        if (
+            group["n_population"].nunique() != 1
+            or int(group["n_population"].iloc[0]) != expected_mapped[dataset]
+        ):
+            raise ValueError(f"{dataset}: annotated-cell recovery denominator mismatch")
     observed = {
         "n_types": int(len(metrics)),
         "n_valid": int(len(valid)),
@@ -152,7 +162,7 @@ def main() -> None:
         "n_valid": 32,
         "mean_oof_r": 0.792,
         "mean_predictive_r2": 0.629,
-        "pooled_top1_purity_pct": 68.3,
+        "pooled_top1_purity_pct": 68.4,
     }
     if observed["n_types"] != expected["n_types"] or observed["n_valid"] != expected["n_valid"]:
         raise ValueError(f"benchmark universe changed: {observed}")

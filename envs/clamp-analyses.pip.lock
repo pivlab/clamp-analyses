@@ -1,0 +1,7 @@
+# PyPI packages that cannot be represented in Conda's @EXPLICIT lock format.
+# Keep these top-level versions synchronized with envs/clamp-analyses.yaml.
+mofaflex==0.1.1
+anndata==0.12.11
+scanpy==1.11.5
+umap-learn==0.5.11
+pytest==9.0.2

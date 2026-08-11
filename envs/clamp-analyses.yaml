@@ -76,9 +76,6 @@ dependencies:
   - scikit-learn
   - scipy
   - h5py
-  - scanpy
-  - umap-learn
-  - pytest
   - r-ggrastr
 
   # PyTorch with CUDA support
@@ -87,5 +84,8 @@ dependencies:
 
   - pip
   - pip:
-      - mofaflex
-      - anndata
+      - mofaflex==0.1.1
+      - anndata==0.12.11
+      - scanpy==1.11.5
+      - umap-learn==0.5.11
+      - pytest==9.0.2
