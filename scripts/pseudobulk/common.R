@@ -1,4 +1,8 @@
 # Shared pseudobulk helpers used by multiple production scripts and reports.
+# Batch scripts must never fall back to R's implicit `Rplots.pdf` device.
+# Explicit devices (for example ggsave/cairo_pdf) are unaffected.
+options(device = function(...) grDevices::pdf(file = NULL))
+
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
 parse_cli <- function(args = commandArgs(trailingOnly = TRUE)) {
