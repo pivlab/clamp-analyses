@@ -3,6 +3,7 @@ import os
 configfile: "workflow/config/pseudobulk.yaml"
 configfile: "workflow/config/gtex.yaml"
 configfile: "workflow/config/runtime_benchmark.yaml"
+configfile: "workflow/config/donor_bulk.yaml"
 
 # Anchor for repo-root-relative config paths (e.g. notebook locations), so
 # they resolve the same way regardless of which included .smk file consumes
@@ -14,6 +15,7 @@ REPO_ROOT = os.path.dirname(workflow.basedir)
 include: "rules/pseudobulk.smk"
 include: "rules/gtex.smk"
 include: "rules/computational_timing.smk"
+include: "rules/donor_bulk.smk"
 include: "rules/panels.smk"
 
 rule all:
@@ -25,6 +27,7 @@ rule all:
         rules.model_building_qc_pseudobulk.output.complete,
         rules.computational_timing_analysis.input,
         rules.biology_pseudobulk.input,
+        rules.donor_bulk_report.input,
         rules.panels_pseudobulk.input,
         rules.full_models_gtex.input,
         rules.model_building_qc_gtex.output.complete,

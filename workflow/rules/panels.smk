@@ -10,7 +10,6 @@ PANELS_NB = os.path.join(REPO_ROOT, config["paths"]["panels_notebooks"])
 rule fig2_panel:
     input:
         benchmark_long=rules.benchmark_pseudobulk.output.long,
-        runtime_seed_totals=rules.computational_timing_report_pseudobulk.output.seed_totals,
         holdout_predictions=rules.grouped_cv_analysis_pseudobulk.output.predictions,
         holdout_thresholded_metrics=rules.grouped_cv_analysis_pseudobulk.output.thresholded_metrics,
         holdout_thresholded_summary=rules.grouped_cv_analysis_pseudobulk.output.thresholded_summary,
@@ -25,6 +24,11 @@ rule fig2_panel:
         liver_xcell_scatter=rules.liver_disentangle_xcell_rf_true_labels_gtex.output.xcell_scatter,
         liver_lv_pathways=rules.liver_disentangle_xcell_rf_true_labels_gtex.output.lv_pathways,
         multitissue_panel_ready=rules.multitissue_xcell_recovery_gtex.output.panel_ready,
+        donor_bulk_predictions=rules.donor_bulk_recovery_report.output.fig2_predictions,
+        donor_bulk_statistics=rules.donor_bulk_recovery_report.output.fig2_statistics,
+        donor_bulk_perez_annotation=rules.donor_bulk_recovery_report.output.perez_annotation,
+        donor_bulk_perez_activity=rules.donor_bulk_recovery_report.output.perez_activity,
+        donor_bulk_perez_summary=rules.donor_bulk_recovery_report.output.perez_summary,
         notebook=f"{PANELS_NB}/fig2.ipynb",
     output:
         png=f"{PANELS}/fig2/fig2.png",
@@ -38,10 +42,16 @@ rule fig2_panel:
         f"{PANELS_NB}/fig2.ipynb"
 
 
+rule donor_bulk_figure2:
+    input:
+        rules.fig2_panel.output.complete,
+
+
 rule supp1_panel:
     input:
         benchmark_long=rules.benchmark_pseudobulk.output.long,
         bootstrap=rules.benchmark_pseudobulk.output.bootstrap,
+        runtime_seed_totals=rules.computational_timing_report_pseudobulk.output.seed_totals,
         heatmap_long=rules.single_cell_recovery_pseudobulk.output.heatmap,
         corr_full=rules.benchmark_pseudobulk.output.corr,
         assignments=rules.benchmark_pseudobulk.output.assignments,
@@ -71,6 +81,24 @@ rule supp1_panel:
 
 rule supp2_panel:
     input:
+        purity=rules.donor_bulk_recovery_report.output.supp2_purity,
+        umap_cells=rules.donor_bulk_recovery_report.output.supp2_umap_cells,
+        umap_lvs=rules.donor_bulk_recovery_report.output.supp2_umap_lvs,
+        notebook=f"{PANELS_NB}/supp2.ipynb",
+    output:
+        png=f"{PANELS}/supp2/supp2.png",
+        pdf=f"{PANELS}/supp2/supp2.pdf",
+        svg=f"{PANELS}/supp2/supp2.svg",
+        complete=touch(f"{PANELS}/supp2/notebook.complete"),
+    log:
+        notebook=f"{PANELS_NB}/supp2.executed.ipynb",
+    conda: "clamp-analyses"
+    notebook:
+        f"{PANELS_NB}/supp2.ipynb"
+
+
+rule supp3_panel:
+    input:
         benchmark_long=rules.benchmark_pseudobulk.output.long,
         bootstrap=rules.benchmark_pseudobulk.output.bootstrap,
         heatmap_long=rules.single_cell_recovery_pseudobulk.output.heatmap,
@@ -87,17 +115,17 @@ rule supp2_panel:
         hard=rules.hard_cell_types_pseudobulk.output.group_dot_ready,
         orthogonality_per_term=rules.geneset_orthogonality_gtex.output.per_term,
         orthogonality_summary=rules.geneset_orthogonality_gtex.output.summary,
-        notebook=f"{PANELS_NB}/supp2.ipynb",
+        notebook=f"{PANELS_NB}/supp3.ipynb",
     output:
-        png=f"{PANELS}/supp2/supp2.png",
-        pdf=f"{PANELS}/supp2/supp2.pdf",
-        svg=f"{PANELS}/supp2/supp2.svg",
-        complete=touch(f"{PANELS}/supp2/notebook.complete"),
+        png=f"{PANELS}/supp3/supp3.png",
+        pdf=f"{PANELS}/supp3/supp3.pdf",
+        svg=f"{PANELS}/supp3/supp3.svg",
+        complete=touch(f"{PANELS}/supp3/notebook.complete"),
     log:
-        notebook=f"{PANELS_NB}/supp2.executed.ipynb",
+        notebook=f"{PANELS_NB}/supp3.executed.ipynb",
     conda: "clamp-analyses"
     notebook:
-        f"{PANELS_NB}/supp2.ipynb"
+        f"{PANELS_NB}/supp3.ipynb"
 
 
 rule panels_pseudobulk:
@@ -105,3 +133,4 @@ rule panels_pseudobulk:
         rules.fig2_panel.output.complete,
         rules.supp1_panel.output.complete,
         rules.supp2_panel.output.complete,
+        rules.supp3_panel.output.complete,

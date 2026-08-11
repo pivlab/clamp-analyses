@@ -1,5 +1,7 @@
 # This file may be used to create an environment using:
 # $ conda create --name <env> --file <this file>
+# Then install the pinned PyPI packages with:
+# $ conda run -n <env> python -m pip install -r envs/clamp-analyses.pip.lock
 # platform: linux-64
 @EXPLICIT
 https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
