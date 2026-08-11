@@ -2,6 +2,10 @@ gtex:
   raw_url: https://storage.googleapis.com/adult-gtex/bulk-gex/v8/rna-seq/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz
   raw_gz: data/gtex/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz
   metadata: data/gtex/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt
+  # Deconvolution scores, 7 cell types x 17,382 samples. Read via here() by
+  # 05_liver_disentangle_xcell.ipynb already; declared here so the multi-tissue
+  # recovery rule can list it as a proper input.
+  xcell_scores: data/gtex/GTEx_Analysis_v8_xCell_scores_7_celltypes.txt
 
   paths:
     production: output/01_model_building/01_gtex

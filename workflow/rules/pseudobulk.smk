@@ -12,6 +12,7 @@ BIO_NB = os.path.join(REPO_ROOT, config["paths"]["biology_notebooks"])
 GMT = config["references"]["go_bp_file"]
 CELL_MARKER_FILE = config["references"]["cell_marker_file"]
 ALLEN_BRAIN_GMT_FILE = config["references"]["allen_brain_gmt_file"]
+AZIMUTH_FILE = config["references"]["azimuth_file"]
 CV_FOLDS = list(range(1, config["grouped_cv"]["n_folds"] + 1))
 CV_FOLD_PATTERN = "|".join(str(fold) for fold in CV_FOLDS)
 
@@ -617,6 +618,29 @@ rule hard_cell_types_pseudobulk:
         f"{BIO_NB}/04_hard_cell_types.ipynb"
 
 
+rule hard_pair_loadings_pseudobulk:
+    input:
+        models=expand(f"{PROD}/{{dataset}}/models/CLAMPfull/Z.csv", dataset=DATASETS),
+        top=rules.disentangle_pseudobulk.output.top,
+        corr=rules.benchmark_pseudobulk.output.corr,
+        cell_marker_file=CELL_MARKER_FILE,
+        allen_brain_gmt_file=ALLEN_BRAIN_GMT_FILE,
+        azimuth_file=AZIMUTH_FILE,
+        notebook=f"{BIO_NB}/05_hard_pair_loadings.ipynb",
+    output:
+        panel_ready=f"{BIO}/05_hard_pair_loadings/hard_pair_loadings_panel_ready.csv",
+        stats=f"{BIO}/05_hard_pair_loadings/hard_pair_loading_stats.csv",
+        sweep=f"{BIO}/05_hard_pair_loadings/hard_pair_marker_resource_sweep.csv",
+        complete=touch(f"{BIO}/05_hard_pair_loadings/notebook.complete"),
+    log:
+        notebook=f"{BIO_NB}/05_hard_pair_loadings.executed.ipynb",
+    params:
+        out_dir=f"{BIO}/05_hard_pair_loadings",
+    conda: "clamp-analyses"
+    notebook:
+        f"{BIO_NB}/05_hard_pair_loadings.ipynb"
+
+
 rule biology_pseudobulk:
     input:
         rules.benchmark_pseudobulk.output.complete,
@@ -624,3 +648,4 @@ rule biology_pseudobulk:
         rules.disentangle_pseudobulk.output.complete,
         rules.single_cell_recovery_pseudobulk.output.complete,
         rules.hard_cell_types_pseudobulk.output.complete,
+        rules.hard_pair_loadings_pseudobulk.output.complete,

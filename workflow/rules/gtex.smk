@@ -291,10 +291,10 @@ rule kmeans_clustering_report_gtex:
         model=rules.kmeans_clustering_gtex.output.model,
         notebook=f"{GTEX_BIO_NB}/00_kmeans_clustering.ipynb",
     output:
-        ari_data=f"output/99_panels/fig3/ari_data.csv",
-        ari_comparisons=f"output/99_panels/fig3/ari_comparisons.csv",
-        gene_fraction_ari_data=f"output/99_panels/fig3/gene_fraction_ari_data.csv",
-        gene_fraction_ari_comparisons=f"output/99_panels/fig3/gene_fraction_ari_comparisons.csv",
+        ari_data=f"{GTEX_BIO}/00_kmeans_clustering/ari_data.csv",
+        ari_comparisons=f"{GTEX_BIO}/00_kmeans_clustering/ari_comparisons.csv",
+        gene_fraction_ari_data=f"{GTEX_BIO}/00_kmeans_clustering/gene_fraction_ari_data.csv",
+        gene_fraction_ari_comparisons=f"{GTEX_BIO}/00_kmeans_clustering/gene_fraction_ari_comparisons.csv",
         complete=touch(f"{GTEX_BIO}/00_kmeans_clustering/notebook.complete"),
     log:
         notebook=f"{GTEX_BIO_NB}/00_kmeans_clustering.executed.ipynb",
@@ -390,6 +390,51 @@ rule liver_disentangle_xcell_rf_true_labels_gtex:
     conda: "clamp-analyses"
     notebook:
         f"{GTEX_BIO_NB}/05_liver_disentangle_xcell.ipynb"
+
+
+rule multitissue_xcell_recovery_gtex:
+    input:
+        shap_dir=rules.lv_importance_rf_true_labels_gtex.output.out_dir,
+        clamp_model=rules.clamp_gtex.output.full_rds,
+        z_matrix=rules.clamp_gtex.output.full_Z,
+        xcell=config["gtex"]["xcell_scores"],
+        cell_marker_file=config["references"]["cell_marker_file"],
+        notebook=f"{GTEX_BIO_NB}/06_multitissue_xcell_recovery.ipynb",
+    output:
+        panel_ready=f"{GTEX_BIO}/06_multitissue_xcell_recovery/multitissue_recovery_panel_ready.csv",
+        shap_by_model=f"{GTEX_BIO}/06_multitissue_xcell_recovery/multitissue_shap_by_model.csv",
+        ora_top1=f"{GTEX_BIO}/06_multitissue_xcell_recovery/cellmarker_ora_top1_per_lv.csv",
+        summary=f"{GTEX_BIO}/06_multitissue_xcell_recovery/multitissue_recovery_summary.csv",
+        complete=touch(f"{GTEX_BIO}/06_multitissue_xcell_recovery/notebook.complete"),
+    log:
+        notebook=f"{GTEX_BIO_NB}/06_multitissue_xcell_recovery.executed.ipynb",
+    params:
+        out_dir=f"{GTEX_BIO}/06_multitissue_xcell_recovery",
+    conda: "clamp-analyses"
+    notebook:
+        f"{GTEX_BIO_NB}/06_multitissue_xcell_recovery.ipynb"
+
+
+# Measures the shared GO:BP prior rather than anything GTEx-specific; it lives in
+# this rule file because the GTEx supplement is what consumes the output.
+rule geneset_orthogonality_gtex:
+    input:
+        go_bp_file=GTEX_GMT,
+        cell_marker_file=config["references"]["cell_marker_file"],
+        allen_brain_gmt_file=config["references"]["allen_brain_gmt_file"],
+        gtex_tissues_pathmat=config["references"]["gtex_tissues_pathmat"],
+        notebook=f"{GTEX_BIO_NB}/07_geneset_orthogonality.ipynb",
+    output:
+        per_term=f"{GTEX_BIO}/07_geneset_orthogonality/orthogonality_per_term.csv",
+        summary=f"{GTEX_BIO}/07_geneset_orthogonality/orthogonality_summary.csv",
+        complete=touch(f"{GTEX_BIO}/07_geneset_orthogonality/notebook.complete"),
+    log:
+        notebook=f"{GTEX_BIO_NB}/07_geneset_orthogonality.executed.ipynb",
+    params:
+        out_dir=f"{GTEX_BIO}/07_geneset_orthogonality",
+    conda: "clamp-analyses"
+    notebook:
+        f"{GTEX_BIO_NB}/07_geneset_orthogonality.ipynb"
 
 
 # ============================================================
@@ -525,4 +570,6 @@ rule biology_gtex:
         rules.lv_importance_rf_true_labels_biology_gtex.output.complete,
         rules.global_alignment_rf_true_labels_gtex.output.complete,
         rules.liver_disentangle_xcell_rf_true_labels_gtex.output.complete,
+        rules.multitissue_xcell_recovery_gtex.output.complete,
+        rules.geneset_orthogonality_gtex.output.complete,
         rules.subtissues_report_gtex.output.complete,

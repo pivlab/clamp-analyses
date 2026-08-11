@@ -119,9 +119,9 @@ Runs in this order; each stage consumes the previous stage's outputs:
 5. __QC report__ (`model_building_qc_pseudobulk`) - sanity-checks pseudobulk inputs and model outputs across every dataset/method combination.
 6. __Grouped cross-validation__ (`grouped_cv_models_pseudobulk` → `grouped_cv_analysis_pseudobulk`) - 5-fold, sample-grouped CV of CLAMPfull (held out at the donor/sample level) to estimate out-of-fold cell-type-fraction prediction accuracy.
 7. __Single-cell projection__ (`single_cell_projections`) - projects each individual cell onto the CLAMPfull latent variables learned from pseudobulk.
-8. __Biology reports__ (`biology_pseudobulk`) - five notebooks: `benchmark_pseudobulk` (method comparison), `holdout_report_pseudobulk` (grouped-CV results), `disentangle_pseudobulk` (LV ↔ cell-type mapping + pathway enrichment), `single_cell_recovery_pseudobulk` (single-cell projection recovery), `hard_cell_types_pseudobulk` (cell types poorly captured by any LV).
+8. __Biology reports__ (`biology_pseudobulk`) - six notebooks: `benchmark_pseudobulk` (method comparison), `holdout_report_pseudobulk` (grouped-CV results), `disentangle_pseudobulk` (LV ↔ cell-type mapping + pathway enrichment), `single_cell_recovery_pseudobulk` (single-cell projection recovery), `hard_cell_types_pseudobulk` (cell types poorly captured by any LV), and `hard_pair_loadings_pseudobulk` (gene-loading separation for difficult cell-type pairs).
 9. __Computational timing__ (`computational_timing_analysis`) - a separate analysis that reuses the six preprocessed pseudobulk matrices, fits each method with seeds 123, 456, and 789, and aggregates wall time across datasets. Its models never overwrite the production models.
-10. __Panels__ (`panels_pseudobulk`) - figure 2 and supplementary figure 1, built from the biology and timing report outputs.
+10. __Panels__ (`panels_pseudobulk`) - Figure 2 and Supplementary Figures 1 and 2, built from the biology and timing report outputs.
 
 See "▶️ Running Snakemake" below for how to run these.
 
