@@ -1,0 +1,6 @@
+runtime_benchmark:
+  seeds: [123, 456, 789]
+  threads: 4
+  methods: [CLAMPfull, CLAMPbase, PLIER, CoGAPS, Flashier, NMF, PCA, ICA, GSSig, MOFA-FLEX]
+  output_root: output/02_model_performance/00_pseudobulk/00_computational_timing
+  notebook: nbs/02_model_performance/00_pseudobulk/00_computational_timing.ipynb

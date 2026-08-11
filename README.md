@@ -120,7 +120,8 @@ Runs in this order; each stage consumes the previous stage's outputs:
 6. __Grouped cross-validation__ (`grouped_cv_models_pseudobulk` → `grouped_cv_analysis_pseudobulk`) - 5-fold, sample-grouped CV of CLAMPfull (held out at the donor/sample level) to estimate out-of-fold cell-type-fraction prediction accuracy.
 7. __Single-cell projection__ (`single_cell_projections`) - projects each individual cell onto the CLAMPfull latent variables learned from pseudobulk.
 8. __Biology reports__ (`biology_pseudobulk`) - five notebooks: `benchmark_pseudobulk` (method comparison), `holdout_report_pseudobulk` (grouped-CV results), `disentangle_pseudobulk` (LV ↔ cell-type mapping + pathway enrichment), `single_cell_recovery_pseudobulk` (single-cell projection recovery), `hard_cell_types_pseudobulk` (cell types poorly captured by any LV).
-9. __Panels__ (`panels_pseudobulk`) - figure 2 and supplementary figure 1, built from the biology report outputs.
+9. __Computational timing__ (`computational_timing_analysis`) - a separate analysis that reuses the six preprocessed pseudobulk matrices, fits each method with seeds 123, 456, and 789, and aggregates wall time across datasets. Its models never overwrite the production models.
+10. __Panels__ (`panels_pseudobulk`) - figure 2 and supplementary figure 1, built from the biology and timing report outputs.
 
 See "▶️ Running Snakemake" below for how to run these.
 
@@ -128,6 +129,7 @@ See "▶️ Running Snakemake" below for how to run these.
 
 - Model-building artifacts: `output/01_model_building/00_pseudobulk/<dataset>/{pseudobulk,preprocessing,models,grouped_cv,single_cell_projection}/`
 - QC: `output/01_model_building/00_pseudobulk/qc/`, executed notebook (with plots) at `nbs/01_model_building/00_pseudobulk/00_model_building_qc.executed.ipynb`
+- Computational timing: `output/02_model_performance/00_pseudobulk/00_computational_timing/` (isolated models, per-fit logs and timing records, pooled CSVs, and the executed report notebook with its embedded plot)
 - Biology reports: `output/03_model_biology/00_pseudobulk/{00_benchmark,01_holdout80,02_disentangle,03_b_matrix_singlecell,04_hard_cell_types}/`, executed notebooks (with plots) at `nbs/03_model_biology/00_pseudobulk/<name>.executed.ipynb`
 - Panels: `output/99_panels/`
 
@@ -228,6 +230,9 @@ snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -n <target>
 ```bash
 # Pseudobulk, end to end
 snakemake --cores 4 --use-conda --snakefile workflow/Snakefile biology_pseudobulk panels_pseudobulk
+
+# Separate 180-fit timing analysis (6 datasets x 10 methods x 3 seeds)
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile computational_timing_analysis
 
 # GTEx, end to end
 snakemake --cores 4 --use-conda --snakefile workflow/Snakefile biology_gtex
