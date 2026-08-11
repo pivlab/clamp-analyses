@@ -25,6 +25,11 @@ rule fig2_panel:
         liver_xcell_scatter=rules.liver_disentangle_xcell_rf_true_labels_gtex.output.xcell_scatter,
         liver_lv_pathways=rules.liver_disentangle_xcell_rf_true_labels_gtex.output.lv_pathways,
         multitissue_panel_ready=rules.multitissue_xcell_recovery_gtex.output.panel_ready,
+        donor_bulk_predictions=rules.donor_bulk_recovery_report.output.fig2_predictions,
+        donor_bulk_statistics=rules.donor_bulk_recovery_report.output.fig2_statistics,
+        donor_bulk_perez_annotation=rules.donor_bulk_recovery_report.output.perez_annotation,
+        donor_bulk_perez_activity=rules.donor_bulk_recovery_report.output.perez_activity,
+        donor_bulk_perez_summary=rules.donor_bulk_recovery_report.output.perez_summary,
         notebook=f"{PANELS_NB}/fig2.ipynb",
     output:
         png=f"{PANELS}/fig2/fig2.png",
@@ -36,6 +41,11 @@ rule fig2_panel:
     conda: "clamp-analyses"
     notebook:
         f"{PANELS_NB}/fig2.ipynb"
+
+
+rule donor_bulk_figure2:
+    input:
+        rules.fig2_panel.output.complete,
 
 
 rule supp1_panel:

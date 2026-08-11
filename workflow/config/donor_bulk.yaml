@@ -1,0 +1,34 @@
+donor_bulk:
+  datasets:
+    - Brain_Mathys2023
+    - Brain_Xiong2023
+    - Heart_Datar2026
+    - PBMC_1k1k
+    - PBMC_Perez2022
+    - Lung_Sikkema2023
+
+  paths:
+    production: output/01_model_building/00_pseudobulk/donor_bulk
+    biology: output/03_model_biology/00_pseudobulk/06_donor_bulk_recovery
+    model_notebooks: nbs/01_model_building/00_pseudobulk
+    biology_notebooks: nbs/03_model_biology/00_pseudobulk
+
+  aggregation:
+    chunk_cells: 20000
+    chunk_nnz: 20000000
+    sample_cells: 60000
+    minimum_per_type: 250
+    seed: 123
+
+  umap:
+    target_sum: 10000
+    n_hvg: 2000
+    n_pcs: 50
+    n_neighbors: 30
+    min_dist: 0.30
+    seed: 123
+
+  projection:
+    chunk_cells: 20000
+    chunk_nnz: 20000000
+    duplicate_gene_policy: sum

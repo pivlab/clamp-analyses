@@ -51,9 +51,21 @@ def projection_operator(z_path: Path, stats_path: Path, l2_path: Path) -> tuple[
     return genes, weights, center, z_frame.columns.astype(str).tolist(), l2
 
 
-def raw_feature_weights(raw_genes: np.ndarray, model_genes: pd.Index, model_weights: np.ndarray) -> tuple[np.ndarray, int]:
-    # Map each raw feature row to its model weight row; split the weight when
-    # a gene ID appears more than once in the raw feature list.
+def raw_feature_weights(
+    raw_genes: np.ndarray,
+    model_genes: pd.Index,
+    model_weights: np.ndarray,
+    duplicate_gene_policy: str = "mean",
+) -> tuple[np.ndarray, int]:
+    """Map collapsed model-gene weights back to raw feature rows.
+
+    ``mean`` preserves the production pseudobulk convention, where duplicate
+    raw symbols were averaged. ``sum`` is required for donor-bulk models whose
+    training matrices sum duplicate symbols: every raw feature then receives
+    the complete collapsed-gene weight.
+    """
+    if duplicate_gene_policy not in {"mean", "sum"}:
+        raise ValueError("duplicate_gene_policy must be 'mean' or 'sum'")
     lookup = {gene: i for i, gene in enumerate(model_genes.astype(str))}
     raw_genes = np.asarray(raw_genes).astype(str)
     counts = pd.Series(raw_genes).value_counts()
@@ -62,7 +74,8 @@ def raw_feature_weights(raw_genes: np.ndarray, model_genes: pd.Index, model_weig
     for index, gene in enumerate(raw_genes):
         model_index = lookup.get(gene)
         if model_index is not None:
-            weights[index] = model_weights[model_index] / int(counts[gene])
+            divisor = int(counts[gene]) if duplicate_gene_policy == "mean" else 1
+            weights[index] = model_weights[model_index] / divisor
             overlap += 1
     if not overlap:
         raise ValueError("raw expression and CLAMP model have no common genes")
@@ -244,6 +257,14 @@ def main() -> None:
     parser.add_argument("--summary", required=True)
     parser.add_argument("--chunk-cells", type=int, default=20_000)
     parser.add_argument("--chunk-nnz", type=int, default=20_000_000)
+    parser.add_argument(
+        "--duplicate-gene-policy", choices=["mean", "sum"], default="mean",
+        help="How duplicate raw symbols were collapsed in the model training matrix",
+    )
+    parser.add_argument(
+        "--normalization-label", default="full_pseudobulk_training_statistics",
+        help="Provenance label stored in the projection summary and HDF5 attributes",
+    )
     args = parser.parse_args()
     config = read_yaml(args.config)
     cfg = config["datasets"][args.dataset]
@@ -255,7 +276,9 @@ def main() -> None:
             raw_genes = h5_gene_names(raw_h5, cfg.get("matrix", "X"))
     else:
         raw_genes = pd.read_csv(repo_path(cfg["features"]), header=None, dtype=str)[0].to_numpy()
-    feature_weights, overlap = raw_feature_weights(raw_genes, model_genes, model_weights)
+    feature_weights, overlap = raw_feature_weights(
+        raw_genes, model_genes, model_weights, args.duplicate_gene_policy
+    )
     output = repo_path(args.output)
     if cfg["kind"] == "h5ad":
         summary = project_h5ad(args.dataset, cfg, feature_weights, center, lv_names, output, args.chunk_cells)
@@ -272,7 +295,8 @@ def main() -> None:
         "n_raw_features_overlapping": overlap,
         "n_lvs": len(lv_names),
         "L2": l2,
-        "normalization": "full_pseudobulk_training_statistics",
+        "normalization": args.normalization_label,
+        "duplicate_gene_policy": args.duplicate_gene_policy,
         "model_preprocess_sha256": sha256_files(args.z, args.l2, args.row_stats),
     })
     with h5py.File(output, "r+") as out_h5:
@@ -282,6 +306,7 @@ def main() -> None:
         out_h5.attrs["preprocessing_row_stats"] = str(repo_path(args.row_stats))
         out_h5.attrs["model_preprocess_sha256"] = summary["model_preprocess_sha256"]
         out_h5.attrs["normalization"] = summary["normalization"]
+        out_h5.attrs["duplicate_gene_policy"] = args.duplicate_gene_policy
         out_h5.attrs["n_model_genes"] = summary["n_model_genes"]
         out_h5.attrs["n_raw_features_overlapping"] = summary["n_raw_features_overlapping"]
         out_h5.attrs["n_cells_projected"] = summary["n_cells_projected"]

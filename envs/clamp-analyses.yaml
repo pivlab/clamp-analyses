@@ -76,6 +76,10 @@ dependencies:
   - scikit-learn
   - scipy
   - h5py
+  - scanpy
+  - umap-learn
+  - pytest
+  - r-ggrastr
 
   # PyTorch with CUDA support
   - pytorch
