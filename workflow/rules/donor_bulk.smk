@@ -432,6 +432,9 @@ rule donor_bulk_recovery_report:
         perez_annotation=f"{DB_BIO}/fig2_perez_annotation.csv",
         perez_activity=f"{DB_BIO}/fig2_perez_activity.csv",
         perez_summary=f"{DB_BIO}/fig2_perez_summary.csv",
+        supp2_purity=f"{DB_BIO}/supp2_purity.csv",
+        supp2_umap_cells=f"{DB_BIO}/supp2_umap_cells.csv.gz",
+        supp2_umap_lvs=f"{DB_BIO}/supp2_umap_lvs.csv",
         complete=touch(f"{DB_BIO}/notebook.complete"),
     log:
         notebook=f"{DB_BIO_NB}/06_donor_bulk_recovery.executed.ipynb",

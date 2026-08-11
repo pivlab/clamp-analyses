@@ -81,6 +81,24 @@ rule supp1_panel:
 
 rule supp2_panel:
     input:
+        purity=rules.donor_bulk_recovery_report.output.supp2_purity,
+        umap_cells=rules.donor_bulk_recovery_report.output.supp2_umap_cells,
+        umap_lvs=rules.donor_bulk_recovery_report.output.supp2_umap_lvs,
+        notebook=f"{PANELS_NB}/supp2.ipynb",
+    output:
+        png=f"{PANELS}/supp2/supp2.png",
+        pdf=f"{PANELS}/supp2/supp2.pdf",
+        svg=f"{PANELS}/supp2/supp2.svg",
+        complete=touch(f"{PANELS}/supp2/notebook.complete"),
+    log:
+        notebook=f"{PANELS_NB}/supp2.executed.ipynb",
+    conda: "clamp-analyses"
+    notebook:
+        f"{PANELS_NB}/supp2.ipynb"
+
+
+rule supp3_panel:
+    input:
         benchmark_long=rules.benchmark_pseudobulk.output.long,
         bootstrap=rules.benchmark_pseudobulk.output.bootstrap,
         heatmap_long=rules.single_cell_recovery_pseudobulk.output.heatmap,
@@ -97,17 +115,17 @@ rule supp2_panel:
         hard=rules.hard_cell_types_pseudobulk.output.group_dot_ready,
         orthogonality_per_term=rules.geneset_orthogonality_gtex.output.per_term,
         orthogonality_summary=rules.geneset_orthogonality_gtex.output.summary,
-        notebook=f"{PANELS_NB}/supp2.ipynb",
+        notebook=f"{PANELS_NB}/supp3.ipynb",
     output:
-        png=f"{PANELS}/supp2/supp2.png",
-        pdf=f"{PANELS}/supp2/supp2.pdf",
-        svg=f"{PANELS}/supp2/supp2.svg",
-        complete=touch(f"{PANELS}/supp2/notebook.complete"),
+        png=f"{PANELS}/supp3/supp3.png",
+        pdf=f"{PANELS}/supp3/supp3.pdf",
+        svg=f"{PANELS}/supp3/supp3.svg",
+        complete=touch(f"{PANELS}/supp3/notebook.complete"),
     log:
-        notebook=f"{PANELS_NB}/supp2.executed.ipynb",
+        notebook=f"{PANELS_NB}/supp3.executed.ipynb",
     conda: "clamp-analyses"
     notebook:
-        f"{PANELS_NB}/supp2.ipynb"
+        f"{PANELS_NB}/supp3.ipynb"
 
 
 rule panels_pseudobulk:
@@ -115,3 +133,4 @@ rule panels_pseudobulk:
         rules.fig2_panel.output.complete,
         rules.supp1_panel.output.complete,
         rules.supp2_panel.output.complete,
+        rules.supp3_panel.output.complete,
