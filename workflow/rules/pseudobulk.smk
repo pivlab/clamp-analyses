@@ -13,7 +13,6 @@ GMT = config["references"]["go_bp_file"]
 CELL_MARKER_FILE = config["references"]["cell_marker_file"]
 ALLEN_BRAIN_GMT_FILE = config["references"]["allen_brain_gmt_file"]
 AZIMUTH_FILE = config["references"]["azimuth_file"]
-GTEX_TISSUES_PATHMAT = config["references"]["gtex_tissues_pathmat"]
 CV_FOLDS = list(range(1, config["grouped_cv"]["n_folds"] + 1))
 CV_FOLD_PATTERN = "|".join(str(fold) for fold in CV_FOLDS)
 

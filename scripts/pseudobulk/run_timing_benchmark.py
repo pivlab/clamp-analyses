@@ -40,7 +40,6 @@ def matrix_shape(path: Path) -> tuple[int, int]:
 
 def command_for(args: argparse.Namespace) -> tuple[list[str], Path]:
     scripts = Path("scripts/pseudobulk")
-    out = Path(args.output_dir)
     seed = str(args.seed)
 
     if args.method in ("CLAMPbase", "CLAMPfull"):
