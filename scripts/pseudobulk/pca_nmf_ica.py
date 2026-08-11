@@ -43,6 +43,9 @@ def main() -> None:
         help="Write a selected method directly into --models-dir instead of a method subdirectory.",
     )
     args = parser.parse_args()
+    if args.flat_output and args.method == "all":
+        parser.error("--flat-output requires one explicit --method (PCA, NMF, or ICA)")
+
     norm = pd.read_csv(args.norm, index_col=0).astype(np.float32)
     k = int(pd.read_csv(args.k)["k"].iloc[0])
     samples, genes = norm.columns.astype(str).tolist(), norm.index.astype(str).tolist()
