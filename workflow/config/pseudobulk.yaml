@@ -179,6 +179,10 @@ preprocess:
   mean_cutoff: 0.5
   var_cutoff: 0.1
   seed: 123
+# CLAMPbase/CLAMPfull fit settings, shared by model building, the runtime
+# benchmark and grouped-CV refits. max_iter is headroom above the iteration
+# count CLAMP actually needs to reach its 5e-4 relative-change convergence
+# tolerance; fits stop well before this cap in practice.
 clamp:
   max_iter: 500
   seed: 123
@@ -189,12 +193,26 @@ grouped_cv:
   min_train_lv_cor: 0.5
   bootstrap_seed: 123
   bootstrap_replicates: 10000
+# flashier: greedy factor addition followed by backfit_maxiter backfitting
+# iterations to refine loadings. Set lower here (10) than in the GTEx
+# pipeline (backfit_maxiter: 20 in gtex.yaml) -- the two pipelines are
+# configured independently for their respective matrix sizes and are not
+# meant to use identical values.
 flashier:
   backfit_maxiter: 10
+# CoGAPS Gibbs sampler settings, identical to the GTEx pipeline's cogaps
+# block. n_iterations follows the package's own guidance for exploratory
+# genome-wide-distributed runs; distributed=genome-wide (set in cogaps.R,
+# not here) partitions genes into ~1,000-5,000-gene subsets so memory stays
+# tractable at this rank.
 cogaps:
   n_iterations: 5000
   n_threads: 4
   seed: 123
+# MOFA-FLEX epoch budget under the Horseshoe weight prior. Set lower here
+# (200) than in the GTEx pipeline (max_epochs: 1000 in gtex.yaml, with the
+# larger MSigDB c5.go.bp prior) -- again, independently configured per
+# pipeline rather than matched.
 mofa_flex:
   max_epochs: 200
   seed: 123
