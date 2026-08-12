@@ -166,13 +166,12 @@ references:
   go_bp_sha256: 0fc02458765cfce6c9348dce9f7a9397c6caf7c09ba318f468135d7ac60342ee
   cell_marker_file: data/pathways/Cell_marker_Human.xlsx
   allen_brain_gmt_file: data/pathways/Allen_Brain_Atlas_10x_scRNA_2021.gmt
-  # Azimuth reference-atlas markers. Used by the hard-pair loading panels: unlike
-  # CellMarker, which aggregates published lists and therefore carries CD4 and
-  # CD8A in *both* its CD4 and CD8 sets, Azimuth's sets are differential within
-  # one reference and can actually separate a hard pair.
+  # Canonical reference-atlas markers for all pseudobulk cell-type ORA and
+  # hard-pair loading panels. Each dataset is matched to its corresponding
+  # Azimuth atlas (PBMC, Motor Cortex, Heart, or Lung V2/HLCA).
   azimuth_file: data/pathways/Azimuth_2023.txt
-  # Binary genes x tissue matrix, one of the three collections the GO:BP prior is
-  # tested against for orthogonality.
+  # Binary genes x tissue matrix, one of the evaluation collections the GO:BP
+  # prior is tested against for orthogonality.
   gtex_tissues_pathmat: data/archs4/GTEx_Tissues_pathMat.rds
   brain_datasets: [Brain_Mathys2023, Brain_Xiong2023]
 

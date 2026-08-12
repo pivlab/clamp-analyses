@@ -543,8 +543,7 @@ rule disentangle_pseudobulk:
         models=expand(f"{PROD}/{{dataset}}/models/CLAMPfull/CLAMPfull.rds", dataset=DATASETS),
         assignments=rules.benchmark_pseudobulk.output.assignments,
         corr=rules.benchmark_pseudobulk.output.corr,
-        cell_marker_file=CELL_MARKER_FILE,
-        allen_brain_gmt_file=ALLEN_BRAIN_GMT_FILE,
+        azimuth_file=AZIMUTH_FILE,
         notebook=f"{BIO_NB}/02_disentangle.ipynb",
     output:
         top=f"{BIO}/02_disentangle/top_lvs_per_celltype.csv",
