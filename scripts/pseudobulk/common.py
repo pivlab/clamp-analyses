@@ -141,6 +141,31 @@ def map_labels(values: np.ndarray, mapping: dict[str, str] | None) -> np.ndarray
     return pd.Series(values).map(mapping).fillna("").to_numpy(dtype=str)
 
 
+def analysis_excluded_cell_types(config: dict[str, Any], dataset: str) -> list[str]:
+    """Return the configured evaluation-only cell-type exclusions for a dataset."""
+    values = (
+        config.get("cell_type_analysis", {})
+        .get("excluded_targets", {})
+        .get(dataset, [])
+    )
+    return [str(value) for value in values]
+
+
+def filter_analysis_cell_types(
+    truth: pd.DataFrame,
+    config: dict[str, Any],
+    dataset: str,
+    *,
+    strict: bool = True,
+) -> pd.DataFrame:
+    """Remove configured evaluation targets without renormalizing compositions."""
+    excluded = analysis_excluded_cell_types(config, dataset)
+    missing = sorted(set(excluded) - set(truth.columns.astype(str)))
+    if strict and missing:
+        raise ValueError(f"{dataset}: configured cell-type exclusions absent from truth: {missing}")
+    return truth.loc[:, ~truth.columns.astype(str).isin(excluded)].copy()
+
+
 def matrix_market_header(path: str | Path) -> tuple[int, int, int]:
     with gzip.open(repo_path(path), "rt") as handle:
         line = handle.readline()

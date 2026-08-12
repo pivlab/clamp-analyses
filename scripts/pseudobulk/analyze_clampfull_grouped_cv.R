@@ -10,6 +10,7 @@ suppressPackageStartupMessages({
 source(here('scripts', 'pseudobulk', 'common.R'))
 
 cfg <- yaml::read_yaml(here('workflow', 'config', 'pseudobulk.yaml'))
+analysis_cfg <- yaml::read_yaml(here('workflow', 'config', 'cell_type_analysis.yaml'))
 DATASETS <- names(cfg$datasets)
 N_FOLDS <- as.integer(cfg$grouped_cv$n_folds)
 MIN_TRAIN_LV_COR <- as.numeric(cfg$grouped_cv$min_train_lv_cor)
@@ -92,6 +93,14 @@ for (dataset in DATASETS) {
     fold_z <- read_matrix(file.path(fold_root, 'train_Z.csv'))
     train_truth <- read_matrix(file.path(fold_root, 'train_truth.csv'))
     test_truth <- read_matrix(file.path(fold_root, 'test_truth.csv'))
+    train_truth <- filter_analysis_cell_types(
+      train_truth, dataset, analysis_cfg$cell_type_analysis$excluded_targets,
+      strict = FALSE
+    )
+    test_truth <- filter_analysis_cell_types(
+      test_truth, dataset, analysis_cfg$cell_type_analysis$excluded_targets,
+      strict = FALSE
+    )
 
     train_ids <- sort(Reduce(intersect, list(rownames(train_b), rownames(train_truth))))
     test_ids <- sort(Reduce(intersect, list(rownames(test_b), rownames(test_truth))))

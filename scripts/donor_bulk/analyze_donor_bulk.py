@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import sys
 from collections import Counter
 from pathlib import Path
 
@@ -15,6 +16,9 @@ from scipy.stats import rankdata
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "scripts" / "pseudobulk"))
+
+from common import filter_analysis_cell_types, read_yaml  # noqa: E402
 
 
 def resolve(value: str | Path) -> Path:
@@ -61,22 +65,22 @@ def greedy_assign(correlation: pd.DataFrame) -> list[tuple[str, str, float]]:
     return assignments
 
 
-def filter_rare(truth: pd.DataFrame) -> pd.DataFrame:
-    return truth.loc[:, truth.mean(axis=0) >= 0.005] if len(truth) <= 100 else truth
-
-
 def regression_predict(x_train, y_train, x_test):
     design = np.column_stack([np.ones(len(x_train)), x_train])
     coefficient, *_ = np.linalg.lstsq(design, y_train, rcond=None)
     return coefficient[0] + coefficient[1] * x_test, coefficient
 
 
-def full_data_analysis(production: Path, datasets: list[str], output: Path) -> pd.DataFrame:
+def full_data_analysis(
+    production: Path, datasets: list[str], output: Path, config: dict
+) -> pd.DataFrame:
     assignment_rows, correlation_rows, summary_rows = [], [], []
     for dataset in datasets:
         root = production / dataset
         scores = read_matrix(root / "models/CLAMPfull/B.csv").T
-        truth = filter_rare(read_matrix(root / "bulk/truthFrac_v0.csv"))
+        truth = filter_analysis_cell_types(
+            read_matrix(root / "bulk/truthFrac_v0.csv"), config, dataset
+        )
         correlation = correlation_matrix(scores, truth)
         assignments = greedy_assign(correlation)
         for lv, cell_type, value in assignments:
@@ -129,11 +133,14 @@ def grouped_cv_analysis(
     output: Path,
     model_subdir: str,
     prefix: str,
+    config: dict,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     predictions, calibrations = [], []
     for dataset in datasets:
         root = production / dataset
-        truth = filter_rare(read_matrix(root / "bulk/truthFrac_v0.csv"))
+        truth = filter_analysis_cell_types(
+            read_matrix(root / "bulk/truthFrac_v0.csv"), config, dataset
+        )
         for fold in range(1, 6):
             fold_root = root / model_subdir / f"fold{fold}/CLAMPfull"
             train_b = read_matrix(fold_root / "train_B.csv").T
@@ -281,11 +288,14 @@ def single_cell_analysis(
     datasets: list[str],
     assignments: pd.DataFrame,
     output: Path,
+    config: dict,
 ) -> None:
     recovery_rows, specificity_rows, specificity_summary = [], [], []
     for dataset in datasets:
         selected = assignments[assignments.dataset.eq(dataset)].copy()
-        truth = read_matrix(production / dataset / "bulk/truthFrac_v0.csv")
+        truth = filter_analysis_cell_types(
+            read_matrix(production / dataset / "bulk/truthFrac_v0.csv"), config, dataset
+        )
         cell_types = [value for value in truth.columns if value in set(selected.cell_type)]
         selected = selected.set_index("cell_type").loc[cell_types].reset_index()
         projection = production / dataset / "single_cell_projection/single_cell_lv_scores.h5"
@@ -402,19 +412,21 @@ def main() -> None:
     parser.add_argument("--production-root", required=True)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--datasets", nargs="+", required=True)
+    parser.add_argument("--config", required=True)
     args = parser.parse_args()
     production = resolve(args.production_root)
     output = resolve(args.output_dir)
+    config = read_yaml(args.config)
     output.mkdir(parents=True, exist_ok=True)
-    assignments = full_data_analysis(production, args.datasets, output)
+    assignments = full_data_analysis(production, args.datasets, output, config)
     donor_metrics, _ = grouped_cv_analysis(
-        production, args.datasets, output, "grouped_cv", ""
+        production, args.datasets, output, "grouped_cv", "", config
     )
     control_metrics, _ = grouped_cv_analysis(
-        production, args.datasets, output, "grouped_cv_mean_cell_cpm", "control_"
+        production, args.datasets, output, "grouped_cv_mean_cell_cpm", "control_", config
     )
     comparison(donor_metrics, control_metrics, output)
-    single_cell_analysis(production, args.datasets, assignments, output)
+    single_cell_analysis(production, args.datasets, assignments, output, config)
     print("donor-bulk analysis complete")
 
 

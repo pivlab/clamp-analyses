@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import h5py
@@ -13,6 +14,9 @@ import pandas as pd
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "scripts" / "pseudobulk"))
+
+from common import analysis_excluded_cell_types, read_yaml  # noqa: E402
 
 
 def resolve(value: str | Path) -> Path:
@@ -45,10 +49,12 @@ def main() -> None:
     parser.add_argument("--output-summary", required=True)
     parser.add_argument("--output-json", required=True)
     parser.add_argument("--datasets", nargs="+", required=True)
+    parser.add_argument("--config", required=True)
     parser.add_argument("--sample-target", type=int, default=60_000)
     args = parser.parse_args()
     production = resolve(args.production_root)
     analysis = resolve(args.analysis_dir)
+    config = read_yaml(args.config)
     rows = []
     for dataset in args.datasets:
         root = production / dataset
@@ -58,6 +64,9 @@ def main() -> None:
         donor = matrix(root / "bulk/bulk_counts.csv")
         control = matrix(root / "bulk/bulk_mean_cell_cpm.csv")
         truth = matrix(root / "bulk/truthFrac_v0.csv")
+        excluded_targets = analysis_excluded_cell_types(config, dataset)
+        if not set(excluded_targets) <= set(truth.columns):
+            raise ValueError(f"{dataset}: configured exclusions absent from raw truth")
         info = pd.read_csv(root / "bulk/patient_info.csv", dtype={"sample": str})
         donors = info["sample"].astype(str).tolist()
         if donor.index.duplicated().any() or donor.columns.duplicated().any():
@@ -139,8 +148,14 @@ def main() -> None:
         )
 
     metrics = pd.read_csv(analysis / "oof_metrics.csv")
-    valid = metrics[metrics.valid_all_folds]
     recovery = pd.read_csv(analysis / "single_cell_recovery.csv")
+    for dataset in args.datasets:
+        excluded = set(analysis_excluded_cell_types(config, dataset))
+        if set(metrics.loc[metrics.dataset.eq(dataset), "cell_type"]) & excluded:
+            raise ValueError(f"{dataset}: excluded target present in CV metrics")
+        if set(recovery.loc[recovery.dataset.eq(dataset), "cell_type"]) & excluded:
+            raise ValueError(f"{dataset}: excluded target present in single-cell recovery")
+    valid = metrics[metrics.valid_all_folds]
     expected_mapped = {
         row["dataset"]: row["n_mapped_projection_cells"] for row in rows
     }
@@ -158,11 +173,11 @@ def main() -> None:
         "pooled_top1_purity_pct": float(recovery.diag_count.sum() / recovery.n_top.sum() * 100),
     }
     expected = {
-        "n_types": 48,
+        "n_types": 47,
         "n_valid": 32,
         "mean_oof_r": 0.792,
         "mean_predictive_r2": 0.629,
-        "pooled_top1_purity_pct": 68.4,
+        "pooled_top1_purity_pct": 70.6,
     }
     if observed["n_types"] != expected["n_types"] or observed["n_valid"] != expected["n_valid"]:
         raise ValueError(f"benchmark universe changed: {observed}")
