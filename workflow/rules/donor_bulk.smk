@@ -338,6 +338,7 @@ rule donor_bulk_analysis_tables:
             dataset=DB_DATASETS, fold=CV_FOLDS,
         ),
         projections=expand(f"{DB_PROD}/{{dataset}}/single_cell_projection/single_cell_lv_scores.h5", dataset=DB_DATASETS),
+        config="workflow/config/cell_type_analysis.yaml",
         script="scripts/donor_bulk/analyze_donor_bulk.py",
     output:
         assignments=f"{DB_BIO}/analysis/full_lv_assignments.csv",
@@ -366,7 +367,8 @@ rule donor_bulk_analysis_tables:
         datasets=" ".join(DB_DATASETS),
     conda: "clamp-analyses"
     shell:
-        "python {input.script} --production-root {DB_PROD} --output-dir {DB_BIO}/analysis "
+        "python {input.script} --config {input.config} "
+        "--production-root {DB_PROD} --output-dir {DB_BIO}/analysis "
         "--datasets {params.datasets}"
 
 
@@ -374,6 +376,7 @@ rule validate_donor_bulk:
     input:
         analysis=rules.donor_bulk_analysis_tables.output,
         umaps=expand(f"{DB_PROD}/{{dataset}}/single_cell_umap/umap_points.csv", dataset=DB_DATASETS),
+        config="workflow/config/cell_type_analysis.yaml",
         script="scripts/donor_bulk/validate_donor_bulk.py",
     output:
         summary=f"{DB_PROD}/qc/validation_summary.csv",
@@ -386,7 +389,8 @@ rule validate_donor_bulk:
         sample_target=DB_CFG["aggregation"]["sample_cells"],
     conda: "clamp-analyses"
     shell:
-        "python {input.script} --production-root {DB_PROD} --analysis-dir {DB_BIO}/analysis "
+        "python {input.script} --config {input.config} "
+        "--production-root {DB_PROD} --analysis-dir {DB_BIO}/analysis "
         "--output-summary {output.summary} --output-json {output.json} "
         "--sample-target {params.sample_target} --datasets {params.datasets}"
 

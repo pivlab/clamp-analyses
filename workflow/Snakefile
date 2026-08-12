@@ -1,6 +1,7 @@
 import os
 
 configfile: "workflow/config/pseudobulk.yaml"
+configfile: "workflow/config/cell_type_analysis.yaml"
 configfile: "workflow/config/gtex.yaml"
 configfile: "workflow/config/runtime_benchmark.yaml"
 configfile: "workflow/config/donor_bulk.yaml"

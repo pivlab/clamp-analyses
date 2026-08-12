@@ -440,6 +440,7 @@ rule grouped_cv_analysis_pseudobulk:
         analysis="scripts/pseudobulk/analyze_clampfull_grouped_cv.R",
         common="scripts/pseudobulk/common.R",
         config="workflow/config/pseudobulk.yaml",
+        analysis_config="workflow/config/cell_type_analysis.yaml",
     output:
         membership=f"{PROD}/grouped_cv_analysis/fold_membership.csv",
         calibrations=f"{PROD}/grouped_cv_analysis/fold_calibrations.csv",
