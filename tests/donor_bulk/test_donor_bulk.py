@@ -23,6 +23,7 @@ from build_donor_bulk import (  # noqa: E402
     select_cells,
 )
 from single_cell_projection import raw_feature_weights  # noqa: E402
+from common import filter_analysis_cell_types  # noqa: E402
 
 
 COUNTS = np.asarray(
@@ -163,3 +164,18 @@ def test_projection_duplicate_gene_policy_is_sum_consistent() -> None:
     np.testing.assert_array_equal(sum_weights[:2], np.vstack([model_weights[0]] * 2))
     np.testing.assert_array_equal(mean_weights[:2], np.vstack([model_weights[0] / 2] * 2))
     np.testing.assert_array_equal(sum_weights[2], model_weights[1])
+
+
+def test_analysis_exclusions_are_explicit_and_do_not_renormalize() -> None:
+    truth = pd.DataFrame(
+        {"A": [0.60, 0.70], "Rare": [0.01, 0.02], "B": [0.39, 0.28]},
+        index=["D1", "D2"],
+    )
+    config = {
+        "cell_type_analysis": {
+            "excluded_targets": {"synthetic": ["Rare"]}
+        }
+    }
+    filtered = filter_analysis_cell_types(truth, config, "synthetic")
+    assert list(filtered.columns) == ["A", "B"]
+    np.testing.assert_allclose(filtered.sum(axis=1), [0.99, 0.98])

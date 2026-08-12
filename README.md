@@ -131,6 +131,45 @@ Runs in this order; each stage consumes the previous stage's outputs:
     `donor_bulk_umaps`, `donor_bulk_qc`, `donor_bulk_biology`, and
     `donor_bulk_figure2`.
 
+### Cell-type evaluation universe
+
+All pseudobulk and donor-bulk recovery analyses use the same canonical set of
+47 dataset-cell-type targets. The following low-prevalence annotations are excluded:
+
+- `Brain_Mathys2023`: `Vas`
+- `Brain_Xiong2023`: `Vas`
+- `Lung_Sikkema2023`: `Hematopoietic stem cells`, `Mesothelium`, and `Smooth muscle`
+
+The exclusions are defined once under `cell_type_analysis.excluded_targets` in
+`workflow/config/cell_type_analysis.yaml` and apply to full-data LV matching, grouped-CV
+calibration and evaluation, projected single-cell recovery, specificity analyses,
+method comparisons, and figure/supplementary tables. The corresponding cells remain
+in the pseudobulk and donor-bulk expression mixtures and in the unfiltered composition
+tables. Thus the libraries continue to represent all retained cells and truth-table
+rows continue to sum to one; the excluded annotations are simply not scored as
+recovery targets and the retained target fractions are not renormalized.
+
+### Single-cell recovery provenance
+
+The projected-cell purity results from the pseudobulk and donor-bulk models are
+separate benchmarks and must not be pooled or substituted for one another:
+
+| Figure | Model fitted to | Pooled purity | Mean dataset purity | Mean purity ratio | Mean lift | Perez B-cell LV |
+|---|---|---:|---:|---:|---:|---:|
+| Supplementary Fig. 1e | Pseudobulk mixtures | 70.3% | 76.8% | 0.773 | 19.1 | LV10 |
+| Supplementary Fig. 2a | Donor-summed bulk-like libraries | 70.6% | 77.5% | 0.782 | 19.6 | LV32 |
+
+Supplementary Figure 1 reads the pseudobulk recovery outputs under
+`output/03_model_biology/00_pseudobulk/03_b_matrix_singlecell/`.
+Supplementary Figure 2 reads the donor-bulk recovery outputs under
+`output/03_model_biology/00_pseudobulk/06_donor_bulk_recovery/`. Both panel
+notebooks assert these pipeline identities and benchmark values before drawing.
+
+For grouped-CV results, the live canonical path is
+`output/01_model_building/00_pseudobulk/grouped_cv_analysis/`. The retired
+`output/03_model_biology/00_pseudobulk/01_grouped_cv/` directory may contain stale
+pre-exclusion results and must not be used by analyses or figures.
+
 See "▶️ Running Snakemake" below for how to run these.
 
 ### Outputs
@@ -147,8 +186,11 @@ See "▶️ Running Snakemake" below for how to run these.
 
 All pipeline parameters (preprocessing cutoffs, CLAMP/CoGAPS/MOFA-FLEX/grouped-CV
 hyperparameters and seeds, projection chunk sizes, dataset ingestion metadata, and
-pathway reference files) live in `workflow/config/pseudobulk.yaml`. Adding a new dataset
-means adding an entry under `datasets:` there - no rule changes needed.
+pathway reference files) live in `workflow/config/pseudobulk.yaml`. The shared
+pseudobulk/donor-bulk evaluation exclusions live separately in
+`workflow/config/cell_type_analysis.yaml`, so changing the evaluated target universe
+does not invalidate aggregation or model fits. Adding a new dataset means adding an
+entry under `datasets:` in the pseudobulk config - no rule changes needed.
 
 ## 🧬 GTEx bulk tissue pipeline
 

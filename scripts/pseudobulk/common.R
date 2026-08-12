@@ -58,17 +58,19 @@ read_norm_and_k <- function(norm_path, k_path) {
   list(norm = read_csv_matrix(norm_path), k = read_k(k_path))
 }
 
-# Drop cell types with mean prevalence below `min_prevalence` in small
-# studies (nrow <= min_nrow_for_filter), where a handful of samples makes a
-# rare cell type's fraction estimate too noisy to trust. Works on both a
-# matrix (e.g. from read_csv_matrix()) and a data.frame (e.g. from
-# read.csv(..., row.names = 1)) since colMeans()/`[` behave the same on both.
-filter_rare_cell_types <- function(x, min_nrow_for_filter = 100, min_prevalence = 0.005) {
-  if (nrow(x) <= min_nrow_for_filter) {
-    keep <- colMeans(x, na.rm = TRUE) >= min_prevalence
-    x <- x[, keep, drop = FALSE]
+# Apply the canonical, dataset-specific evaluation universe configured in
+# workflow/config/cell_type_analysis.yaml. Excluded annotations remain part of the
+# expression mixture and raw truth denominator; only their columns are removed
+# from LV matching, prediction, and recovery evaluation. Fractions are therefore
+# intentionally not renormalized after filtering.
+filter_analysis_cell_types <- function(x, dataset, excluded_targets, strict = TRUE) {
+  excluded <- as.character(excluded_targets[[dataset]] %||% character())
+  missing <- setdiff(excluded, colnames(x))
+  if (strict && length(missing)) {
+    stop(dataset, ": configured cell-type exclusions absent from truth: ",
+         paste(missing, collapse = ", "))
   }
-  x
+  x[, setdiff(colnames(x), excluded), drop = FALSE]
 }
 
 # Greedy one-to-one assignment used by the pseudobulk benchmark.

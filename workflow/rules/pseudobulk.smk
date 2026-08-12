@@ -440,6 +440,7 @@ rule grouped_cv_analysis_pseudobulk:
         analysis="scripts/pseudobulk/analyze_clampfull_grouped_cv.R",
         common="scripts/pseudobulk/common.R",
         config="workflow/config/pseudobulk.yaml",
+        analysis_config="workflow/config/cell_type_analysis.yaml",
     output:
         membership=f"{PROD}/grouped_cv_analysis/fold_membership.csv",
         calibrations=f"{PROD}/grouped_cv_analysis/fold_calibrations.csv",
@@ -542,8 +543,7 @@ rule disentangle_pseudobulk:
         models=expand(f"{PROD}/{{dataset}}/models/CLAMPfull/CLAMPfull.rds", dataset=DATASETS),
         assignments=rules.benchmark_pseudobulk.output.assignments,
         corr=rules.benchmark_pseudobulk.output.corr,
-        cell_marker_file=CELL_MARKER_FILE,
-        allen_brain_gmt_file=ALLEN_BRAIN_GMT_FILE,
+        azimuth_file=AZIMUTH_FILE,
         notebook=f"{BIO_NB}/02_disentangle.ipynb",
     output:
         top=f"{BIO}/02_disentangle/top_lvs_per_celltype.csv",
