@@ -179,6 +179,10 @@ preprocess:
   mean_cutoff: 0.5
   var_cutoff: 0.1
   seed: 123
+# CLAMPbase/CLAMPfull fit settings, shared by model building, the runtime
+# benchmark and grouped-CV refits. max_iter is headroom above the iteration
+# count CLAMP actually needs to reach its 5e-4 relative-change convergence
+# tolerance; fits stop well before this cap in practice.
 clamp:
   max_iter: 500
   seed: 123
@@ -189,14 +193,42 @@ grouped_cv:
   min_train_lv_cor: 0.5
   bootstrap_seed: 123
   bootstrap_replicates: 10000
+# flashier: greedy factor addition followed by backfit_maxiter backfitting
+# iterations to refine loadings.  Matched to the GTEx pipeline
+# (backfit_maxiter: 20 in gtex.yaml) so the same method is fitted the same way
+# on both datasets and the two benchmarks are comparable.
+#
+# This sits below the package default (flash_backfit's own maxiter) on purpose.
+# The default is not computationally practical on the GTEx matrix, and flashier
+# does not reach its convergence tolerance at any cap we have run: the fit logs
+# show the between-iteration criterion still orders of magnitude above tolerance
+# when the cap is hit.  The benchmark therefore compares cost under a fixed,
+# equal iteration budget, not cost to convergence, and the timing figures must
+# not be read as convergence comparisons.
 flashier:
-  backfit_maxiter: 10
+  backfit_maxiter: 20
+# CoGAPS Gibbs sampler settings, identical to the GTEx pipeline's cogaps
+# block. n_iterations follows the package's own guidance for exploratory
+# genome-wide-distributed runs; distributed=genome-wide (set in cogaps.R,
+# not here) partitions genes into ~1,000-5,000-gene subsets so memory stays
+# tractable at this rank.
 cogaps:
   n_iterations: 5000
   n_threads: 4
   seed: 123
+# MOFA-FLEX epoch budget under the Horseshoe weight prior.  Matched to the GTEx
+# pipeline (max_epochs: 1000 in gtex.yaml), which also now uses the same pinned
+# Enrichr GO:BP prior as CLAMP and PLIER, so the method is configured identically
+# on both datasets.
+#
+# As with flashier, this sits below the package default deliberately: the default
+# is not computationally practical on GTEx, and MOFA-FLEX does not converge at
+# either cap we have run.  Its logs show the full epoch budget consumed with the
+# built-in early stopper never triggering, so the epoch count is a budget rather
+# than a convergence point, and the timing figures compare cost under a fixed,
+# equal budget.
 mofa_flex:
-  max_epochs: 200
+  max_epochs: 1000
   seed: 123
 projection:
   chunk_cells: 20000

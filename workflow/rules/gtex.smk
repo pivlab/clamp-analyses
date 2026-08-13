@@ -132,13 +132,12 @@ rule mofa_flex_prior_gtex:
     input:
         df_gtex_fbm_filt=rules.clamp_gtex.output.df_csv,
         k=rules.clamp_gtex.output.k_csv,
+        gmt=rules.pathway_prior.output,
     output:
         B=f"{GTEX_PROD}/MOFA_FLEX_PRIOR/B_matrix.csv",
         Z=f"{GTEX_PROD}/MOFA_FLEX_PRIOR/Z_matrix.csv",
         model=f"{GTEX_PROD}/MOFA_FLEX_PRIOR/model.pkl",
     params:
-        msigdb_category=config["gtex"]["mofa_flex_prior"]["msigdb_category"],
-        msigdb_dbver=config["gtex"]["mofa_flex_prior"]["msigdb_dbver"],
         min_fraction=config["gtex"]["mofa_flex_prior"]["min_fraction"],
         min_count=config["gtex"]["mofa_flex_prior"]["min_count"],
         max_count=config["gtex"]["mofa_flex_prior"]["max_count"],
@@ -149,8 +148,8 @@ rule mofa_flex_prior_gtex:
     conda: "clamp-analyses"
     shell:
         "python scripts/gtex/mofa_flex_prior.py --df-gtex-fbm-filt {input.df_gtex_fbm_filt} --k {input.k} "
-        "--out-dir {GTEX_PROD}/MOFA_FLEX_PRIOR --msigdb-category {params.msigdb_category} "
-        "--msigdb-dbver {params.msigdb_dbver} --min-fraction {params.min_fraction} "
+        "--out-dir {GTEX_PROD}/MOFA_FLEX_PRIOR --gmt {input.gmt} "
+        "--min-fraction {params.min_fraction} "
         "--min-count {params.min_count} --max-count {params.max_count} "
         "--similarity-threshold {params.similarity_threshold} --seed {params.seed} "
         "--max-epochs {params.max_epochs}"
