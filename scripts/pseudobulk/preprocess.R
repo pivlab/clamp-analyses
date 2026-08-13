@@ -23,7 +23,24 @@ set.seed(seed)
 counts <- read_csv_matrix(input)
 if (!all(is.finite(counts)) || any(counts < 0)) stop("Input contains non-finite or negative values")
 cpm <- CLAMP::cpmCLAMP(counts)
-prep <- CLAMP::preprocessCLAMP(cpm, mean_cutoff = mean_cutoff, var_cutoff = var_cutoff)
+
+# Log-transform before filtering, matching the GTEx pipeline.
+#
+# The two pipelines enter CLAMP through different doors: GTEx builds an FBM and
+# calls preprocessCLAMPFBM, which runs cleanFBM and applies log2(x + 1) whenever
+# the matrix maximum is >= 100.  Pseudobulk calls the in-memory preprocessCLAMP,
+# which does no transform at all and assumes the caller passes data on a suitable
+# scale.  Without this line the pipelines differed in two ways: GTEx modelled
+# log2 data while pseudobulk modelled raw CPM, and -- more subtly -- the shared
+# mean_cutoff/var_cutoff were applied to incomparable scales, so identical config
+# values selected genes by different criteria (linear CPM row variances here run
+# to 1e7, against a var_cutoff of 0.1).
+#
+# cleanFBM's >= 100 condition is always true for CPM, so it is applied
+# unconditionally rather than reproducing a branch that never takes the else.
+log_cpm <- log2(cpm + 1)
+
+prep <- CLAMP::preprocessCLAMP(log_cpm, mean_cutoff = mean_cutoff, var_cutoff = var_cutoff)
 norm <- CLAMP::zscoreCLAMP(prep$Y_filtered, prep$rowStats)
 
 # SVD
@@ -43,6 +60,10 @@ diagnostics <- data.frame(
 )
 
 write_csv_matrix(norm, norm_out)
+# NOTE: despite the file name, this is now the filtered log2(CPM + 1) matrix, not
+# raw CPM.  It is the pre-z-score matrix CoGAPS consumes, and CoGAPS no longer
+# log-transforms it itself.  The name is kept because renaming it ripples through
+# pseudobulk.smk, donor_bulk.smk, computational_timing.smk and the timing driver.
 write_csv_matrix(prep$Y_filtered, cpm_filt_out)
 write_csv_matrix(prep$rowStats, stats_out)
 ensure_parent(k_out); fwrite(data.frame(k = k), k_out)
