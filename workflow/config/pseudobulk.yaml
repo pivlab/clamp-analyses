@@ -175,9 +175,34 @@ references:
   gtex_tissues_pathmat: data/archs4/GTEx_Tissues_pathMat.rds
   brain_datasets: [Brain_Mathys2023, Brain_Xiong2023]
 
+# Gene filter applied after CPM normalization and the log2(x + 1) transform in
+# scripts/pseudobulk/preprocess.R.  Deliberately NOT the same as the GTEx values
+# (gtex.yaml keeps mean_cutoff: 0.5, var_cutoff: 0.1), and that is not an oversight.
+#
+# These cutoffs were originally tuned against linear CPM, where var_cutoff: 0.1 was
+# effectively inert: measured row variances had medians of 9-53 and maxima near 1e7,
+# so almost nothing was removed and the filter was in practice mean-only.  Once
+# preprocessing was corrected to log2 the same 0.1 became a real filter, removing
+# 16-23% of genes, and the elbow-based rank estimate on the largest dataset
+# collapsed from k=130 to k=62.  Values calibrated on one scale do not transfer to
+# another, so they were recalibrated to preserve the filter's previous effective
+# selectivity rather than its literal numbers.
+#
+# At 0.25/0.01 the inferred k is unchanged from the pre-log2 pipeline on five of the
+# six datasets (Brain_Mathys2023 19, Brain_Xiong2023 18, PBMC_1k1k 130,
+# PBMC_Perez2022 52, Heart_Datar2026 52); only Lung_Sikkema2023 moves, 18 -> 24, and
+# it does so under every cutoff tested.  Retained gene sets run 6-11% larger than the
+# pre-log2 ones.  It is mean_cutoff that governs the rank: lowering it readmits the
+# low-expression genes carrying those components, whereas varying var_cutoff alone
+# only moved PBMC_1k1k from 62 to 74.
+#
+# GTEx keeps its own values because it is bulk tissue rather than aggregated
+# single-cell profiles, with a different per-gene variance distribution.  Note this
+# is a deliberate exception to the method-parameter harmonization: the iteration caps
+# below are matched to GTEx, these preprocessing cutoffs are not.
 preprocess:
-  mean_cutoff: 0.5
-  var_cutoff: 0.1
+  mean_cutoff: 0.25
+  var_cutoff: 0.01
   seed: 123
 # CLAMPbase/CLAMPfull fit settings, shared by model building, the runtime
 # benchmark and grouped-CV refits. max_iter is headroom above the iteration
