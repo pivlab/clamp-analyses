@@ -1,9 +1,11 @@
 import os
 
 configfile: "workflow/config/pseudobulk.yaml"
+configfile: "workflow/config/cell_type_analysis.yaml"
 configfile: "workflow/config/gtex.yaml"
 configfile: "workflow/config/runtime_benchmark.yaml"
 configfile: "workflow/config/donor_bulk.yaml"
+configfile: "workflow/config/archs4.yaml"
 
 # Anchor for repo-root-relative config paths (e.g. notebook locations), so
 # they resolve the same way regardless of which included .smk file consumes
@@ -16,6 +18,9 @@ include: "rules/pseudobulk.smk"
 include: "rules/gtex.smk"
 include: "rules/computational_timing.smk"
 include: "rules/donor_bulk.smk"
+include: "rules/archs4.smk"
+include: "rules/archs4_coverage.smk"
+include: "rules/archs4_saturation.smk"
 include: "rules/panels.smk"
 
 rule all:
@@ -32,3 +37,9 @@ rule all:
         rules.full_models_gtex.input,
         rules.model_building_qc_gtex.output.complete,
         rules.biology_gtex.input,
+        # ARCHS4 needs the lab server (500 GB per CLAMP fit).  Adopt the
+        # existing results first with `snakemake --touch archs4_precomputed`,
+        # or these become multi-day jobs.  See the README's ARCHS4 section.
+        rules.archs4_models.input,
+        rules.archs4_coverage.input,
+        rules.archs4_saturation.input,

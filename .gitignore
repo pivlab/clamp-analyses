@@ -53,3 +53,9 @@ __pycache__/
 **/tmp_pseudobulk/
 *.executed.ipynb
 **/*.executed.ipynb
+
+# Site-specific execution settings: cluster aliases, accounts, partitions and
+# absolute paths. The committed profiles and scripts stay generic; see
+# "Running ARCHS4" in README.md.
+workflow/profiles/site-*/
+.campaign.env

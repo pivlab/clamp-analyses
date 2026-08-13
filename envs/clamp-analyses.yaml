@@ -23,6 +23,9 @@ dependencies:
   - r-here
   - r-tibble
   - r-tidyr
+  - r-jsonlite
+  - r-readxl
+  - r-ggplot2
   - r-devtools
   - r-irkernel
   - r-pkgdown

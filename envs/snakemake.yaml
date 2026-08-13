@@ -5,4 +5,7 @@ channels:
 dependencies:
   - python=3.11
   - snakemake=8.*
+  # Submits the ARCHS4 model fits to the lab SLURM cluster; required by
+  # workflow/profiles/slurm.
+  - snakemake-executor-plugin-slurm
   - pip

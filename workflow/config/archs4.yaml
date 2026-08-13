@@ -1,0 +1,160 @@
+archs4:
+  raw_url: https://s3.dev.maayanlab.cloud/archs4/files/human_gene_v2.5.h5
+  raw_h5: data/archs4/human_gene_v2.5.h5
+  # Max transcript length per HGNC symbol, pulled once from Ensembl 107. The
+  # preprocessing notebook fetched this with biomaRt behind a commented-out
+  # cell because the compute node has no internet; it is a tracked input here.
+  gene_lengths: data/archs4/gene_lengths.rds
+  ensembl_version: 107
+
+  paths:
+    production: output/01_model_building/02_archs4
+    biology: output/03_model_biology/02_archs4
+    model_notebooks: nbs/01_model_building/02_archs4
+    biology_notebooks: nbs/03_model_biology/02_archs4
+
+  raw_data:
+    # Block size for streaming /data/expression out of the HDF5 file. Kept at
+    # 100 rather than config.R's CHUNK_SIZE: at least one block in ARCHS4 v2.5
+    # cannot be read, and a small block keeps the damage from that fallback
+    # (a near-zero dummy block) contained.
+    block_size: 100
+    n_cores: 10
+
+  preprocess:
+    mean_cutoff: 0.5
+    var_cutoff: 0.1
+    # Drop libraries ARCHS4 flags as probably single-cell.
+    single_cell_probability_max: 0.5
+    seed: 123
+
+  svd:
+    n_cores: 30
+    seed: 123
+
+  clamp:
+    # CLAMP_K = num.pc(svd$d) * k_multiplier
+    k_multiplier: 2
+    # The values that actually produced the shipped model. config.R's
+    # CLAMP_PARAMS (MAX_ITER 350, MULTICLAMP 3) belonged to the earlier
+    # 04_archs4_CLAMPfull chain, which is superseded.
+    multiplier: 100
+    max_iter: 5000
+    seed: 123
+
+  # Prior used by the existing production ARCHS4 model.  The coverage-only BP
+  # campaign below has its own prior and does not silently invalidate this
+  # production rule.
+  prior:
+    gmts:
+      HALL: data/pathways/h.all.v2026.1.Hs.symbols.gmt
+      REACTOME: data/pathways/c2.cp.reactome.v2026.1.Hs.symbols.gmt
+      GOCC: data/pathways/c5.go.cc.v2026.1.Hs.symbols.gmt
+      C8: data/pathways/c8.all.v2026.1.Hs.symbols.gmt
+
+  final_model:
+    # The shipped ARCHS4 model (K = 1728), fit on the full sample set. Three
+    # seeds exist; seed 1 is what every downstream analysis projects into.
+    # Each seed directory is self-contained: its own svd.rds, CLAMP_K.rds,
+    # CLAMPbase.rds and CLAMPfull_hall.rds.
+    dir: output/01_model_building/02_archs4/01_final_model
+    seeds: [1, 2, 3]
+    reference_seed: 1
+    # Leaf directory name inside `dir`, formatted with the seed. Renaming these
+    # to something less coverage-flavoured is deliberately deferred.
+    leaf: hall_coverage_rs100_seed_{seed}
+    model_name: CLAMPfull_hall
+
+  # Coverage-only BP rebuild.  The model-fitting inputs are the existing
+  # study-level subsamples, SVDs, inferred ranks, and CLAMPbase fits.  Keeping
+  # this map explicit prevents a missing or renamed fraction from silently
+  # triggering a new subsample.
+  coverage:
+    prior_gmt: data/pathways/go_bp.Hs.symbols.gmt
+    model_root: output/03_model_biology/02_archs4/00_coverage/models
+    ora_root: output/03_model_biology/02_archs4/00_coverage/ora
+    assignments: output/03_model_biology/02_archs4/00_coverage/assignments
+    seeds: [1, 2, 3]
+    rng_seeds: [123, 124, 125]
+    levels:
+      "1": 00_bp_coverage_study_01
+      "5": 01_bp_coverage_study_05
+      "10": 02_bp_coverage_study_10
+      "25": 03_bp_coverage_study_25
+      "50": 04_bp_coverage_study_50
+      "75": 05_bp_coverage_study_75
+      "100": 06_bp_coverage_study_100
+    input_root: output/01_model_building/02_archs4/02_coverage_study
+    model_name: CLAMPfull_bp
+    resources:
+      # runtime is in minutes, as expected by the Slurm executor plugin.
+      "1": {mem_mb: 32000, runtime: 5760}
+      "5": {mem_mb: 64000, runtime: 8640}
+      "10": {mem_mb: 96000, runtime: 14400}
+      "25": {mem_mb: 224000, runtime: 24000}
+      "50": {mem_mb: 400000, runtime: 36000}
+      "75": {mem_mb: 400000, runtime: 48000}
+      "100": {mem_mb: 500000, runtime: 54000}
+    comparators:
+      gtex:
+        label: GTEx
+        fbm_rds: output/01_model_building/01_gtex/gtex_fbm_filt.rds
+        genes_rds: output/01_model_building/01_gtex/gtex_genes.rds
+        samples_rds: output/01_model_building/01_gtex/gtex_samples.rds
+        svd: output/01_model_building/01_gtex/gtex_svdRes.rds
+        k: output/01_model_building/01_gtex/CLAMP_K_gtex.rds
+        base: output/01_model_building/01_gtex/CLAMPbase.rds
+        base_z: output/01_model_building/01_gtex/CLAMPbase/Z.csv
+        max_iter: 500
+      recount2:
+        label: recount2
+        fbm_rds: output/01_model_building/03_recount2/00_recount2/recount2_fbm_filt.rds
+        genes_rds: output/01_model_building/03_recount2/00_recount2/recount2_genes.rds
+        samples_rds: output/01_model_building/03_recount2/00_recount2/recount2_samples.rds
+        svd: output/01_model_building/03_recount2/00_recount2/recount2_svdRes.rds
+        k: output/01_model_building/03_recount2/00_recount2/CLAMP_K_recount2.rds
+        base: output/01_model_building/03_recount2/00_recount2/CLAMPbase.rds
+        base_z: output/01_model_building/03_recount2/00_recount2/CLAMPbase/Z.csv
+        max_iter: 500
+    routing:
+      remote_min_free_cpus: 2
+      remote_min_free_mem_mb: 16000
+      remote_max_ora_jobs: 8
+      local_total_mem_mb: 96000
+      retries: 2
+      retry_mem_factors: [1.0, 1.5, 2.0]
+      retry_mem_cap_mb: 800000
+
+  # ORA collections are tested independently.  Their BH corrections and
+  # eligible-set denominators are never pooled across databases.
+  ora:
+    databases:
+      reactome:
+        type: gmt
+        path: data/pathways/c2.cp.reactome.v2026.1.Hs.symbols.gmt
+        label: Reactome
+      canonical:
+        type: gmt
+        path: data/pathways/c2.cp.v2026.1.Hs.symbols.gmt
+        exclude_term_regex: ^REACTOME_
+        label: Canonical non-Reactome
+      cellmarker:
+        type: cellmarker_xlsx
+        path: data/pathways/Cell_marker_Human.xlsx
+        sheet: human
+        term_column: cell_name
+        gene_column: Symbol
+        label: CellMarker
+    top_pct: 0.01
+    min_size: 10
+    max_size: 500
+    pvalue_cutoff: 0.05
+    qvalue_cutoff: 0.2
+    fdr: [0.05]
+    resources: {mem_mb: 8000, runtime: 5760}
+
+  # Independently built CLAMP models on other compendia, for the cross-dataset
+  # comparison. These live under their own dataset trees, not under ARCHS4.
+  comparators:
+    GTEx: output/01_model_building/02_gtex/10_CLAMP_hall/CLAMPfull_hall.rds
+    Recount2: output/01_model_building/03_recount2/01_recount2_hall/CLAMPfull_hall.rds

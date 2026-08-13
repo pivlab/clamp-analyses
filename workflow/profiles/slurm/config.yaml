@@ -1,0 +1,46 @@
+# Portable Slurm profile for high-memory coverage fits.
+#
+# Supply site-specific account and partition values outside the repository,
+# for example in a user-owned profile derived from this file or with
+# `--default-resources slurm_account=... slurm_partition=...`.
+
+executor: slurm
+jobs: 20
+cores: 144
+use-conda: true
+printshellcmds: true
+rerun-incomplete: true
+retries: 2
+rerun-triggers:
+  - mtime
+
+resources:
+  - mem_mb=800000
+  - fit_mem_mb=800000
+  - ora_mem_mb=64000
+  - fit_slots=20
+  - ora_slots=8
+  - large_fit_slot=1
+
+default-resources:
+  - mem_mb=8000
+  - runtime=5760
+  - tasks=1
+
+set-resources:
+  preprocess_archs4:
+    mem_mb: 200000
+    runtime: 18000
+  svd_archs4:
+    mem_mb: 200000
+    runtime: 6000
+  clampbase_archs4:
+    mem_mb: 500000
+    runtime: 12000
+  clampfull_archs4:
+    mem_mb: 500000
+    runtime: 18000
+
+set-threads:
+  preprocess_archs4: 30
+  svd_archs4: 30

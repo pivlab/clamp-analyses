@@ -1,0 +1,29 @@
+# Local profile for comparator fits, streaming ORA, and plotting notebooks.
+#
+#   snakemake --profile workflow/profiles/local <target>
+#
+# The ARCHS4 model fits are not runnable here (they want 500 GB); pull their
+# results down from the server with scripts/archs4/sync_server.sh pull and adopt
+# them with `snakemake --touch archs4_precomputed`.
+
+use-conda: true
+printshellcmds: true
+rerun-incomplete: true
+cores: 24
+resources:
+  - mem_mb=96000
+  - fit_mem_mb=64000
+  - ora_mem_mb=64000
+  - fit_slots=2
+  - ora_slots=8
+  - large_fit_slot=0
+
+# CLAMPfull failures may be retried with attempt-dependent memory. The coverage
+# rules cap the third request at 800 GB; this local profile can only satisfy the
+# comparator requests that fit inside the 96 GB aggregate limit above.
+retries: 2
+
+# See the note in workflow/profiles/slurm/config.yaml: mtime-only reruns keep an
+# edit to an ARCHS4 rule from invalidating results that took days to produce.
+rerun-triggers:
+  - mtime

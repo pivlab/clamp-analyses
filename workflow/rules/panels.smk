@@ -52,7 +52,11 @@ rule supp1_panel:
         benchmark_long=rules.benchmark_pseudobulk.output.long,
         bootstrap=rules.benchmark_pseudobulk.output.bootstrap,
         runtime_seed_totals=rules.computational_timing_report_pseudobulk.output.seed_totals,
+        # Provenance anchors: Supplementary Fig. 1e is the pseudobulk projection
+        # benchmark (including Perez B cell = LV10), never the donor-bulk result.
         heatmap_long=rules.single_cell_recovery_pseudobulk.output.heatmap,
+        pseudobulk_recovery=rules.single_cell_recovery_pseudobulk.output.recovery,
+        pseudobulk_overall=rules.single_cell_recovery_pseudobulk.output.overall,
         corr_full=rules.benchmark_pseudobulk.output.corr,
         assignments=rules.benchmark_pseudobulk.output.assignments,
         related_corr=rules.hard_cell_types_pseudobulk.output.correlations,
@@ -81,9 +85,13 @@ rule supp1_panel:
 
 rule supp2_panel:
     input:
+        # Provenance anchors: Supplementary Fig. 2a is the donor-bulk projection
+        # benchmark (including Perez B cell = LV32), never the pseudobulk result.
         purity=rules.donor_bulk_recovery_report.output.supp2_purity,
         umap_cells=rules.donor_bulk_recovery_report.output.supp2_umap_cells,
         umap_lvs=rules.donor_bulk_recovery_report.output.supp2_umap_lvs,
+        donor_bulk_recovery=rules.donor_bulk_analysis_tables.output.recovery,
+        donor_bulk_overall=rules.donor_bulk_analysis_tables.output.recovery_overall,
         notebook=f"{PANELS_NB}/supp2.ipynb",
     output:
         png=f"{PANELS}/supp2/supp2.png",

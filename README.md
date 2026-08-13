@@ -131,6 +131,45 @@ Runs in this order; each stage consumes the previous stage's outputs:
     `donor_bulk_umaps`, `donor_bulk_qc`, `donor_bulk_biology`, and
     `donor_bulk_figure2`.
 
+### Cell-type evaluation universe
+
+All pseudobulk and donor-bulk recovery analyses use the same canonical set of
+47 dataset-cell-type targets. The following low-prevalence annotations are excluded:
+
+- `Brain_Mathys2023`: `Vas`
+- `Brain_Xiong2023`: `Vas`
+- `Lung_Sikkema2023`: `Hematopoietic stem cells`, `Mesothelium`, and `Smooth muscle`
+
+The exclusions are defined once under `cell_type_analysis.excluded_targets` in
+`workflow/config/cell_type_analysis.yaml` and apply to full-data LV matching, grouped-CV
+calibration and evaluation, projected single-cell recovery, specificity analyses,
+method comparisons, and figure/supplementary tables. The corresponding cells remain
+in the pseudobulk and donor-bulk expression mixtures and in the unfiltered composition
+tables. Thus the libraries continue to represent all retained cells and truth-table
+rows continue to sum to one; the excluded annotations are simply not scored as
+recovery targets and the retained target fractions are not renormalized.
+
+### Single-cell recovery provenance
+
+The projected-cell purity results from the pseudobulk and donor-bulk models are
+separate benchmarks and must not be pooled or substituted for one another:
+
+| Figure | Model fitted to | Pooled purity | Mean dataset purity | Mean purity ratio | Mean lift | Perez B-cell LV |
+|---|---|---:|---:|---:|---:|---:|
+| Supplementary Fig. 1e | Pseudobulk mixtures | 70.3% | 76.8% | 0.773 | 19.1 | LV10 |
+| Supplementary Fig. 2a | Donor-summed bulk-like libraries | 70.6% | 77.5% | 0.782 | 19.6 | LV32 |
+
+Supplementary Figure 1 reads the pseudobulk recovery outputs under
+`output/03_model_biology/00_pseudobulk/03_b_matrix_singlecell/`.
+Supplementary Figure 2 reads the donor-bulk recovery outputs under
+`output/03_model_biology/00_pseudobulk/06_donor_bulk_recovery/`. Both panel
+notebooks assert these pipeline identities and benchmark values before drawing.
+
+For grouped-CV results, the live canonical path is
+`output/01_model_building/00_pseudobulk/grouped_cv_analysis/`. The retired
+`output/03_model_biology/00_pseudobulk/01_grouped_cv/` directory may contain stale
+pre-exclusion results and must not be used by analyses or figures.
+
 See "▶️ Running Snakemake" below for how to run these.
 
 ### Outputs
@@ -147,8 +186,11 @@ See "▶️ Running Snakemake" below for how to run these.
 
 All pipeline parameters (preprocessing cutoffs, CLAMP/CoGAPS/MOFA-FLEX/grouped-CV
 hyperparameters and seeds, projection chunk sizes, dataset ingestion metadata, and
-pathway reference files) live in `workflow/config/pseudobulk.yaml`. Adding a new dataset
-means adding an entry under `datasets:` there - no rule changes needed.
+pathway reference files) live in `workflow/config/pseudobulk.yaml`. The shared
+pseudobulk/donor-bulk evaluation exclusions live separately in
+`workflow/config/cell_type_analysis.yaml`, so changing the evaluated target universe
+does not invalidate aggregation or model fits. Adding a new dataset means adding an
+entry under `datasets:` in the pseudobulk config - no rule changes needed.
 
 ## 🧬 GTEx bulk tissue pipeline
 
@@ -213,6 +255,257 @@ See "▶️ Running Snakemake" below for how to run these.
 All pipeline parameters (preprocessing cutoffs, per-method hyperparameters and seeds,
 clustering settings, subtissue-inference settings) live in `workflow/config/gtex.yaml`.
 
+## 🧬 ARCHS4 compendium pipeline
+
+CLAMP fit across the whole ARCHS4 human RNA-seq compendium: **18,423 genes x 605,614
+samples**, K = 1728. This is the model the coverage, saturation, drug-disease, projection
+and CRISPR analyses all project into.
+
+Unlike the pipelines above, ARCHS4 does not fit on a workstation. Its largest CLAMP fits
+ask for ~500 GB of RAM, so they run through a generic high-memory Slurm profile. The
+streaming ORA can run either on Slurm or locally. See "Running ARCHS4" below.
+
+### Input
+
+ARCHS4 `human_gene_v2.5.h5` (raw gene counts). Counts are TPM-normalized using a
+per-symbol transcript-length table pulled once from Ensembl 107
+(`data/archs4/gene_lengths.rds`); TPM rather than CPM because the compendium ships raw
+counts and TPM puts it on the same footing as GTEx, which enters the repo already in TPM.
+
+### Pipeline stages
+
+1. **Preprocess** (`preprocess_archs4`) - stream the HDF5 in blocks, collapse duplicate
+   gene symbols, TPM-normalize, clean, drop probable single-cell libraries, filter on mean
+   and variance, z-score. Produces the file-backed matrix everything else reads.
+2. **SVD** (`svd_archs4`) - randomized SVD and the CLAMP rank estimate, per seed.
+3. **CLAMPbase** (`clampbase_archs4`) - unsupervised fit, per seed.
+4. **CLAMPfull** (`clampfull_archs4`) - fit with the Hallmark + Reactome + GO:CC + C8
+   prior, per seed. This is the shipped model.
+5. **QC** (`model_building_qc_archs4`) - matrix shape, pathway recovery per seed, and
+   seed-to-seed agreement.
+
+At 100% of the compendium there is no subsampling, so stages 2 and 3 are computed once and
+shared: the SVD and CLAMPbase fit are byte-identical across seeds, and only CLAMPfull
+actually varies.
+
+### Analyses
+
+Each lives in its own directory under `nbs/03_model_biology/02_archs4/`, with the heavy
+compute in `scripts/archs4/` and the notebook reduced to plotting:
+
+| Directory | Target | What it asks |
+|---|---|---|
+| `00_coverage/` | `coverage_bp` | Retrain CLAMPfull with the GO:BP prior and measure Reactome, canonical non-Reactome, and CellMarker recovery as more **studies** enter training. Includes a full-data ARCHS4/GTEx/recount2 comparison with an explicit universe per dataset. |
+| `01_saturation/` | `archs4_saturation` | How does coverage depend on model rank K, and does a larger compendium need a larger K? |
+| `02_drug_diseases_associations/` | - | S-PrediXcan and LINCS projections, module- vs gene-based drug-disease prediction across ARCHS4/GTEx/recount2. |
+| `03_projections/` | - | GTEx and external datasets projected into the ARCHS4 model. |
+| `04_crispercas/` | - | CRISPR-Cas9 screen enrichment and LV deep dives. |
+
+Subsampling is **by study**, not by random samples: samples within a study are correlated,
+so drawing them at random overstates how much new biology each increment buys. The
+random-sample track is retired to `output/_deprecated/`.
+
+Coverage and saturation are scored by ORA only. Trait- and L1000-based coverage do not
+exist yet.
+
+### Outputs
+
+- Model-building artifacts: `output/01_model_building/02_archs4/`
+  - `00_preprocess/` filtered, z-scored FBM plus gene/sample metadata
+  - `01_final_model/hall_coverage_rs100_seed_{1,2,3}/` the shipped models
+  - `02_coverage_study/`, `03_saturation_study/` subsampling sweeps (by study)
+  - `04_reconstruction_error/`, `05_drug_disease/`
+- Biology reports: `output/03_model_biology/02_archs4/`
+- Executed notebooks (with plots) at `nbs/**/02_archs4/<name>.executed.ipynb`
+
+### Configuration
+
+`workflow/config/archs4.yaml` - preprocessing cutoffs, CLAMP hyperparameters, the prior
+GMT collections, ORA settings, and the final-model location.
+
+## ▶️ Running ARCHS4
+
+### Adopting the existing results
+
+The ARCHS4 models already exist (2.2 TB). Adopt them instead of recomputing:
+
+```bash
+# One-time: move legacy output trees into the layout the rules declare.
+# Dry run first; nothing is deleted, dropped tracks go to output/_deprecated/.
+scripts/archs4/migrate_outputs.sh
+scripts/archs4/migrate_outputs.sh --apply
+
+# Mark every existing output as up to date.
+snakemake --profile workflow/profiles/local --touch archs4_precomputed
+```
+
+`--touch` fails loudly on a missing file, so it doubles as a check that the migration put
+everything where the rules expect it. Afterwards `snakemake -n archs4_models` should
+report "Nothing to be done".
+
+**Starting from scratch instead?** Skip both steps; the pipeline computes everything from
+the raw HDF5. Expect multi-day jobs.
+
+### Coverage rebuild resources
+
+The coverage-only rebuild reuses its existing subsamples, SVDs, inferred ranks, and
+CLAMPbase fits. Each row below is one CLAMPfull seed; the wall-time limits are deliberately
+generous and do not represent expected elapsed time.
+
+| ARCHS4 fraction | CPUs | Initial RAM | Wall time |
+|---:|---:|---:|---:|
+| 1% | 16 | 32 GB | 96 h |
+| 5% | 16 | 64 GB | 144 h |
+| 10% | 16 | 96 GB | 240 h |
+| 25% | 16 | 224 GB | 400 h |
+| 50% | 16 | 400 GB | 600 h |
+| 75% | 16 | 400 GB | 800 h |
+| 100% | 16 | 500 GB | 900 h |
+
+GTEx and recount2 request 8 CPUs, 32 GB, and 96 h per seed. A model/database ORA
+requests 1 CPU, 8 GB, and 96 h. Failed CLAMPfull jobs have two retries; their memory
+requests increase to 1.5x and 2x the initial value, capped at 800 GB. Outputs are
+published from a temporary directory only after their dimensions and finite values pass
+validation. Each attempt records its exit code, elapsed time, peak RSS, requested
+resources, seed, prior hash, and Slurm state when available; the final validation also
+captures `sacct` accounting.
+
+On a single 900 GB node, restrict aggregate fit memory to 800 GB and allow only one
+50--100% fit at a time. Streaming ORA jobs can use spare resources, but should not delay a
+pending CLAMPfull job. If the Slurm node is occupied, synchronize the completed model's
+`Z.csv` and manifest and run its ORA through the local profile.
+
+Reactome, canonical non-Reactome, and CellMarker are run as separate ORAs. Each uses the
+genes in that dataset's `Z` as its explicit universe; BH correction and the eligible-term
+denominator remain database-specific and are combined only in the reporting tables.
+
+#### Reading the cross-dataset panel
+
+Per-dataset universes mean the three compendia are not scored against the same
+denominator, and the difference is large:
+
+| Dataset | ORA universe | Eligible Reactome | Eligible canonical | Eligible CellMarker |
+|---|---:|---:|---:|---:|
+| ARCHS4 | 18,423 genes | 1,370 | 1,721 | 289 |
+| GTEx | 21,613 genes | 1,381 | 1,735 | 289 |
+| recount2 | 6,000 genes | 1,148 | 1,513 | 216 |
+
+This is the intended design: an ORA universe must be the genes the model could actually
+have recovered, and recount2 enters the repo already filtered to 6,000 genes. It does mean
+the cross-dataset figure's absolute pathway counts are **not** a like-for-like comparison,
+and that part of recount2's lower recovery is denominator, not model quality. Compare the
+recovered percentages, which are per-dataset, before comparing the counts.
+
+At 100% there is no subsampling, so the SVD and CLAMPbase fit are shared across seeds.
+The CLAMPbase reference marks at that fraction therefore carry no seed-to-seed spread by
+construction; only CLAMPfull varies.
+
+### Running on Slurm
+
+```bash
+# Run this on the Slurm login node after providing account/partition values in
+# a user-owned profile derived from workflow/profiles/slurm/config.yaml.
+snakemake --profile /path/to/user/slurm-profile coverage_bp_archs4_models
+
+# Fit the two smaller compendia locally (at most two fits at once).
+snakemake --profile workflow/profiles/local coverage_bp_comparator_models
+```
+
+The tracked profile contains no hostname, SSH alias, account, partition, email address,
+or personal path. Inspect actual usage with `sacct`, including `State`, `Elapsed`,
+`MaxRSS`, `AllocCPUS`, and `ReqMem`, then refine site-local settings if necessary.
+
+For compute nodes without internet access, pre-stage both environments and all four GMT/
+XLSX inputs, set `use-conda: false` only in the site-owned profile, and prepend the
+pre-staged analysis and Snakemake `bin` directories to the worker `PATH`. Some Slurm
+executors still call `conda env export` for provenance even when environment activation is
+disabled, so the worker must have an offline `conda` command capable of exporting the
+declared environment.
+
+After remote model jobs begin, `scripts/coverage/route_ora.py` can run on the local host.
+It discovers validated remote models, checks free CPUs/RAM and pending CLAMPfull jobs,
+records one backend assignment per model/database, and invokes the same Snakemake ORA
+target remotely or locally. Its SSH destination, roots, and user-owned Slurm profile are
+runtime arguments and are not stored in the repository. Use `--dry-run` first; use
+`--once` for a single routing pass or omit it to poll continuously.
+
+The router also counts local fit and ORA processes launched by other Snakemake instances,
+reserves headroom for their requested memory, and checks current system-available RAM.
+Thus independent local dispatchers still share the 96 GB coverage budget instead of each
+assuming it owns the full machine.
+
+Both profiles set `rerun-triggers: mtime`. Without it, editing an ARCHS4 rule's shell
+command or params marks its outputs stale through Snakemake's provenance tracking, which
+would queue multi-day 500 GB jobs to regenerate files that are already correct. If you do
+edit these rules and see them queued unexpectedly, re-run the `--touch` above.
+
+### Deriving a site Slurm profile
+
+`workflow/profiles/slurm/config.yaml` is generic on purpose: no account, partition,
+hostname or absolute path. A site profile is that file plus the local answers, kept
+outside version control (`.gitignore` covers `workflow/profiles/site-*/`):
+
+```bash
+mkdir -p workflow/profiles/site-slurm
+cp workflow/profiles/slurm/config.yaml workflow/profiles/site-slurm/config.yaml
+# Then edit the copy to add the two site-specific deltas:
+#   default-resources:  add slurm_partition (and slurm_account if not guessable)
+#   use-conda: false    only when the compute nodes have no internet and the
+#                       environments are pre-staged on PATH instead
+```
+
+Drop the `set-resources` block from the copy if the site profile only drives the coverage
+rules, which carry their own per-fraction memory and runtime. Keep the copy on the machine
+that submits jobs; the campaign scripts refer to it by path, never by content.
+
+### Running the campaign unattended
+
+The coverage campaign runs for days across two machines, so its drivers must outlive the
+shell that starts them. `scripts/coverage/run_campaign.sh` starts the host half under
+`setsid`, is safe to re-run at any time, and starts only what is not already running:
+
+```bash
+scripts/coverage/run_campaign.sh --status    # progress, cluster jobs, nothing started
+scripts/coverage/run_campaign.sh --dry-run   # what it would start
+scripts/coverage/run_campaign.sh             # start or resume the host half
+```
+
+It reads site values from `.campaign.env` (gitignored; override with `--site-env`):
+
+```bash
+CLAMP_SNAKEMAKE_BIN=/path/to/env/snakemake/bin   # host environments
+CLAMP_ANALYSES_BIN=/path/to/env/clamp-analyses/bin
+CLAMP_REMOTE=my-cluster-alias                    # SSH alias for the Slurm login node
+CLAMP_REMOTE_ROOT=/path/to/checkout/on/cluster
+CLAMP_REMOTE_PROFILE=workflow/profiles/site-slurm
+CLAMP_REMOTE_PATH_DIRS="--remote-path-dir /pre/staged/snakemake/bin --remote-path-dir /pre/staged/analyses/bin"
+CLAMP_TOTAL_MEM_MB=96000                         # host scheduling budget
+CLAMP_FIT_SLOTS=2                                # drop to 1 under memory pressure
+```
+
+The script starts four components: the comparator model fits, the comparator ORAs (which
+wait for those fits to validate), the ORA router, and the aggregation plus notebook (which
+waits for every ORA). Both waiters derive their expected counts from
+`workflow/config/archs4.yaml`, so adding a fraction, seed, database or comparator does not
+leave them waiting on a stale number.
+
+The cluster half is separate and is not started by this script. Launch the high-memory
+fits inside a `tmux` session on the login node so they survive disconnection, and check
+them with `ssh <alias> 'tmux ls; squeue -u $USER'`.
+
+The umbrella `coverage_bp` target only resolves where the ARCHS4 subsamples, SVDs and
+CLAMPbase fits live, which is the cluster. On a workstation it raises
+`MissingInputException` for `fit_bp_archs4_coverage`, so drive the host half through the
+narrower targets the script already uses (`coverage_bp_comparator_models`,
+`coverage_bp_comparator_ora`, `aggregate_bp_coverage coverage_report_archs4`). Aggregation
+needs only the published ORA directories, which the router synchronizes back, not the
+models themselves.
+
+If the host drivers are killed, re-running the script resumes them. Snakemake recomputes
+nothing already finished, and the router reclaims any ORA left mid-flight: on startup it
+discards output directories that were never published atomically and makes their targets
+eligible again.
+
 ## ▶️ Running Snakemake
 
 Applies to both pipelines above.
@@ -250,6 +543,14 @@ snakemake --cores 8 --resources donor_bulk_io=1 --use-conda \
 
 # GTEx, end to end
 snakemake --cores 4 --use-conda --snakefile workflow/Snakefile biology_gtex
+
+# ARCHS4 models (cluster only -- see "Running ARCHS4" above before invoking this,
+# or you will queue multi-day 500 GB jobs instead of adopting existing results)
+snakemake --profile workflow/profiles/slurm archs4_models
+
+# ARCHS4 model-building QC and the coverage/saturation reports (local, cheap)
+snakemake --profile workflow/profiles/local \
+  model_building_qc_archs4 archs4_coverage archs4_saturation
 ```
 
 `donor_bulk_io=1` serializes the large raw-matrix aggregation and projection scans.

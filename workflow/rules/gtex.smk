@@ -422,6 +422,8 @@ rule geneset_orthogonality_gtex:
         go_bp_file=GTEX_GMT,
         cell_marker_file=config["references"]["cell_marker_file"],
         allen_brain_gmt_file=config["references"]["allen_brain_gmt_file"],
+        azimuth_file=config["references"]["azimuth_file"],
+        pseudobulk_marker_recovery=rules.disentangle_pseudobulk.output.recovery,
         gtex_tissues_pathmat=config["references"]["gtex_tissues_pathmat"],
         notebook=f"{GTEX_BIO_NB}/07_geneset_orthogonality.ipynb",
     output:
