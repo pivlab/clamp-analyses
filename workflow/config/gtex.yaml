@@ -26,12 +26,22 @@ gtex:
     max_iter: 500
     seed: 123
 
+  # Matched to the pseudobulk pipeline (backfit_maxiter: 20 in pseudobulk.yaml).
+  # Below the package default on purpose: the default is not computationally
+  # practical on this matrix, and flashier does not reach its convergence
+  # tolerance at any cap we have run.  See the note in pseudobulk.yaml.
   flashier:
     backfit_maxiter: 20
 
+  # Pathway prior comes from the pinned Enrichr GO:BP GMT built by rule
+  # pathway_prior (references.go_bp_file), the same file CLAMP and PLIER use, so
+  # every GTEx model is trained against the same prior and the pseudobulk and
+  # GTEx MOFA-FLEX models are directly comparable.  This replaced a live
+  # mfl.tl.msigdb_get_features() download of MSigDB c5.go.bp, which was both a
+  # different curation from the rest of the pipeline and a network dependency
+  # inside the fit.  max_epochs matches pseudobulk; see the note there on why it
+  # sits below the package default.
   mofa_flex_prior:
-    msigdb_category: c5.go.bp
-    msigdb_dbver: "2026.1.Hs"
     min_fraction: 0.4
     min_count: 40
     max_count: 200

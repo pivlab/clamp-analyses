@@ -59,7 +59,7 @@ def main() -> None:
                    "PC", "pca_model.pkl", args.flat_output)
 
     if args.method in ("all", "ICA"):
-        ica = FastICA(n_components=k, random_state=args.seed, max_iter=2000, tol=0.01)
+        ica = FastICA(n_components=k, random_state=args.seed, max_iter=2000)
         ica_scores = ica.fit_transform(x)
         save_model(root, "ICA", ica_scores, ica.mixing_.T, samples, genes, ica,
                    "IC", "ica_model.pkl", args.flat_output)

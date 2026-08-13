@@ -11,6 +11,7 @@ import anndata as ad
 import mofaflex as mfl
 import numpy as np
 import pandas as pd
+from mofaflex._core.feature_sets import FeatureSets
 
 
 def main() -> None:
@@ -18,8 +19,7 @@ def main() -> None:
     parser.add_argument("--df-gtex-fbm-filt", required=True)
     parser.add_argument("--k", required=True)
     parser.add_argument("--out-dir", required=True)
-    parser.add_argument("--msigdb-category", default="c5.go.bp")
-    parser.add_argument("--msigdb-dbver", default="2026.1.Hs")
+    parser.add_argument("--gmt", required=True)
     parser.add_argument("--min-fraction", type=float, default=0.4)
     parser.add_argument("--min-count", type=int, default=40)
     parser.add_argument("--max-count", type=int, default=200)
@@ -40,10 +40,12 @@ def main() -> None:
     # get gene list from data (genes are row index)
     gene_list = gtex_data.index.tolist()
 
-    bp_collection = mfl.tl.msigdb_get_features(
-        category=args.msigdb_category,
-        dbver=args.msigdb_dbver,
-    )
+    # Use the workflow-pinned pathway file, the same GO:BP GMT CLAMP and PLIER are
+    # trained against and the same one the pseudobulk MOFA-FLEX model uses.  Model
+    # jobs must not independently download a mutable MSigDB release: that made the
+    # fit depend on the network and trained MOFA-FLEX against a different curation
+    # from every other GTEx model.
+    bp_collection = FeatureSets.from_gmt(args.gmt, name="GO_Biological_Process_pinned")
 
     # filter to pathways that overlap with our genes
     bp_collection = bp_collection.filter(
