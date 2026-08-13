@@ -11,7 +11,6 @@ script_dir <- dirname(normalizePath(sub("^--file=", "", commandArgs(FALSE)[grep(
 source(file.path(script_dir, "common.R"))
 
 args <- parse_cli()
-raw_gct <- required_arg(args, "raw_gct")
 gmt_path <- required_arg(args, "gmt")
 out_dir <- required_arg(args, "out_dir")
 mean_cutoff <- as.numeric(args$mean_cutoff %||% 0.5)
@@ -20,9 +19,48 @@ block_size <- as.integer(args$chunk_size %||% 100L)
 n_cores <- as.integer(args$n_cores %||% 1L)
 max_iter <- as.integer(args$max_iter %||% 500L)
 seed <- as.integer(args$seed %||% 123L)
+
+# --model selects which of the two published CLAMP models get written, mirroring
+# scripts/pseudobulk/clamp.R.  The default, both, is the production behavior.
+model <- tolower(as.character(args$model %||% "both"))
+if (!model %in% c("base", "full", "both")) {
+  stop("--model must be one of: base, full, both")
+}
+
+# Two input modes.
+#  (a) production (--raw-gct): this script does the whole ~48 min of GCT parse /
+#      FBM build / preprocess / z-score / rsvd / K estimation before fitting.
+#  (b) precomputed (--fbm-filt --svd-res --k --genes --samples, all readRDS, same
+#      signature style as scripts/gtex/plier.R): the preprocessing stage is
+#      skipped entirely.  The computational-timing benchmark uses this so the
+#      reported CLAMPbase/CLAMPfull runtimes measure factorization only, matching
+#      the pseudobulk benchmark, which excludes preprocessing by construction by
+#      reusing rules.preprocess_pseudobulk.output.
+precomputed <- !is.null(args$fbm_filt)
 set.seed(seed)
 
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
+
+if (precomputed) {
+
+gtex_fbm_filt <- readRDS(required_arg(args, "fbm_filt"))
+gtex_svdRes <- readRDS(required_arg(args, "svd_res"))
+CLAMP_K_gtex <- readRDS(required_arg(args, "k"))
+gtex_genes <- readRDS(required_arg(args, "genes"))
+samples <- readRDS(required_arg(args, "samples"))
+
+# The FBM object embeds an absolute path to the production backing file
+# (output/01_model_building/01_gtex/FBMgtex_preproc_filtered.bk).  Nothing on this
+# code path should write to it; make that a hard error rather than a silent
+# corruption of the matrix underlying every downstream GTEx result.
+gtex_fbm_filt$is_read_only <- TRUE
+
+message("Reusing precomputed inputs: ", nrow(gtex_fbm_filt), " genes x ",
+        ncol(gtex_fbm_filt), " samples, K = ", CLAMP_K_gtex)
+
+} else {
+
+raw_gct <- required_arg(args, "raw_gct")
 
 # Aggregate raw GTEx TPM matrix to gene level
 exprs_data <- read.table(raw_gct, header = TRUE, sep = "\t", skip = 2, check.names = FALSE)
@@ -115,7 +153,13 @@ write.csv(
   row.names = TRUE
 )
 
-# CLAMPbase
+}  # end of the preprocessing stage; the body above is left unindented so the
+   # diff against the pre-benchmark version stays reviewable.
+
+# CLAMPfull takes the fitted base model as clamp.base.result, so a full run always
+# refits CLAMPbase first.  --model controls which requested model artifacts get
+# written and lets the timing workflow invoke the two published methods as
+# independent jobs.  (Same rationale as scripts/pseudobulk/clamp.R.)
 message("Running CLAMPbase ...")
 gtex_baseRes <- CLAMPbase(
   Y = gtex_fbm_filt,
@@ -128,11 +172,18 @@ rownames(gtex_baseRes$Z) <- gtex_genes
 gtex_baseRes$B <- data.frame(gtex_baseRes$B)
 colnames(gtex_baseRes$B) <- samples
 
-saveRDS(gtex_baseRes, file = file.path(out_dir, "CLAMPbase.rds"))
-base_dir <- file.path(out_dir, "CLAMPbase")
-dir.create(base_dir, showWarnings = FALSE, recursive = TRUE)
-write.csv(gtex_baseRes$B, file.path(base_dir, "B.csv"))
-write.csv(gtex_baseRes$Z, file.path(base_dir, "Z.csv"))
+if (model %in% c("base", "both")) {
+  saveRDS(gtex_baseRes, file = file.path(out_dir, "CLAMPbase.rds"))
+  base_dir <- file.path(out_dir, "CLAMPbase")
+  dir.create(base_dir, showWarnings = FALSE, recursive = TRUE)
+  write.csv(gtex_baseRes$B, file.path(base_dir, "B.csv"))
+  write.csv(gtex_baseRes$Z, file.path(base_dir, "Z.csv"))
+  message("CLAMPbase saved -> ", out_dir)
+}
+
+if (model == "base") {
+  quit(save = "no", status = 0L)
+}
 
 # Prepare pathway priors (pinned GO:BP file, see common.R::build_go_bp_prior)
 prior <- build_go_bp_prior(gtex_genes, gmt_path)

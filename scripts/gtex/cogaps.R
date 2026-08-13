@@ -16,6 +16,18 @@ seed <- as.integer(args$seed %||% 123L)
 cat("Dimensions:", dim(gtex_data), "\n")
 cat("nPatterns (K):", K, "\n")
 
+# CoGAPS needs a non-negative matrix.  The pseudobulk pipeline feeds it
+# log1p(CPM) (scripts/pseudobulk/cogaps.R); GTEx cannot match that, and this
+# divergence is deliberate rather than an oversight:
+#   * GTEx source data is TPM, not CPM, and CLAMP::cleanFBM already applies
+#     log2(x + 1) upstream, so the pseudobulk expression is not reproducible here;
+#   * clamp_gtex z-scores the matrix in place (scripts/gtex/clamp.R) and never
+#     writes a pre-z-score filtered copy, so no log-scale matrix exists on disk to
+#     hand to this rule.  Producing one means re-running clamp_gtex and
+#     regenerating CLAMPbase/CLAMPfull, cascading into every GTEx analysis.
+# Since GTEx CoGAPS does not converge inside its 7-day budget and is excluded
+# from full_models_gtex, harmonizing the input would cost a full GTEx refit to
+# change a model nobody consumes.  A global min-shift is used instead.
 gtex_data_shifted <- gtex_data - min(gtex_data)
 
 # Calculate nSets: each subset should have 1000-5000 genes

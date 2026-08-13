@@ -231,11 +231,21 @@ Paths are relative to `output/01_model_building/01_gtex/`.
    comparison methods (PLIER, PCA/NMF/ICA, Flashier, MOFA-FLEX, GSSig; CoGAPS is excluded
    by default - see the note in `gtex.smk`).
 2. **QC report** (`model_building_qc_gtex`).
-3. **Clustering** (`kmeans_clustering_gtex` → `kmeans_clustering_report_gtex`) - GPU
+3. **Computational timing** (`computational_timing_analysis_gtex`) - a separate 27-fit
+   benchmark (9 methods x 3 seeds) that reuses the preprocessed GTEx matrix from
+   `clamp_gtex`, so it measures factorization only and not the preprocessing and SVD
+   stage. It records wall time and peak resident memory per fit and never overwrites
+   the production models. Fits run strictly one at a time, so it **must** be invoked
+   with `--resources timing_slot=1`; the report notebook hard-fails on overlapping fit
+   intervals if that flag was omitted. CoGAPS is excluded (killed at its 7-day budget
+   without converging) and MOFA-FLEX base is excluded (no working GTEx production fit
+   exists); both exclusions and their reasons live in
+   `workflow/config/runtime_benchmark_gtex.yaml` and are printed by the report.
+4. **Clustering** (`kmeans_clustering_gtex` → `kmeans_clustering_report_gtex`) - GPU
    k-means ensemble across methods and gene subsampling fractions (`gpu-kmeans` env).
-4. **LV importance** (`lv_importance_rf_true_labels_gtex` → report) - random forest +
+5. **LV importance** (`lv_importance_rf_true_labels_gtex` → report) - random forest +
    SHAP, tissue labels as ground truth.
-5. **Biology reports** (`biology_gtex`) - LV↔tissue concordance (`02_b_matrix`), global
+6. **Biology reports** (`biology_gtex`) - LV↔tissue concordance (`02_b_matrix`), global
    alignment across methods (`03_global_alignment`), liver cell-type disentangling via
    xCell (`05_liver_disentangle_xcell`), and out-of-fold subtissue recovery
    (`04_subtissues`).
@@ -534,8 +544,19 @@ snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -n <target>
 # Pseudobulk, end to end
 snakemake --cores 4 --use-conda --snakefile workflow/Snakefile biology_pseudobulk panels_pseudobulk
 
-# Separate 180-fit timing analysis (6 datasets x 10 methods x 3 seeds)
+# Separate 180-fit pseudobulk timing analysis (6 datasets x 10 methods x 3 seeds)
 snakemake --cores 4 --use-conda --snakefile workflow/Snakefile computational_timing_analysis
+
+# Separate 27-fit GTEx timing analysis (9 methods x 3 seeds), strictly serial.
+# --resources timing_slot=1 is mandatory: a resource not named there is unlimited,
+# so omitting it parallelises the sweep and inflates every timing.  Note --resources
+# takes a variable number of values, so it must NOT be the last flag before the
+# target -- another flag has to terminate its list or snakemake consumes the target
+# name as a malformed resource and exits.  Run under tmux; resume after any
+# interruption with the identical command.
+snakemake --snakefile workflow/Snakefile --use-conda \
+          --resources timing_slot=1 --cores 4 --rerun-incomplete \
+          computational_timing_analysis_gtex
 
 # Donor-level bulk-like RNA-seq extension and its Figure 2 row
 snakemake --cores 8 --resources donor_bulk_io=1 --use-conda \

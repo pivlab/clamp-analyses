@@ -41,7 +41,7 @@ plier_res <- PLIER::PLIER(
   as.matrix(matched),
   svdres     = svdres,
   Chat       = as.matrix(chatObj),
-  doCrossval = FALSE,
+  doCrossval = TRUE,
   k          = k
 )
 

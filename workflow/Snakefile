@@ -4,6 +4,7 @@ configfile: "workflow/config/pseudobulk.yaml"
 configfile: "workflow/config/cell_type_analysis.yaml"
 configfile: "workflow/config/gtex.yaml"
 configfile: "workflow/config/runtime_benchmark.yaml"
+configfile: "workflow/config/runtime_benchmark_gtex.yaml"
 configfile: "workflow/config/donor_bulk.yaml"
 configfile: "workflow/config/archs4.yaml"
 
@@ -17,6 +18,9 @@ REPO_ROOT = os.path.dirname(workflow.basedir)
 include: "rules/pseudobulk.smk"
 include: "rules/gtex.smk"
 include: "rules/computational_timing.smk"
+# Must follow rules/gtex.smk: it dereferences rules.clamp_gtex.output and
+# GTEX_PROD at parse time.
+include: "rules/computational_timing_gtex.smk"
 include: "rules/donor_bulk.smk"
 include: "rules/archs4.smk"
 include: "rules/archs4_coverage.smk"
@@ -36,6 +40,9 @@ rule all:
         rules.panels_pseudobulk.input,
         rules.full_models_gtex.input,
         rules.model_building_qc_gtex.output.complete,
+        # Needs `--resources timing_slot=1` to stay serialized; the report notebook
+        # hard-fails on overlapping fit intervals if the flag was omitted.
+        rules.computational_timing_analysis_gtex.input,
         rules.biology_gtex.input,
         # ARCHS4 needs the lab server (500 GB per CLAMP fit).  Adopt the
         # existing results first with `snakemake --touch archs4_precomputed`,
