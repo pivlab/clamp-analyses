@@ -543,6 +543,7 @@ rule disentangle_pseudobulk:
         models=expand(f"{PROD}/{{dataset}}/models/CLAMPfull/CLAMPfull.rds", dataset=DATASETS),
         assignments=rules.benchmark_pseudobulk.output.assignments,
         corr=rules.benchmark_pseudobulk.output.corr,
+        truths=all_pseudobulk_inputs("truthFrac_v0.csv"),
         azimuth_file=AZIMUTH_FILE,
         notebook=f"{BIO_NB}/02_disentangle.ipynb",
     output:
