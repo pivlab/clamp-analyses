@@ -11,6 +11,7 @@ import anndata as ad
 import mofaflex as mfl
 import numpy as np
 import pandas as pd
+import torch
 from mofaflex._core.feature_sets import FeatureSets
 
 
@@ -26,7 +27,21 @@ def main() -> None:
     parser.add_argument("--similarity-threshold", type=float, default=0.8)
     parser.add_argument("--seed", type=int, default=123)
     parser.add_argument("--max-epochs", type=int, default=1000)
+    parser.add_argument(
+        "--threads",
+        type=int,
+        default=None,
+        help="Cap the PyTorch intra-op and inter-op thread pools.  torch otherwise "
+        "defaults to one thread per core, which would give MOFA-FLEX several times "
+        "the parallelism of every other method in the timing benchmark.",
+    )
     args = parser.parse_args()
+
+    # Must precede any other torch use: set_num_interop_threads raises once the
+    # inter-op pool has been initialised.
+    if args.threads is not None:
+        torch.set_num_threads(args.threads)
+        torch.set_num_interop_threads(args.threads)
 
     gtex_data = pd.read_csv(args.df_gtex_fbm_filt, index_col=0).astype(np.float32)
     print(f"[gtex] GTEx data shape: {gtex_data.shape}", flush=True)

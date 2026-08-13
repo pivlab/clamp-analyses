@@ -9,6 +9,10 @@ source(file.path(script_dir, "common.R"))
 
 args <- parse_cli()
 fbm_filt <- readRDS(required_arg(args, "fbm_filt"))
+# The FBM object embeds an absolute path to a shared, writable production backing
+# file; PLIER only reads it (fbm_filt[] materialises a copy).  Make any write a
+# hard error rather than a silent corruption of the shared matrix.
+fbm_filt$is_read_only <- TRUE
 svdRes <- readRDS(required_arg(args, "svd_res"))
 CLAMP_K_gtex <- readRDS(required_arg(args, "k"))
 gtex_genes <- readRDS(required_arg(args, "genes"))
