@@ -6,6 +6,11 @@ A4_COV_ORA_ROOT = A4_COV_CFG["ora_root"]
 A4_COV_INPUT_ROOT = A4_COV_CFG["input_root"]
 A4_COV_LEVELS = [int(level) for level in A4_COV_CFG["levels"]]
 A4_COV_SEEDS = [int(seed) for seed in A4_COV_CFG["seeds"]]
+# At 100% there is no subsampling, so every seed's SVD/CLAMPbase (and, for the
+# comparators, CLAMPbase itself) is identical or not seed-varied to begin
+# with -- only this one seed's CLAMPfull is ever used downstream. Fitting and
+# scoring the other seeds there would just recompute discarded data.
+A4_COV_REFERENCE_SEED = 1
 A4_COV_RNG_SEEDS = [int(seed) for seed in A4_COV_CFG["rng_seeds"]]
 A4_COV_DATABASES = list(A4_CFG["ora"]["databases"])
 A4_COV_COMPARATORS = list(A4_COV_CFG["comparators"])
@@ -74,32 +79,44 @@ def a4_cov_sample_arg(wildcards, full):
     return f"--samples-rds {samples}"
 
 
+def a4_cov_seeds_for(fraction):
+    """Seeds to fit/score by default at this fraction.
+
+    Below 100% each seed draws its own random subsample, so its SVD,
+    CLAMPbase and CLAMPfull are all genuinely independent and worth scoring
+    separately. At 100% there is nothing left to subsample -- every seed
+    would fit from the same full compendium -- so only the reference seed is
+    requested by default.
+    """
+    return [A4_COV_REFERENCE_SEED] if int(fraction) == 100 else A4_COV_SEEDS
+
+
 A4_COV_ARCH_VALIDATED = [
     a4_cov_validated("archs4", fraction, seed)
     for fraction in A4_COV_LEVELS
-    for seed in A4_COV_SEEDS
+    for seed in a4_cov_seeds_for(fraction)
 ]
 A4_COV_COMPARATOR_VALIDATED = [
     a4_cov_validated(dataset, 100, seed)
     for dataset in A4_COV_COMPARATORS
-    for seed in A4_COV_SEEDS
+    for seed in a4_cov_seeds_for(100)
 ]
 A4_COV_ARCH_FULL_ORA = [
     a4_cov_ora_dir("archs4", fraction, seed, "CLAMPfull", database)
     for fraction in A4_COV_LEVELS
-    for seed in A4_COV_SEEDS
+    for seed in a4_cov_seeds_for(fraction)
     for database in A4_COV_DATABASES
 ]
 A4_COV_COMPARATOR_FULL_ORA = [
     a4_cov_ora_dir(dataset, 100, seed, "CLAMPfull", database)
     for dataset in A4_COV_COMPARATORS
-    for seed in A4_COV_SEEDS
+    for seed in a4_cov_seeds_for(100)
     for database in A4_COV_DATABASES
 ]
 A4_COV_ARCH_BASE_ORA = [
     a4_cov_ora_dir("archs4", fraction, seed, "CLAMPbase", database)
     for fraction in A4_COV_LEVELS
-    for seed in A4_COV_SEEDS
+    for seed in a4_cov_seeds_for(fraction)
     for database in A4_COV_DATABASES
 ]
 A4_COV_COMPARATOR_BASE_ORA = [
@@ -331,10 +348,6 @@ rule aggregate_bp_coverage:
         coverage_long=f"{A4_COV_BIO}/coverage_long.csv",
         cross_dataset=f"{A4_COV_BIO}/cross_dataset_coverage.csv",
         panel_ready=f"{A4_COV_BIO}/coverage_panel_ready.csv",
-        arch_png=f"{A4_COV_BIO}/figures/coverage_archs4.png",
-        arch_pdf=f"{A4_COV_BIO}/figures/coverage_archs4.pdf",
-        cross_png=f"{A4_COV_BIO}/figures/coverage_cross_dataset.png",
-        cross_pdf=f"{A4_COV_BIO}/figures/coverage_cross_dataset.pdf",
     log:
         f"{A4_COV_BIO}/aggregate.log"
     resources:
@@ -344,7 +357,7 @@ rule aggregate_bp_coverage:
     shell:
         "Rscript {input.script} --ora-root {A4_COV_ORA_ROOT} "
         "--coverage-out {output.coverage_long} --cross-out {output.cross_dataset} "
-        "--panel-out {output.panel_ready} --figure-prefix {A4_COV_BIO}/figures/coverage "
+        "--panel-out {output.panel_ready} "
         "> {log} 2>&1"
 
 
@@ -353,8 +366,6 @@ rule coverage_report_archs4:
         coverage_long=rules.aggregate_bp_coverage.output.coverage_long,
         cross_dataset=rules.aggregate_bp_coverage.output.cross_dataset,
         panel_ready=rules.aggregate_bp_coverage.output.panel_ready,
-        arch_png=rules.aggregate_bp_coverage.output.arch_png,
-        cross_png=rules.aggregate_bp_coverage.output.cross_png,
         notebook=f"{A4_COV_NB}/00_coverage.ipynb",
     output:
         complete=touch(f"{A4_COV_BIO}/notebook.complete"),

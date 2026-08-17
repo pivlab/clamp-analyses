@@ -88,13 +88,22 @@ archs4:
     model_name: CLAMPfull_bp
     resources:
       # runtime is in minutes, as expected by the Slurm executor plugin.
+      #
+      # The 50-100% requests are sized from measured peak RSS rather than from
+      # the conservative first-pass estimates, so that more than one large fit
+      # fits on a 900 GB node at once.  Observed peaks: 11.9 GB at 1%, 19.0 at
+      # 5%, 28.0 at 10%, 54.6 at 25%, 223 at 100%; growth above 25% is roughly
+      # 2.25 GB per percentage point, giving ~111 GB at 50% and ~167 GB at 75%.
+      # Each request below is about 1.7x its predicted peak (1.4x at 100%,
+      # where the peak is measured, not predicted), and the retry ladder still
+      # adds 1.5x and 2x on failure.
       "1": {mem_mb: 32000, runtime: 5760}
       "5": {mem_mb: 64000, runtime: 8640}
       "10": {mem_mb: 96000, runtime: 14400}
       "25": {mem_mb: 224000, runtime: 24000}
-      "50": {mem_mb: 400000, runtime: 36000}
-      "75": {mem_mb: 400000, runtime: 48000}
-      "100": {mem_mb: 500000, runtime: 54000}
+      "50": {mem_mb: 192000, runtime: 36000}
+      "75": {mem_mb: 288000, runtime: 48000}
+      "100": {mem_mb: 320000, runtime: 54000}
     comparators:
       gtex:
         label: GTEx
