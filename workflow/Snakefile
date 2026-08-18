@@ -8,18 +8,11 @@ configfile: "workflow/config/runtime_benchmark_gtex.yaml"
 configfile: "workflow/config/donor_bulk.yaml"
 configfile: "workflow/config/archs4.yaml"
 
-# Anchor for repo-root-relative config paths (e.g. notebook locations), so
-# they resolve the same way regardless of which included .smk file consumes
-# them or what directory snakemake is invoked from -- notebook:/script:
-# directives resolve relative paths against the file that defines the rule,
-# not against the top-level Snakefile or the invocation cwd.
 REPO_ROOT = os.path.dirname(workflow.basedir)
 
 include: "rules/pseudobulk.smk"
 include: "rules/gtex.smk"
 include: "rules/computational_timing.smk"
-# Must follow rules/gtex.smk: it dereferences rules.clamp_gtex.output and
-# GTEX_PROD at parse time.
 include: "rules/computational_timing_gtex.smk"
 include: "rules/donor_bulk.smk"
 include: "rules/archs4.smk"
@@ -40,13 +33,8 @@ rule all:
         rules.panels_pseudobulk.input,
         rules.full_models_gtex.input,
         rules.model_building_qc_gtex.output.complete,
-        # Needs `--resources timing_slot=1` to stay serialized; the report notebook
-        # hard-fails on overlapping fit intervals if the flag was omitted.
         rules.computational_timing_analysis_gtex.input,
         rules.biology_gtex.input,
-        # ARCHS4 needs the lab server (500 GB per CLAMP fit).  Adopt the
-        # existing results first with `snakemake --touch archs4_precomputed`,
-        # or these become multi-day jobs.  See the README's ARCHS4 section.
         rules.archs4_models.input,
         rules.archs4_coverage.input,
         rules.archs4_saturation.input,
