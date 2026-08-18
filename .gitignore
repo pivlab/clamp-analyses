@@ -51,14 +51,10 @@ __pycache__/
 
 # Pseudobulk scratch/papermill output copies
 **/tmp_pseudobulk/
-*.executed.ipynb
-**/*.executed.ipynb
 
 # Site-specific execution settings: cluster aliases, accounts, partitions and
-# absolute paths. The committed profiles and scripts stay generic; see
-# "Running ARCHS4" in README.md.
+# absolute paths. The committed profiles stay generic.
 workflow/profiles/site-*/
-.campaign.env
 
 # Editor settings
 .vscode/
