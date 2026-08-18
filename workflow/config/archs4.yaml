@@ -305,8 +305,3 @@ archs4:
     # and, unlike the previous 96 h, does not let a hung job squat the queue.
     resources: {mem_mb: 8000, runtime: 60}
 
-  # Independently built CLAMP models on other compendia, for the cross-dataset
-  # comparison. These live under their own dataset trees, not under ARCHS4.
-  comparators:
-    GTEx: output/01_model_building/02_gtex/10_CLAMP_hall/CLAMPfull_hall.rds
-    Recount2: output/01_model_building/03_recount2/01_recount2_hall/CLAMPfull_hall.rds
