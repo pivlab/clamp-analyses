@@ -22,10 +22,18 @@ curl -fsSL "https://raw.githubusercontent.com/pivlab/phenoplier-cli/main/scripts
 
 cat <<EOF
 
-Next: wire the reference data bundle into the workspace once:
-  conda activate $TARGET_ENV
-  phenoplier workspace init
-  phenoplier workspace link /path/to/phenoplier_full_data
-    (Alpine:    /pl/active/pivlab/projects/hzhang/data/phenoplier_full_data.tar.gz)
-    (server_cu: /pividori_lab/data/phenoplier_full_data.tar.gz)
+Next:
+  1. Sanity-check the install itself (no full data bundle needed):
+       bash scripts/phenoplier/verify_install.sh $TARGET_ENV
+
+  2. Wire the reference data bundle into the workspace:
+       conda activate $TARGET_ENV
+       phenoplier workspace init
+       phenoplier workspace link /path/to/phenoplier_full_data
+         (Alpine:    /pl/active/pivlab/projects/hzhang/data/phenoplier_full_data.tar.gz)
+         (server_cu: /pividori_lab/data/phenoplier_full_data.tar.gz)
+
+  3. Smoke-test this repo's integration on a small (K=86 LV) model:
+       snakemake --profile workflow/profiles/local \\
+         output/03_model_biology/00_phenoplier/archs4_saturation/rs1/k86/seed1/CLAMPbase/gls-summary-phenomexcan.tsv.gz
 EOF
