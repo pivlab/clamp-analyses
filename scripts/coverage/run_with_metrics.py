@@ -68,7 +68,8 @@ def main() -> None:
     parser.add_argument("--requested-cpus", required=True, type=int)
     parser.add_argument("--requested-runtime-min", required=True, type=int)
     parser.add_argument("--seed", required=True, type=int)
-    parser.add_argument("--prior", required=True, type=Path)
+    # Optional: CLAMPbase is unsupervised and has no prior to record.
+    parser.add_argument("--prior", type=Path)
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
@@ -106,7 +107,7 @@ def main() -> None:
             "runtime_min": args.requested_runtime_min,
         },
         "rng_seed": args.seed,
-        "prior": {
+        "prior": None if args.prior is None else {
             "path": str(args.prior.resolve()),
             "md5": file_hash(args.prior, "md5"),
             "sha256": file_hash(args.prior, "sha256"),

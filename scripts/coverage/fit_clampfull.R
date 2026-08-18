@@ -72,7 +72,11 @@ args <- parse_cli()
 dataset <- required_arg(args, "dataset")
 prior_gmt <- required_arg(args, "prior_gmt")
 svd_path <- required_arg(args, "svd")
-k_path <- required_arg(args, "k")
+# K normally comes from the inferred CLAMP_K.rds, but the saturation sweep
+# forces specific ranks; --clamp-k overrides the file so those runs do not have
+# to fabricate a CLAMP_K.rds per cell.  Exactly one of the two is required.
+clamp_k_arg <- args$clamp_k
+k_path <- if (is.null(clamp_k_arg)) required_arg(args, "k") else args$k
 base_path <- required_arg(args, "base_model")
 out_dir <- required_arg(args, "out_dir")
 seed <- as.integer(required_arg(args, "seed"))
@@ -116,7 +120,12 @@ if (!is.null(args$metadata)) {
 }
 
 svd_res <- readRDS(svd_path)
-clamp_k <- as.integer(readRDS(k_path))
+clamp_k <- if (is.null(clamp_k_arg)) {
+  as.integer(readRDS(k_path))
+} else {
+  as.integer(clamp_k_arg)
+}
+if (is.na(clamp_k) || clamp_k < 1L) stop("Invalid CLAMP K: ", clamp_k)
 base_res <- readRDS(base_path)
 
 if (!identical(nrow(Y), length(genes)) || !identical(ncol(Y), length(sample_names))) {
@@ -213,7 +222,9 @@ manifest <- list(
   ),
   inputs = list(
     svd = file_record(svd_path),
-    k = file_record(k_path),
+    # The saturation sweep forces K with --clamp-k and has no CLAMP_K.rds to
+    # point at, so record the value itself rather than a file that is not there.
+    k = if (is.null(k_path)) list(value = clamp_k, source = "--clamp-k") else file_record(k_path),
     base_model = file_record(base_path)
   ),
   outputs = list(
