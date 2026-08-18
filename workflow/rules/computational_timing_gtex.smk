@@ -52,10 +52,9 @@ RUNTIME_GTEX_MEM_MB = {
 # run on GTEx and killed at its 7-day budget without converging
 # (output/01_model_building/01_gtex/CoGAPS/NOT_CONVERGED.txt), which is also why it
 # is excluded from rule full_models_gtex.  It has no finite runtime to report and
-# is documented as a censored observation rather than dropped.  MOFA-FLEX_base is
-# absent because no working prior-free MOFA-FLEX GTEx production fit exists.  Both
-# exclusions and their reasons live in workflow/config/runtime_benchmark_gtex.yaml
-# and are printed by the report notebook.
+# is documented as a censored observation rather than dropped.  This exclusion and
+# its reason live in workflow/config/runtime_benchmark_gtex.yaml and are printed
+# by the report notebook.
 # ============================================================
 
 rule runtime_gtex_matrix_shape:
