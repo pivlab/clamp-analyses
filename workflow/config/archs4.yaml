@@ -71,8 +71,11 @@ archs4:
   # triggering a new subsample.
   coverage:
     prior_gmt: data/pathways/go_bp.Hs.symbols.gmt
-    model_root: output/03_model_biology/02_archs4/00_coverage/models
-    ora_root: output/03_model_biology/02_archs4/00_coverage/ora
+    # Models and ORA sit beside the subsamples that produced them: everything
+    # computational is under 01_model_building, while 03_model_biology keeps
+    # only the report tables and the notebook.
+    model_root: output/01_model_building/02_archs4/02_coverage_study/models
+    ora_root: output/01_model_building/02_archs4/02_coverage_study/ora
     assignments: output/03_model_biology/02_archs4/00_coverage/assignments
     seeds: [1, 2, 3]
     rng_seeds: [123, 124, 125]
@@ -125,6 +128,14 @@ archs4:
         base: output/01_model_building/03_recount2/00_recount2/CLAMPbase.rds
         base_z: output/01_model_building/03_recount2/00_recount2/CLAMPbase/Z.csv
         max_iter: 500
+    colors:
+      model:
+        CLAMPfull: "#0072B2"
+        CLAMPbase: "#777777"
+      dataset:
+        ARCHS4: "#0072B2"
+        GTEx: "#E69F00"
+        recount2: "#009E73"
     routing:
       remote_min_free_cpus: 2
       remote_min_free_mem_mb: 16000
