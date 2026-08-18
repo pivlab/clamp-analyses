@@ -33,18 +33,11 @@ archs4:
     seed: 123
 
   clamp:
-    # CLAMP_K = num.pc(svd$d) * k_multiplier
     k_multiplier: 2
-    # The values that actually produced the shipped model. config.R's
-    # CLAMP_PARAMS (MAX_ITER 350, MULTICLAMP 3) belonged to the earlier
-    # 04_archs4_CLAMPfull chain, which is superseded.
     multiplier: 100
     max_iter: 5000
     seed: 123
 
-  # Prior used by the existing production ARCHS4 model.  The coverage-only BP
-  # campaign below has its own prior and does not silently invalidate this
-  # production rule.
   prior:
     gmts:
       HALL: data/pathways/h.all.v2026.1.Hs.symbols.gmt
@@ -53,17 +46,11 @@ archs4:
       C8: data/pathways/c8.all.v2026.1.Hs.symbols.gmt
 
   final_model:
-    # The shipped ARCHS4 model (K = 1728), fit on the full sample set. Three
-    # seeds exist; seed 1 is what every downstream analysis projects into.
-    # Each seed directory is self-contained: its own svd.rds, CLAMP_K.rds,
-    # CLAMPbase.rds and CLAMPfull_hall.rds.
     dir: output/01_model_building/02_archs4/01_final_model
     seeds: [1, 2, 3]
     reference_seed: 1
-    # Leaf directory name inside `dir`, formatted with the seed. Renaming these
-    # to something less coverage-flavoured is deliberately deferred.
-    leaf: hall_coverage_rs100_seed_{seed}
-    model_name: CLAMPfull_hall
+    leaf: seed{seed}
+    model_name: CLAMPfull
 
   # Coverage-only BP rebuild.  The model-fitting inputs are the existing
   # study-level subsamples, SVDs, inferred ranks, and CLAMPbase fits.  Keeping
@@ -71,9 +58,6 @@ archs4:
   # triggering a new subsample.
   coverage:
     prior_gmt: data/pathways/go_bp.Hs.symbols.gmt
-    # Models and ORA sit beside the subsamples that produced them: everything
-    # computational is under 01_model_building, while 03_model_biology keeps
-    # only the report tables and the notebook.
     model_root: output/01_model_building/02_archs4/02_coverage_study/models
     ora_root: output/01_model_building/02_archs4/02_coverage_study/ora
     assignments: output/03_model_biology/02_archs4/00_coverage/assignments
@@ -90,16 +74,6 @@ archs4:
     input_root: output/01_model_building/02_archs4/02_coverage_study
     model_name: CLAMPfull_bp
     resources:
-      # runtime is in minutes, as expected by the Slurm executor plugin.
-      #
-      # The 50-100% requests are sized from measured peak RSS rather than from
-      # the conservative first-pass estimates, so that more than one large fit
-      # fits on a 900 GB node at once.  Observed peaks: 11.9 GB at 1%, 19.0 at
-      # 5%, 28.0 at 10%, 54.6 at 25%, 223 at 100%; growth above 25% is roughly
-      # 2.25 GB per percentage point, giving ~111 GB at 50% and ~167 GB at 75%.
-      # Each request below is about 1.7x its predicted peak (1.4x at 100%,
-      # where the peak is measured, not predicted), and the retry ladder still
-      # adds 1.5x and 2x on failure.
       "1": {mem_mb: 32000, runtime: 5760}
       "5": {mem_mb: 64000, runtime: 8640}
       "10": {mem_mb: 96000, runtime: 14400}
@@ -145,8 +119,6 @@ archs4:
       retry_mem_factors: [1.0, 1.5, 2.0]
       retry_mem_cap_mb: 800000
 
-  # ORA collections are tested independently.  Their BH corrections and
-  # eligible-set denominators are never pooled across databases.
   ora:
     databases:
       reactome:
