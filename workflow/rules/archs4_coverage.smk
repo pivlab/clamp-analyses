@@ -137,8 +137,8 @@ rule fit_bp_archs4_coverage:
         k=lambda wc: f"{a4_cov_cell(wc.fraction, wc.seed)}/CLAMP_K.rds",
         base=lambda wc: f"{a4_cov_cell(wc.fraction, wc.seed)}/CLAMPbase.rds",
         prior=A4_COV_CFG["prior_gmt"],
-        script="scripts/coverage/fit_clampfull.R",
-        runner="scripts/coverage/run_with_metrics.py",
+        script="scripts/archs4/coverage/fit_clampfull.R",
+        runner="scripts/archs4/coverage/run_with_metrics.py",
     output:
         model_dir=directory(
             f"{A4_COV_MODEL_ROOT}/archs4/rs{{fraction}}/seed{{seed}}/{A4_COV_CFG['model_name']}"
@@ -184,8 +184,8 @@ rule fit_bp_comparator_coverage:
         k=lambda wc: A4_COV_CFG["comparators"][wc.dataset]["k"],
         base=lambda wc: A4_COV_CFG["comparators"][wc.dataset]["base"],
         prior=A4_COV_CFG["prior_gmt"],
-        script="scripts/coverage/fit_clampfull.R",
-        runner="scripts/coverage/run_with_metrics.py",
+        script="scripts/archs4/coverage/fit_clampfull.R",
+        runner="scripts/archs4/coverage/run_with_metrics.py",
     output:
         model_dir=directory(
             f"{A4_COV_MODEL_ROOT}/{{dataset}}/rs100/seed{{seed}}/{A4_COV_CFG['model_name']}"
@@ -230,7 +230,7 @@ rule fit_bp_comparator_coverage:
 rule validate_bp_coverage_model:
     input:
         model_dir=lambda wc: a4_cov_model_dir(wc.dataset, wc.fraction, wc.seed),
-        script="scripts/coverage/validate_model.py",
+        script="scripts/archs4/coverage/validate_model.py",
     output:
         f"{A4_COV_MODEL_ROOT}/{{dataset}}/rs{{fraction}}/seed{{seed}}/validated.json"
     resources:
@@ -249,7 +249,7 @@ rule ora_bp_full_coverage:
     input:
         validated=lambda wc: a4_cov_validated(wc.dataset, wc.fraction, wc.seed),
         database=lambda wc: a4_cov_db(wc)["path"],
-        script="scripts/coverage/run_ora.R",
+        script="scripts/archs4/coverage/run_ora.R",
     output:
         ora_dir=directory(
             f"{A4_COV_ORA_ROOT}/{{dataset}}/rs{{fraction}}/seed{{seed}}/CLAMPfull/{{database}}"
@@ -297,7 +297,7 @@ rule ora_bp_base_coverage:
     input:
         z=a4_cov_base_z,
         database=lambda wc: a4_cov_db(wc)["path"],
-        script="scripts/coverage/run_ora.R",
+        script="scripts/archs4/coverage/run_ora.R",
     output:
         ora_dir=directory(
             f"{A4_COV_ORA_ROOT}/{{dataset}}/rs{{fraction}}/seed{{seed}}/CLAMPbase/{{database}}"
@@ -343,7 +343,7 @@ rule ora_bp_base_coverage:
 rule aggregate_bp_coverage:
     input:
         A4_COV_FULL_ORA + A4_COV_BASE_ORA,
-        script="scripts/coverage/aggregate_coverage.R",
+        script="scripts/archs4/coverage/aggregate_coverage.R",
     output:
         coverage_long=f"{A4_COV_BIO}/coverage_long.csv",
         cross_dataset=f"{A4_COV_BIO}/cross_dataset_coverage.csv",
