@@ -1,0 +1,53 @@
+phenoplier:
+  # Isolated conda env for pivlab/phenoplier-cli. Kept separate from
+  # envs/clamp-analyses.yaml and envs/snakemake.yaml: phenoplier-cli requires
+  # snakemake>=9,<10 on Python >=3.12, while this repo's own Snakemake runs on
+  # snakemake=8.* / Python 3.11. See scripts/phenoplier/setup_env.sh.
+  conda_env: phenoplier-cli-neo
+  namespace: clamp
+  # Top percentile of genes per LV used to binarize the Z matrix for GLS.
+  # Matches archs4.yaml: ora.top_pct, so the LV gene sets scored here are the
+  # same ones scored for pathway overlap.
+  lv_percentile: 0.01
+  output_root: output/03_model_biology/00_phenoplier
+
+  # Which of phenoplier-cli's built-in cluster profiles (see its
+  # phenoplier/workflow/clusters.py) to submit to. Account/partition specifics
+  # stay inside phenoplier-cli's own profiles, not here -- same reasoning as
+  # workflow/profiles/site-slurm/ being kept out of this repo.
+  clusters:
+    local:
+      executor: local
+    server_cu:
+      executor: slurm
+      cluster: cu-pico
+    alpine:
+      executor: slurm
+      cluster: cu-alpine
+
+  # Which entry in `clusters` to submit to. Override per invocation, e.g.:
+  #   snakemake phenoplier_traits --config phenoplier_target=server_cu
+  target: local
+
+  # UK Biobank Category-tree branches to drop before computing cross-model
+  # trait comparisons: administrative/behavioral fields, not health
+  # phenotypes, that would otherwise inflate or deflate "traits recovered"
+  # counts across fractions/seeds. Matched case-insensitively, by substring,
+  # against phenoplier.entity.Trait.category -- phenoplier-cli's own category
+  # derivation from the UK Biobank data dictionary in the linked reference
+  # data bundle. These strings should be checked against that real dictionary
+  # once it's available (see scripts/phenoplier/filter_phenotypes.py); they
+  # are not yet verified against actual category-tree spelling.
+  excluded_ukb_categories:
+    - "Employment"
+    - "Occupation"
+    - "Occupational history"
+    - "Food preferences"
+    - "24-hour dietary recall"
+    - "Household"
+    - "Accommodation"
+    - "Education"
+    - "Transport"
+    - "Leisure"
+    - "Hobbies"
+    - "Questionnaire administrative"
