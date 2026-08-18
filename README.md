@@ -90,6 +90,23 @@ snakemake --profile /path/to/user/slurm-profile archs4_models
 snakemake --profile workflow/profiles/local archs4_coverage
 ```
 
+## Running a single notebook
+
+Each notebook-backed rule runs one specific notebook and writes the executed copy
+back to it. Target it by rule name like any other rule:
+
+```bash
+snakemake --cores 1 --use-conda --snakefile workflow/Snakefile liver_disentangle_xcell_rf_true_labels_gtex
+```
+
+Snakemake skips a rule whose outputs are already newer than its inputs, so editing
+a notebook's cells alone won't trigger a re-run. Force one with `-f`/`--forcerun`
+(add `-R`/`--forceall` to also force everything downstream of it):
+
+```bash
+snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -f <target>
+```
+
 ## Citation
 
 ## License
