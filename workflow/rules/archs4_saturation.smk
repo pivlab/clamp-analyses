@@ -152,7 +152,7 @@ rule fit_bp_saturation_base:
         fbm=lambda wc: ancient(f"{a4_sat_input_cell(wc.fraction, wc.seed)}/fbm_subsampled.bk"),
         subsample=lambda wc: ancient(f"{a4_sat_input_cell(wc.fraction, wc.seed)}/subsample_info.rds"),
         metadata=ancient(f"{A4_PROD}/00_preprocess/metadata_filtered.rds"),
-        script=ancient("scripts/saturation/fit_clampbase.R"),
+        script=ancient("scripts/archs4/saturation/fit_clampbase.R"),
         runner=ancient("scripts/archs4/coverage/run_with_metrics.py"),
     output:
         base_rds=f"{A4_SAT_BASE_ROOT}/{A4_SAT_CFG['base_leaf']}/CLAMPbase.rds",
@@ -355,7 +355,7 @@ rule ora_bp_saturation_full:
 rule aggregate_bp_saturation:
     input:
         A4_SAT_FULL_ORA + A4_SAT_BASE_ORA_ALL,
-        script="scripts/saturation/aggregate_saturation.R",
+        script="scripts/archs4/saturation/aggregate_saturation.R",
     output:
         saturation_long=f"{A4_SAT_BIO}/saturation_long.csv",
         panel_ready=f"{A4_SAT_BIO}/saturation_panel_ready.csv",
