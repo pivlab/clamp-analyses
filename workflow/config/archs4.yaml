@@ -145,8 +145,136 @@ archs4:
       retry_mem_factors: [1.0, 1.5, 2.0]
       retry_mem_cap_mb: 800000
 
+  # Saturation: pathway recovery against model rank K, at several study
+  # subsampling levels.  Coverage asks how much data CLAMP needs; this asks
+  # how much model capacity, and whether the two interact.
+  #
+  # Study-subsampled, like coverage.  That is what makes the SVD/FBM reuse
+  # below correct rather than coincidental: saturation and coverage share the
+  # same draws per (fraction, seed), so nothing is re-subsampled and no SVD is
+  # recomputed -- K changes the model, not the data.
+  #
+  # CLAMPbase takes no prior, so the fits left by the earlier Hallmark sweep
+  # are valid here unchanged and are reused; only CLAMPfull is refit, with the
+  # same GO:BP prior coverage trains on.
+  saturation:
+    prior_gmt: data/pathways/go_bp.Hs.symbols.gmt
+    model_root: output/01_model_building/02_archs4/03_saturation_study/models
+    ora_root: output/01_model_building/02_archs4/03_saturation_study/ora
+    seeds: [1, 2, 3]
+    rng_seeds: [123, 124, 125]
+    fractions: [1, 5, 10, 25, 50, 75]
+    k_values: [86, 173, 432, 864, 1296, 1728]
+    # Cells that cannot be fit, as [fraction, k, seed].
+    #
+    # Study-subsampling draws whole studies, so the sample count at a given
+    # fraction varies by seed, and each cell's SVD was computed at 25% of its
+    # own sample count.  rs1 seed 1 drew 220 studies (6,109 samples), giving an
+    # SVD of rank 1,527 -- fewer than the 1,728 components K=1728 requires, so
+    # CLAMPbase fails with "subscript out of bounds".  Seeds 2 and 3 drew more
+    # studies (7,084 and 7,858 samples; ranks 1,771 and 1,964) and are fine.
+    # This is a property of the data, not a resource limit: no amount of memory
+    # makes it fit.  That grid point is therefore reported from 2 seeds.
+    exclude_cells:
+      - [1, 1728, 1]
+    # K values are 5/10/25/50/75/100% of K_100 = 1728, as the original
+    # saturation notebooks derived them.  There is no 100% fraction: at full
+    # coverage there is nothing to subsample, and that point is 01_final_model.
+    #
+    # Inputs come from the coverage cells, one per (fraction, seed), shared
+    # across all six K values.
+    input_root: output/01_model_building/02_archs4/02_coverage_study
+    input_levels:
+      "1": 00_bp_coverage_study_01
+      "5": 01_bp_coverage_study_05
+      "10": 02_bp_coverage_study_10
+      "25": 03_bp_coverage_study_25
+      "50": 04_bp_coverage_study_50
+      "75": 05_bp_coverage_study_75
+    input_leaf: study_coverage_rs{fraction}_seed_{seed}
+    # CLAMPbase cells produced by the earlier sweep, reused as-is.
+    base_root: output/01_model_building/02_archs4/03_saturation_study
+    base_leaf: study_saturation_rs{fraction}_k{k}_seed_{seed}
+    model_name: CLAMPfull_bp
+    max_iter: 5000
+    # Study-subsampled sample counts, read from each cell's run_info.rds.
+    n_samples:
+      "1": 6109
+      "5": 30308
+      "10": 60645
+      "25": 152860
+      "50": 303309
+      "75": 454404
+    resources:
+      # mem_mb is per (fraction, K), at 1.6x a peak-RSS model refit against 12
+      # measurements spanning both campaigns:
+      #     peak_GB ~ 8.9 + 0.175*(n/1000) + 0.092*(K*n/1e6)
+      # An earlier version was fit to coverage alone, where the inferred K tracked
+      # sample count so closely that the regression could not separate an n-only
+      # term from the K*n term and folded everything into K*n.  Saturation breaks
+      # that correlation by forcing small K on large subsamples, where the old
+      # model under-requested by up to 5x (rs75/k86 asked 32 GB and peaked at 93).
+      # runtime is in minutes, from hours ~ 1.97 + 0.0167*K*n/1e6, x3.
+      "1":
+        "86": {mem_mb: 24000, runtime: 360}
+        "173": {mem_mb: 24000, runtime: 360}
+        "432": {mem_mb: 24000, runtime: 420}
+        "864": {mem_mb: 24000, runtime: 420}
+        "1296": {mem_mb: 24000, runtime: 420}
+        "1728": {mem_mb: 24000, runtime: 420}
+      "5":
+        "86": {mem_mb: 24000, runtime: 420}
+        "173": {mem_mb: 24000, runtime: 420}
+        "432": {mem_mb: 32000, runtime: 420}
+        "864": {mem_mb: 32000, runtime: 480}
+        "1296": {mem_mb: 32000, runtime: 480}
+        "1728": {mem_mb: 32000, runtime: 540}
+      "10":
+        "86": {mem_mb: 32000, runtime: 420}
+        "173": {mem_mb: 40000, runtime: 420}
+        "432": {mem_mb: 40000, runtime: 480}
+        "864": {mem_mb: 40000, runtime: 540}
+        "1296": {mem_mb: 48000, runtime: 600}
+        "1728": {mem_mb: 48000, runtime: 720}
+      "25":
+        "86": {mem_mb: 64000, runtime: 420}
+        "173": {mem_mb: 64000, runtime: 480}
+        "432": {mem_mb: 72000, runtime: 600}
+        "864": {mem_mb: 80000, runtime: 780}
+        "1296": {mem_mb: 88000, runtime: 960}
+        "1728": {mem_mb: 96000, runtime: 1200}
+      "50":
+        "86": {mem_mb: 104000, runtime: 480}
+        "173": {mem_mb: 112000, runtime: 540}
+        "432": {mem_mb: 120000, runtime: 780}
+        "864": {mem_mb: 144000, runtime: 1200}
+        "1296": {mem_mb: 160000, runtime: 1560}
+        "1728": {mem_mb: 184000, runtime: 1980}
+      "75":
+        "86": {mem_mb: 152000, runtime: 480}
+        "173": {mem_mb: 160000, runtime: 600}
+        "432": {mem_mb: 176000, runtime: 960}
+        "864": {mem_mb: 200000, runtime: 1560}
+        "1296": {mem_mb: 232000, runtime: 2160}
+        "1728": {mem_mb: 264000, runtime: 2760}
+    routing:
+      # Capped at 75% of the shared 168-CPU / 900 GB node, leaving 42 CPUs and
+      # 225 GB for other users.  Memory, not the slot count, packs the queue.
+      total_mem_mb: 675000
+      fit_slots: 10
+      ora_slots: 24
+      threads_per_fit: 8
+      retries: 2
+      retry_mem_factors: [1.0, 1.5, 2.0]
+      retry_mem_cap_mb: 675000
+
   # ORA collections are tested independently.  Their BH corrections and
   # eligible-set denominators are never pooled across databases.
+  #
+  # Shared by the coverage and saturation campaigns so both provably score
+  # against identical collections with identical thresholds.  Note GO:BP is
+  # absent here on purpose: it is the CLAMPfull *training* prior, and scoring a
+  # GO:BP-trained model against GO:BP would be circular.
   ora:
     databases:
       reactome:
@@ -171,7 +299,11 @@ archs4:
     pvalue_cutoff: 0.05
     qvalue_cutoff: 0.2
     fdr: [0.05]
-    resources: {mem_mb: 8000, runtime: 5760}
+    # Measured across the 150 coverage ORAs: runtime_s ~ 3 + 0.1455 * n_LVs,
+    # median 122 s, max 407 s at K = 1728.  Memory is dominated by the
+    # gene-by-K Z matrix, ~1 GB at the largest K.  60 min leaves >8x headroom
+    # and, unlike the previous 96 h, does not let a hung job squat the queue.
+    resources: {mem_mb: 8000, runtime: 60}
 
   # Independently built CLAMP models on other compendia, for the cross-dataset
   # comparison. These live under their own dataset trees, not under ARCHS4.
