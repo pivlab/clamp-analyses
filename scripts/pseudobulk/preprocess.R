@@ -1,4 +1,7 @@
 #!/usr/bin/env Rscript
+# Normalizes one pseudobulk expression matrix CPM,
+# then filters and z-scores it via CLAMP and
+# selects number LVs via elbow-based SVD component selection
 suppressPackageStartupMessages({
   library(CLAMP)
   library(data.table)
@@ -9,6 +12,7 @@ source(file.path(script_dir, "common.R"))
 
 args <- parse_cli()
 input <- required_arg(args, "input")
+input_scale <- required_arg(args, "input_scale")
 norm_out <- required_arg(args, "norm")
 cpm_filt_out <- required_arg(args, "cpm_filt")
 stats_out <- required_arg(args, "row_stats")
@@ -19,24 +23,19 @@ var_cutoff <- as.numeric(args$var_cutoff %||% 0.1)
 seed <- as.integer(args$seed %||% 123L)
 set.seed(seed)
 
-# bulk_expr.csv is already library-size normalized to CPM; do not normalize
-# or log-transform it again. Filters below are calibrated on linear CPM.
-cpm <- read_csv_matrix(input)
-if (!all(is.finite(cpm)) || any(cpm < 0)) stop("Input contains non-finite or negative values")
+cpm <- prepare_linear_cpm(read_csv_matrix(input), input_scale, "preprocess.R")
 
 prep <- CLAMP::preprocessCLAMP(cpm, mean_cutoff = mean_cutoff, var_cutoff = var_cutoff)
 norm <- CLAMP::zscoreCLAMP(prep$Y_filtered, prep$rowStats)
 
-# SVD
 n_genes <- nrow(norm)
 n_samples <- ncol(norm)
 svd_k <- max(floor((min(n_genes, n_samples) - 1) / 4), 2L)
 svdres <- rsvd::rsvd(norm, k = svd_k)
 
-# model number of components
 k <- CLAMP::num.pc(data = norm, method = "elbow") * 2
 k <- max(as.integer(k), 2L)
-k <- min(k, svd_k)  # cannot use more singular vectors than computed
+k <- min(k, svd_k)
 
 diagnostics <- data.frame(
   component = seq_along(svdres$d), singular_value = svdres$d,
@@ -44,7 +43,6 @@ diagnostics <- data.frame(
 )
 
 write_csv_matrix(norm, norm_out)
-# Filtered linear CPM before z-scoring. CoGAPS applies its own log1p transform.
 write_csv_matrix(prep$Y_filtered, cpm_filt_out)
 write_csv_matrix(prep$rowStats, stats_out)
 ensure_parent(k_out); fwrite(data.frame(k = k), k_out)

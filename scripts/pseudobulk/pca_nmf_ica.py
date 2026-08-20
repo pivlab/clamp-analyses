@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fit PCA, NMF, and ICA to one preprocessed pseudobulk matrix."""
+"""PCA, NMF, and ICA pseudobulk models"""
 
 from __future__ import annotations
 
@@ -18,7 +18,6 @@ def save_model(root: Path, method: str, scores: np.ndarray, loadings: np.ndarray
     out = root if flat_output else root / method
     out.mkdir(parents=True, exist_ok=True)
     names = [f"{prefix}{i + 1}" for i in range(scores.shape[1])]
-    # LVs x samples / genes x LVs, matching CLAMP's B/Z convention
     pd.DataFrame(scores.T, index=names, columns=sample_names).to_csv(out / "B.csv")
     pd.DataFrame(loadings.T, index=gene_names, columns=names).to_csv(out / "Z.csv")
     with open(out / filename, "wb") as handle:
@@ -65,7 +64,6 @@ def main() -> None:
                    "IC", "ica_model.pkl", args.flat_output)
 
     if args.method in ("all", "NMF"):
-        # NMF needs non-negative input, so shift each gene's z-scores by its row min
         nonnegative = norm.sub(norm.min(axis=1), axis=0).T.to_numpy()
         nmf = NMF(n_components=k, init="nndsvd", random_state=args.seed, max_iter=1000)
         nmf_scores = nmf.fit_transform(nonnegative)

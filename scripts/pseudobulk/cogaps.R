@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+# CoGAPS pseudobulk models
 suppressPackageStartupMessages({
   library(data.table)
   library(CoGAPS)
@@ -16,12 +17,8 @@ parallel_workers <- if (!is.null(args$parallel_workers)) {
 }
 seed <- as.integer(args$seed %||% 123L)
 
-# cpm_filt is non-negative linear CPM (pre-z-score). log1p it as CoGAPS's own
-# vignette does for count-scale data: raw CPM values are outside the range its
-# Gibbs sampler expects and otherwise trigger its large-value warning.
 mat <- log1p(loaded$norm)
 
-# Distributed genome-wide CoGAPS: each subset should have 1000-5000 genes
 nSets <- max(ceiling(nrow(mat) / 2500), 2L)
 params <- CogapsParams(
   nPatterns = loaded$k,
@@ -46,7 +43,6 @@ cogapsresult <- CoGAPS(
   outputFrequency = 10000
 )
 
-# LVs x samples / genes x LVs, matching CLAMP's B/Z convention
 B <- t(cogapsresult@sampleFactors)
 colnames(B) <- colnames(mat); rownames(B) <- paste0("LV", seq_len(nrow(B)))
 Z <- cogapsresult@featureLoadings

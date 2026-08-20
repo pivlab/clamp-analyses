@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Derive the cohort sample manifest for a raw-built pseudobulk dataset."""
+# maps each cell to its
+# sample, drops excluded cells, counts what's left per sample, and drops any
+# sample below the minimum cell count. 
+# Writes the surviving samples and their
+# cell counts to a manifest CSV that later scripts use to pick samples.
 
 from __future__ import annotations
 
@@ -25,14 +29,12 @@ def main() -> None:
 
     import h5py
 
-    # Map each cell to its sample, then blank out cells excluded by config
     with h5py.File(repo_path(cfg["raw"]), "r") as h5:
         eligible_sample = transform_ids(obs_values(h5, cfg["sample_col"]), cfg.get("sample_transform"))
         for column, excluded_values in cfg.get("exclude", {}).items():
             excluded = np.isin(obs_values(h5, column), np.asarray(excluded_values).astype(str))
             eligible_sample[excluded] = ""
 
-    # Count cells per sample and drop samples below the min_cells threshold
     counts = pd.Series(eligible_sample).value_counts()
     counts = counts[counts.index != ""]
     min_cells = cfg.get("min_cells")

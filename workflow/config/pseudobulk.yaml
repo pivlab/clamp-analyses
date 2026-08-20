@@ -162,13 +162,13 @@ paths:
 
 references:
   go_bp_url: https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=GO_Biological_Process_2025
-  go_bp_file: output/01_model_building/00_pseudobulk/references/GO_Biological_Process_2025.gmt
+  go_bp_file: data/pathways/GO_Biological_Process_2025.gmt
   go_bp_sha256: 0fc02458765cfce6c9348dce9f7a9397c6caf7c09ba318f468135d7ac60342ee
   cell_marker_file: data/pathways/Cell_marker_Human.xlsx
   allen_brain_gmt_file: data/pathways/Allen_Brain_Atlas_10x_scRNA_2021.gmt
-  # Canonical reference-atlas markers for all pseudobulk cell-type ORA and
-  # hard-pair loading panels. Each dataset is matched to its corresponding
-  # Azimuth atlas (PBMC, Motor Cortex, Heart, or Lung V2/HLCA).
+  # Dataset-matched reference-atlas markers used together with CellMarker and,
+  # for brain cohorts, Allen in pseudobulk cell-type ORA. The loading analysis
+  # also compares these marker resources explicitly.
   azimuth_file: data/pathways/Azimuth_2023.txt
   # Binary genes x tissue matrix, one of the evaluation collections the GO:BP
   # prior is tested against for orthogonality.
@@ -196,10 +196,9 @@ grouped_cv:
   bootstrap_seed: 123
   bootstrap_replicates: 10000
 # flashier: greedy factor addition followed by backfit_maxiter backfitting
-# iterations to refine loadings. Set independently of the GTEx pipeline because
-# the pipelines operate on different data scales and matrix sizes.
+# iterations to refine loadings, as defined in PR #21.
 flashier:
-  backfit_maxiter: 10
+  backfit_maxiter: 20
 # CoGAPS Gibbs sampler settings, identical to the GTEx pipeline's cogaps
 # block. n_iterations follows the package's own guidance for exploratory
 # genome-wide-distributed runs; distributed=genome-wide (set in cogaps.R,
@@ -209,10 +208,9 @@ cogaps:
   n_iterations: 5000
   n_threads: 4
   seed: 123
-# MOFA-FLEX epoch budget under the Horseshoe weight prior. Set independently of
-# the GTEx pipeline for the same reason as flashier above.
+# MOFA-FLEX epoch budget under the Horseshoe weight prior, as defined in PR #21.
 mofa_flex:
-  max_epochs: 200
+  max_epochs: 1000
   seed: 123
 projection:
   chunk_cells: 20000

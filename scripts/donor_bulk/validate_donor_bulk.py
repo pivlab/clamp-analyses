@@ -62,7 +62,6 @@ def main() -> None:
         if aggregation.raw_validation_scope != "exhaustive_all_nonzeros":
             raise ValueError(f"{dataset}: raw input was not exhaustively validated")
         donor = matrix(root / "bulk/bulk_counts.csv")
-        control = matrix(root / "bulk/bulk_mean_cell_cpm.csv")
         truth = matrix(root / "bulk/truthFrac_v0.csv")
         excluded_targets = analysis_excluded_cell_types(config, dataset)
         if not set(excluded_targets) <= set(truth.columns):
@@ -71,15 +70,11 @@ def main() -> None:
         donors = info["sample"].astype(str).tolist()
         if donor.index.duplicated().any() or donor.columns.duplicated().any():
             raise ValueError(f"{dataset}: donor matrix has duplicate identifiers")
-        if not donor.index.equals(control.index):
-            raise ValueError(f"{dataset}: donor/control genes differ")
-        if list(donor.columns) != donors or list(control.columns) != donors or list(truth.index) != donors:
+        if list(donor.columns) != donors or list(truth.index) != donors:
             raise ValueError(f"{dataset}: donor alignment failure")
         values = donor.to_numpy()
         if not np.isfinite(values).all() or np.any(values < 0) or not np.allclose(values, np.round(values)):
             raise ValueError(f"{dataset}: invalid donor raw sums")
-        if not np.allclose(control.sum(axis=0), 1e6, atol=1e-3):
-            raise ValueError(f"{dataset}: matched controls are not CPM libraries")
         counts = info["nCells"].to_numpy(np.int64)
         implied = truth.to_numpy() * counts[:, None]
         if (
@@ -103,7 +98,7 @@ def main() -> None:
             raise ValueError(f"{dataset}: incomplete fold membership")
         if set(membership.fold) != {1, 2, 3, 4, 5} or membership.groupby("group_id").fold.nunique().max() != 1:
             raise ValueError(f"{dataset}: fold leakage")
-        for subdir in ["grouped_cv", "grouped_cv_mean_cell_cpm"]:
+        for subdir in ["grouped_cv"]:
             for fold in range(1, 6):
                 fold_root = root / subdir / f"fold{fold}/CLAMPfull"
                 train = matrix(fold_root / "train_B.csv").T

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""Project every raw single cell into a full-data CLAMP model without materializing CPM."""
-
+# Projects every raw single cell onto a full-data CLAMPfull models
+# Writes per-cell LV scores plus cell metadata to an
+# HDF5 output and a projection summary CSV.
+# we created a projection function for py instead of using the clamp function that uses the same 
+# ridge formula (B = (Z'Z + L2*I)^-1 Z'Y) to avoid cross-language R
 from __future__ import annotations
 
 import argparse
@@ -27,7 +30,6 @@ from common import (
     sparse_shape,
 )
 
-
 def projection_operator(z_path: Path, stats_path: Path, l2_path: Path) -> tuple[pd.Index, np.ndarray, np.ndarray, list[str], float]:
     z_frame = pd.read_csv(z_path, index_col=0)
     stats = pd.read_csv(stats_path, index_col=0)
@@ -42,9 +44,6 @@ def projection_operator(z_path: Path, stats_path: Path, l2_path: Path) -> tuple[
         raise ValueError("CLAMP row statistics contain non-positive variance")
     sigma = np.sqrt(variance)
     l2 = float(pd.read_csv(l2_path)["L2"].iloc[0])
-    # Closed-form ridge projection: B = (Y_zscored) @ Z @ (Z'Z + L2*I)^-1, with
-    # z-scoring folded into per-gene weights/center so raw counts can be scored
-    # directly without ever materializing a z-scored single-cell matrix.
     ridge = np.linalg.inv(z.T @ z + l2 * np.eye(z.shape[1]))
     weights = (z / sigma[:, None]) @ ridge
     center = (mean / sigma) @ z @ ridge
@@ -57,13 +56,6 @@ def raw_feature_weights(
     model_weights: np.ndarray,
     duplicate_gene_policy: str = "mean",
 ) -> tuple[np.ndarray, int]:
-    """Map collapsed model-gene weights back to raw feature rows.
-
-    ``mean`` preserves the production pseudobulk convention, where duplicate
-    raw symbols were averaged. ``sum`` is required for donor-bulk models whose
-    training matrices sum duplicate symbols: every raw feature then receives
-    the complete collapsed-gene weight.
-    """
     if duplicate_gene_policy not in {"mean", "sum"}:
         raise ValueError("duplicate_gene_policy must be 'mean' or 'sum'")
     lookup = {gene: i for i, gene in enumerate(model_genes.astype(str))}
@@ -129,8 +121,6 @@ def project_h5ad(dataset: str, cfg: dict, raw_weights: np.ndarray, center: np.nd
             raise ValueError("raw expression dimensions do not match metadata/operator")
         with create_output(output, n_cells, lv_names, cell_id, raw_label, mapped_label, chunk_cells)[0] as out_h5:
             scores = out_h5["scores"]
-            # Stream cells in chunks: CPM-normalize each block, then apply the
-            # projection operator directly (no full matrix in memory).
             for start in range(0, n_cells, chunk_cells):
                 stop = min(start + chunk_cells, n_cells)
                 counts = read_csr_rows(group, start, stop, n_features)
@@ -184,8 +174,6 @@ def project_mtx(dataset: str, cfg: dict, raw_weights: np.ndarray, center: np.nda
     checked: list[np.ndarray] = []
     seen = 0
     previous_col = -1
-    # First pass: accumulate per-cell library sizes (needed for CPM before the
-    # per-cell total is known from a single streamed pass).
     for _, col, value in iter_matrix_market(raw_path, chunk_nnz):
         if len(col) and (col[0] < previous_col or np.any(col[1:] < col[:-1])):
             raise ValueError("Matrix Market entries must be cell-column sorted for streaming projection")
@@ -206,16 +194,12 @@ def project_mtx(dataset: str, cfg: dict, raw_weights: np.ndarray, center: np.nda
         score_map[start : start + chunk_cells] = -center
     seen = 0
     previous_col = -1
-    # Second pass: apply the projection operator to each streamed NNZ chunk
     for row, col, value in iter_matrix_market(raw_path, chunk_nnz):
         if len(col) and (col[0] < previous_col or np.any(col[1:] < col[:-1])):
             raise ValueError("Matrix Market entries changed order between projection passes")
         if len(col):
             previous_col = int(col[-1])
         scaled = value * 1e6 / totals[col]
-        # MTX entries are stored contiguously by cell column. Multiply only the
-        # cell span represented by this NNZ chunk; boundary cells are accumulated
-        # across chunks. This is the same global operator, with bounded RAM.
         first, stop = int(col[0]), int(col[-1]) + 1
         counts = sp.coo_matrix(
             (scaled, (col - first, row)), shape=(stop - first, n_features)

@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+# PLIER pseudobulk models.
 suppressPackageStartupMessages({
   library(CLAMP)
   library(PLIER)
@@ -23,18 +24,15 @@ genes <- rownames(norm)
 message("norm: ", nrow(norm), " genes x ", ncol(norm), " samples")
 message("k = ", k)
 
-# SVD (for PLIER warm start)
 n_genes <- nrow(norm)
 n_samples <- ncol(norm)
 svd_k <- max(floor((min(n_genes, n_samples) - 1) / 4), k, 2L)
 svdres <- rsvd::rsvd(norm, k = svd_k)
 
-# Match BP prior to dataset genes
 matched <- CLAMP::getMatchedPathwayMat(pathways, genes)
 chatObj <- CLAMP::getChat(matched)
 message("Prior matched: ", nrow(matched), " genes x ", ncol(matched), " pathways")
 
-# PLIER
 message("Running PLIER ...")
 plier_res <- PLIER::PLIER(
   norm,

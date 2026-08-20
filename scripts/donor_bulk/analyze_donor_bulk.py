@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Analyze donor-bulk CLAMPfull recovery, controls, and projected cells."""
+"""Analyze donor-bulk CLAMPfull recovery and projected cells."""
 
 from __future__ import annotations
 
@@ -396,17 +396,6 @@ def single_cell_analysis(
     pd.DataFrame(specificity_summary).to_csv(output / "single_cell_specificity_summary.csv", index=False)
 
 
-def comparison(donor: pd.DataFrame, control: pd.DataFrame, output: Path) -> None:
-    merged = donor.merge(
-        control,
-        on=["dataset", "cell_type"],
-        suffixes=("_donor_sum", "_mean_cell_cpm"),
-    )
-    for metric in ["pearson_r", "predictive_r2", "mae"]:
-        merged[f"delta_{metric}"] = merged[f"{metric}_donor_sum"] - merged[f"{metric}_mean_cell_cpm"]
-    merged.to_csv(output / "comparison_cv_samecell.csv", index=False)
-
-
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--production-root", required=True)
@@ -419,13 +408,7 @@ def main() -> None:
     config = read_yaml(args.config)
     output.mkdir(parents=True, exist_ok=True)
     assignments = full_data_analysis(production, args.datasets, output, config)
-    donor_metrics, _ = grouped_cv_analysis(
-        production, args.datasets, output, "grouped_cv", "", config
-    )
-    control_metrics, _ = grouped_cv_analysis(
-        production, args.datasets, output, "grouped_cv_mean_cell_cpm", "control_", config
-    )
-    comparison(donor_metrics, control_metrics, output)
+    grouped_cv_analysis(production, args.datasets, output, "grouped_cv", "", config)
     single_cell_analysis(production, args.datasets, assignments, output, config)
     print("donor-bulk analysis complete")
 

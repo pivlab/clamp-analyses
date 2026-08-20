@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+# CLAMPbase and CLAMPfull pseudobulk models
 suppressPackageStartupMessages({
   library(CLAMP)
   library(data.table)
@@ -26,16 +27,11 @@ samples <- colnames(norm)
 message("norm: ", nrow(norm), " genes x ", ncol(norm), " samples")
 message("k = ", k)
 
-# SVD (needed by CLAMPbase and CLAMPfull)
 n_genes <- nrow(norm)
 n_samples <- ncol(norm)
 svd_k <- max(floor((min(n_genes, n_samples) - 1) / 4), k, 2L)
 svdres <- rsvd::rsvd(norm, k = svd_k)
 
-# CLAMPfull uses the fitted CLAMPbase object, so the base fit is always
-# computed for a full run.  --model controls which requested model artifacts
-# are written and lets the timing workflow invoke the two published methods
-# independently.  The default, both, preserves the production behavior.
 message("Running CLAMPbase ...")
 base <- CLAMP::CLAMPbase(Y = norm, svdres = svdres, clamp_k = k, trace = FALSE)
 base$Z <- data.frame(base$Z); rownames(base$Z) <- genes
@@ -51,13 +47,11 @@ if (model %in% c("base", "both")) {
 
 if (model == "base") quit(save = "no", status = 0L)
 
-# Match BP prior to dataset genes
 gmt <- read_gmt_file(required_arg(args, "gmt"))
 pathways <- CLAMP::gmtListToSparseMat(list(BP = gmt))
 matched <- CLAMP::getMatchedPathwayMat(pathways, genes)
 message("Prior matched: ", nrow(matched), " genes x ", ncol(matched), " pathways")
 
-# CLAMPfull
 message("Running CLAMPfull ...")
 full <- CLAMP::CLAMPfull(
   Y                 = norm,
