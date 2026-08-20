@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+# CoGAPS pseudobulk models
 suppressPackageStartupMessages({
   library(data.table)
   library(CoGAPS)
@@ -16,14 +17,8 @@ parallel_workers <- if (!is.null(args$parallel_workers)) {
 }
 seed <- as.integer(args$seed %||% 123L)
 
-# cpm_filt is the filtered log2(CPM + 1) matrix from preprocess.R: non-negative and
-# already on the log scale CoGAPS's Gibbs sampler expects (without a log transform it
-# warns "Large values detected, is data log transformed?").  The log1p that used to be
-# applied here was removed when preprocess.R started log-transforming before filtering,
-# to match the GTEx pipeline -- keeping it would have transformed the data twice.
-mat <- loaded$norm
+mat <- log1p(loaded$norm)
 
-# Distributed genome-wide CoGAPS: each subset should have 1000-5000 genes
 nSets <- max(ceiling(nrow(mat) / 2500), 2L)
 params <- CogapsParams(
   nPatterns = loaded$k,
@@ -48,7 +43,6 @@ cogapsresult <- CoGAPS(
   outputFrequency = 10000
 )
 
-# LVs x samples / genes x LVs, matching CLAMP's B/Z convention
 B <- t(cogapsresult@sampleFactors)
 colnames(B) <- colnames(mat); rownames(B) <- paste0("LV", seq_len(nrow(B)))
 Z <- cogapsresult@featureLoadings

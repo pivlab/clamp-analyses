@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fit the existing GO-BP-informed MOFA-FLEX pseudobulk model."""
+"""MOFA-FLEX GO:BP pseudobulk models"""
 
 from __future__ import annotations
 
@@ -35,17 +35,12 @@ def main() -> None:
     norm = pd.read_csv(args.norm, index_col=0).astype("float32")
     k = int(pd.read_csv(args.k)["k"].iloc[0])
     genes, samples = norm.index.astype(str).tolist(), norm.columns.astype(str).tolist()
-    # Use the workflow-pinned pathway file. Model jobs must not independently
-    # download a mutable MSigDB release.
     collection = FeatureSets.from_gmt(args.gmt, name="GO_Biological_Process_pinned")
-    # Drop pathways with too little/too much gene overlap, then de-duplicate
-    # near-identical pathways before using them as the factor prior
     collection = collection.filter(genes, min_fraction=0.4, min_count=40, max_count=200)
     collection = collection.merge_similar(metric="jaccard", similarity_threshold=0.8, iteratively=True)
     data = ad.AnnData(X=norm.T.values, obs=pd.DataFrame(index=samples), var=pd.DataFrame(index=genes))
     data.varm["annotations"] = collection.to_mask(genes).T
 
-    # Fit MOFA-FLEX with the GO-BP gene sets as a sparsity prior on the weights
     model = mfl.MOFAFLEX(
         {"group_1": {"view_1": data}},
         mfl.DataOptions(scale_per_group=False, plot_data_overview=False, annotations_varm_key="annotations"),
@@ -55,7 +50,6 @@ def main() -> None:
     factors = model.get_factors()["group_1"]
     weights = model.get_weights()["view_1"]
 
-    # LVs x samples / genes x LVs, matching CLAMP's B/Z convention
     factors = factors.T
     factors.columns = samples
     factors.index = [f"LV{i + 1}" for i in range(len(factors))]

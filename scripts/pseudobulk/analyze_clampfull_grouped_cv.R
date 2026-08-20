@@ -1,6 +1,10 @@
 #!/usr/bin/env Rscript
-# Compute CLAMPfull grouped-CV calibrations, OOF metrics, bootstrap summaries, and LV stability.
-# Plotting is intentionally kept in the holdout notebook.
+# For every dataset, this script reads the five grouped-CV folds already fit
+# by clampfull_grouped_cv.R, calibrates each fold's assigned LV against the
+# training cell-type fraction with a simple linear fit, and applies that
+# calibration to the held-out fold to get out-of-fold (OOF) predictions.
+# It aggregates these across folds and datasets into OOF metrics (Pearson r,
+# predictive R2, MAE)
 
 suppressPackageStartupMessages({
   library(data.table)
@@ -82,8 +86,6 @@ for (dataset in DATASETS) {
   if (membership[, uniqueN(sample)] != nrow(membership)) stop(dataset, ': duplicate membership rows')
   membership_rows[[dataset]] <- membership
 
-  # Align selected LVs across training folds using fold 1 as the reference.
-  # This measures CV selection stability without depending on a full-data fit.
   reference_z <- read_matrix(file.path(cv_root, 'fold1', METHOD, 'train_Z.csv'))
 
   for (fold in seq_len(N_FOLDS)) {
@@ -341,8 +343,6 @@ bootstrap_mean_interval <- function(values, replicates, seed) {
   quantile(estimates, c(0.025, 0.975), names = FALSE, na.rm = TRUE)
 }
 
-# Dataset-level summaries for compact paper figures. Intervals describe
-# variation across the valid cell types within each dataset.
 thresholded_dataset_summary <- thresholded_metrics[, {
   valid_rows <- .SD[valid_all_folds == TRUE]
   seed_offset <- match(.BY$dataset, DATASETS) * 10L
@@ -368,7 +368,6 @@ thresholded_dataset_summary <- thresholded_metrics[, {
   )
 }, by = .(dataset, method)]
 
-# Overall intervals preserve the dataset hierarchy before resampling cell types.
 thresholded_pearson_ci <- hierarchical_bootstrap(
   valid_thresholded, 'pearson_r', mean, BOOTSTRAP_REPLICATES, BOOTSTRAP_SEED + 100L
 )

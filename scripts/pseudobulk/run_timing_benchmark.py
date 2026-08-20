@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run one pseudobulk factorization and record auditable wall-clock timing."""
+"""runs all the models with 3 seeds for timing"""
 
 from __future__ import annotations
 
@@ -29,7 +29,6 @@ METHODS = (
 
 
 def matrix_shape(path: Path) -> tuple[int, int]:
-    """Return genes x samples for a CSV matrix with row names in column one."""
     with path.open(newline="") as handle:
         reader = csv.reader(handle)
         header = next(reader)
