@@ -16,12 +16,10 @@ parallel_workers <- if (!is.null(args$parallel_workers)) {
 }
 seed <- as.integer(args$seed %||% 123L)
 
-# cpm_filt is the filtered log2(CPM + 1) matrix from preprocess.R: non-negative and
-# already on the log scale CoGAPS's Gibbs sampler expects (without a log transform it
-# warns "Large values detected, is data log transformed?").  The log1p that used to be
-# applied here was removed when preprocess.R started log-transforming before filtering,
-# to match the GTEx pipeline -- keeping it would have transformed the data twice.
-mat <- loaded$norm
+# cpm_filt is non-negative linear CPM (pre-z-score). log1p it as CoGAPS's own
+# vignette does for count-scale data: raw CPM values are outside the range its
+# Gibbs sampler expects and otherwise trigger its large-value warning.
+mat <- log1p(loaded$norm)
 
 # Distributed genome-wide CoGAPS: each subset should have 1000-5000 genes
 nSets <- max(ceiling(nrow(mat) / 2500), 2L)

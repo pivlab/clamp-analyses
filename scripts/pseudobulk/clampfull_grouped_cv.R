@@ -44,11 +44,12 @@ train_groups <- unique(membership$group_id[membership$sample %in% train_samples]
 test_groups <- unique(membership$group_id[membership$sample %in% test_samples])
 if (length(intersect(train_groups, test_groups)) > 0L) stop(dataset, " fold ", fold, ": group leakage")
 
+# bulk_expr.csv is already CPM; subset it without a second normalization.
 # Every data-derived preprocessing decision is learned from the training fold.
-train_cpm <- CLAMP::cpmCLAMP(counts[, train_samples, drop = FALSE])
+train_cpm <- counts[, train_samples, drop = FALSE]
 prep <- CLAMP::preprocessCLAMP(train_cpm, mean_cutoff = mean_cutoff, var_cutoff = var_cutoff)
 train_norm <- CLAMP::zscoreCLAMP(prep$Y_filtered, prep$rowStats)
-test_cpm <- CLAMP::cpmCLAMP(counts[, test_samples, drop = FALSE])
+test_cpm <- counts[, test_samples, drop = FALSE]
 genes <- intersect(rownames(train_norm), rownames(test_cpm))
 if (length(genes) < 2L) stop(dataset, " fold ", fold, ": insufficient retained genes")
 train_norm <- train_norm[genes, , drop = FALSE]
