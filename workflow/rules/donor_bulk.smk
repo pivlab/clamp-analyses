@@ -19,8 +19,11 @@ def donor_bulk_manifest(wildcards):
 
 
 # ============================================================
-# Donor-bulk libraries and independent expression UMAPs
+# Step 1: build donor-bulk libraries and independent expression UMAPs
 # ============================================================
+# Sums the same retained raw single-cell counts used by pseudobulk into one
+# real bulk-like library per donor, plus a separate expression UMAP from a
+# sampled subset of cells
 
 rule build_donor_bulk:
     input:
@@ -30,7 +33,6 @@ rule build_donor_bulk:
         script="scripts/donor_bulk/build_donor_bulk.py",
     output:
         counts=f"{DB_PROD}/{{dataset}}/bulk/bulk_counts.csv",
-        mean_cell_cpm=f"{DB_PROD}/{{dataset}}/bulk/bulk_mean_cell_cpm.csv",
         truth=f"{DB_PROD}/{{dataset}}/bulk/truthFrac_v0.csv",
         info=f"{DB_PROD}/{{dataset}}/bulk/patient_info.csv",
         summary=f"{DB_PROD}/{{dataset}}/bulk/aggregation_summary.csv",
@@ -54,7 +56,7 @@ rule build_donor_bulk:
     shell:
         "python {input.script} --config {input.config} --dataset {wildcards.dataset} "
         "--manifest {input.manifest} --counts {output.counts} "
-        "--mean-cell-cpm {output.mean_cell_cpm} --truth {output.truth} "
+        "--truth {output.truth} "
         "--patient-info {output.info} --summary {output.summary} "
         "--sample-counts {output.sample_counts} --sample-cells {output.sample_cells} "
         "--sample-genes {output.sample_genes} --chunk-cells {params.chunk_cells} "
@@ -65,7 +67,6 @@ rule build_donor_bulk:
 rule donor_bulk_data:
     input:
         counts=expand(f"{DB_PROD}/{{dataset}}/bulk/bulk_counts.csv", dataset=DB_DATASETS),
-        controls=expand(f"{DB_PROD}/{{dataset}}/bulk/bulk_mean_cell_cpm.csv", dataset=DB_DATASETS),
         truth=expand(f"{DB_PROD}/{{dataset}}/bulk/truthFrac_v0.csv", dataset=DB_DATASETS),
         samples=expand(f"{DB_PROD}/{{dataset}}/single_cell_umap/sampled_counts.npz", dataset=DB_DATASETS),
 
@@ -107,8 +108,10 @@ rule donor_bulk_umaps:
 
 
 # ============================================================
-# Full-data donor-bulk models
+# Step 2: fit full-data donor-bulk models
 # ============================================================
+# Preprocesses the raw donor-summed counts
+# and fits CLAMPfull on the full dataset
 
 rule preprocess_donor_bulk:
     input:
@@ -127,7 +130,7 @@ rule preprocess_donor_bulk:
     conda: "clamp-analyses"
     shell:
         "MKL_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 "
-        "Rscript scripts/pseudobulk/preprocess.R --input {input.bulk} "
+        "Rscript scripts/pseudobulk/preprocess.R --input {input.bulk} --input-scale counts "
         "--norm {output.norm} --cpm-filt {output.cpm_filt} "
         "--row-stats {output.row_stats} --k {output.k} "
         "--diagnostics {output.diagnostics} --mean-cutoff {config[preprocess][mean_cutoff]} "
@@ -167,8 +170,10 @@ rule donor_bulk_full_models:
 
 
 # ============================================================
-# Leakage-free donor-bulk and matched-control grouped CV
+# Step 3: leakage-free donor-bulk grouped CV
 # ============================================================
+# Same 5-fold, donor-preserving grouped CV, refit on
+# the donor-summed libraries
 
 rule donor_bulk_grouped_cv_folds:
     input:
@@ -219,40 +224,7 @@ rule clampfull_grouped_cv_donor_bulk:
     shell:
         "MKL_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 "
         "Rscript scripts/pseudobulk/clampfull_grouped_cv.R --dataset {wildcards.dataset} "
-        "--fold {wildcards.fold} --bulk {input.bulk} --truth {input.truth} "
-        "--membership {input.membership} --gmt {input.gmt} --out-dir {params.out_dir} "
-        "--seed {config[clamp][seed]} --max-iter {config[clamp][max_iter]} "
-        "--mean-cutoff {config[preprocess][mean_cutoff]} --var-cutoff {config[preprocess][var_cutoff]}"
-
-
-rule clampfull_grouped_cv_donor_bulk_control:
-    input:
-        bulk=rules.build_donor_bulk.output.mean_cell_cpm,
-        truth=rules.build_donor_bulk.output.truth,
-        membership=rules.donor_bulk_grouped_cv_folds.output.membership,
-        gmt=rules.pathway_prior.output,
-    output:
-        train_B=f"{DB_PROD}/{{dataset}}/grouped_cv_mean_cell_cpm/fold{{fold}}/CLAMPfull/train_B.csv",
-        train_Z=f"{DB_PROD}/{{dataset}}/grouped_cv_mean_cell_cpm/fold{{fold}}/CLAMPfull/train_Z.csv",
-        test_B=f"{DB_PROD}/{{dataset}}/grouped_cv_mean_cell_cpm/fold{{fold}}/CLAMPfull/test_B.csv",
-        row_stats=f"{DB_PROD}/{{dataset}}/grouped_cv_mean_cell_cpm/fold{{fold}}/CLAMPfull/row_stats.csv",
-        train_truth=f"{DB_PROD}/{{dataset}}/grouped_cv_mean_cell_cpm/fold{{fold}}/CLAMPfull/train_truth.csv",
-        test_truth=f"{DB_PROD}/{{dataset}}/grouped_cv_mean_cell_cpm/fold{{fold}}/CLAMPfull/test_truth.csv",
-        summary=f"{DB_PROD}/{{dataset}}/grouped_cv_mean_cell_cpm/fold{{fold}}/CLAMPfull/summary.csv",
-        model=f"{DB_PROD}/{{dataset}}/grouped_cv_mean_cell_cpm/fold{{fold}}/CLAMPfull/CLAMPfull.rds",
-    params:
-        out_dir=lambda wc: f"{DB_PROD}/{wc.dataset}/grouped_cv_mean_cell_cpm/fold{wc.fold}/CLAMPfull",
-    wildcard_constraints:
-        dataset=DB_DATASET_PATTERN,
-        fold=CV_FOLD_PATTERN,
-    resources:
-        mem_mb=48000,
-        runtime=1440,
-    conda: "clamp-analyses"
-    shell:
-        "MKL_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 "
-        "Rscript scripts/pseudobulk/clampfull_grouped_cv.R --dataset {wildcards.dataset} "
-        "--fold {wildcards.fold} --bulk {input.bulk} --truth {input.truth} "
+        "--fold {wildcards.fold} --bulk {input.bulk} --input-scale counts --truth {input.truth} "
         "--membership {input.membership} --gmt {input.gmt} --out-dir {params.out_dir} "
         "--seed {config[clamp][seed]} --max-iter {config[clamp][max_iter]} "
         "--mean-cutoff {config[preprocess][mean_cutoff]} --var-cutoff {config[preprocess][var_cutoff]}"
@@ -262,10 +234,6 @@ rule donor_bulk_grouped_cv_models:
     input:
         donor=expand(
             f"{DB_PROD}/{{dataset}}/grouped_cv/fold{{fold}}/CLAMPfull/CLAMPfull.rds",
-            dataset=DB_DATASETS, fold=CV_FOLDS,
-        ),
-        control=expand(
-            f"{DB_PROD}/{{dataset}}/grouped_cv_mean_cell_cpm/fold{{fold}}/CLAMPfull/CLAMPfull.rds",
             dataset=DB_DATASETS, fold=CV_FOLDS,
         )
 
@@ -279,17 +247,12 @@ rule donor_bulk_models:
         )
 
 
-rule donor_bulk_controls:
-    input:
-        expand(
-            f"{DB_PROD}/{{dataset}}/grouped_cv_mean_cell_cpm/fold{{fold}}/CLAMPfull/CLAMPfull.rds",
-            dataset=DB_DATASETS, fold=CV_FOLDS,
-        )
-
-
 # ============================================================
 # Original-cell projection, analysis, validation, and notebooks
 # ============================================================
+# Projects the original single cells onto the donor-bulk CLAMPfull models,
+# pools full/CV results into analysis tables, validates the pipeline, and
+# runs the QC and recovery notebooks.
 
 rule single_cell_projection_donor_bulk:
     input:
@@ -333,10 +296,6 @@ rule donor_bulk_analysis_tables:
             f"{DB_PROD}/{{dataset}}/grouped_cv/fold{{fold}}/CLAMPfull/CLAMPfull.rds",
             dataset=DB_DATASETS, fold=CV_FOLDS,
         ),
-        control_cv=expand(
-            f"{DB_PROD}/{{dataset}}/grouped_cv_mean_cell_cpm/fold{{fold}}/CLAMPfull/CLAMPfull.rds",
-            dataset=DB_DATASETS, fold=CV_FOLDS,
-        ),
         projections=expand(f"{DB_PROD}/{{dataset}}/single_cell_projection/single_cell_lv_scores.h5", dataset=DB_DATASETS),
         config="workflow/config/cell_type_analysis.yaml",
         script="scripts/donor_bulk/analyze_donor_bulk.py",
@@ -349,12 +308,6 @@ rule donor_bulk_analysis_tables:
         metrics=f"{DB_BIO}/analysis/oof_metrics.csv",
         cv_dataset=f"{DB_BIO}/analysis/cv_recovery_by_dataset.csv",
         cv_overall=f"{DB_BIO}/analysis/cv_recovery_overall.csv",
-        control_predictions=f"{DB_BIO}/analysis/control_oof_predictions.csv",
-        control_calibrations=f"{DB_BIO}/analysis/control_fold_calibrations.csv",
-        control_metrics=f"{DB_BIO}/analysis/control_oof_metrics.csv",
-        control_dataset=f"{DB_BIO}/analysis/control_cv_recovery_by_dataset.csv",
-        control_overall=f"{DB_BIO}/analysis/control_cv_recovery_overall.csv",
-        comparison=f"{DB_BIO}/analysis/comparison_cv_samecell.csv",
         recovery=f"{DB_BIO}/analysis/single_cell_recovery.csv",
         recovery_dataset=f"{DB_BIO}/analysis/single_cell_recovery_by_dataset.csv",
         recovery_overall=f"{DB_BIO}/analysis/single_cell_recovery_overall.csv",
@@ -422,7 +375,6 @@ rule donor_bulk_recovery_report:
         predictions=rules.donor_bulk_analysis_tables.output.predictions,
         metrics=rules.donor_bulk_analysis_tables.output.metrics,
         cv_dataset=rules.donor_bulk_analysis_tables.output.cv_dataset,
-        comparison=rules.donor_bulk_analysis_tables.output.comparison,
         recovery=rules.donor_bulk_analysis_tables.output.recovery,
         specificity=rules.donor_bulk_analysis_tables.output.specificity,
         specificity_summary=rules.donor_bulk_analysis_tables.output.specificity_summary,

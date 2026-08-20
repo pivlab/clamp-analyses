@@ -1,5 +1,8 @@
 #!/usr/bin/env Rscript
-# Create one deterministic, group-preserving fold assignment per pseudobulk cohort.
+# Splits one dataset's samples into 5 cross-validation folds, keeping every
+# sample from the same donor in the same fold so training and test never
+# share a donor. Writes which sample goes in which fold, and how big each
+# fold is, for the fold-fitting scripts to use.
 suppressPackageStartupMessages(library(data.table))
 
 script_dir <- dirname(normalizePath(sub("^--file=", "", commandArgs(FALSE)[grep("^--file=", commandArgs(FALSE))])))
@@ -37,8 +40,6 @@ groups <- unname(sample_to_group[samples])
 if (anyNA(groups) || any(!nzchar(groups))) stop(dataset, ": missing group identifiers among aligned samples")
 if (length(unique(groups)) < n_folds) stop(dataset, ": fewer unique groups than folds")
 
-# Seeded greedy bin-packing keeps whole groups together while balancing the
-# number of samples per fold. Randomized tie ordering makes the seed effective.
 group_sizes <- table(groups)
 set.seed(seed)
 shuffled_groups <- sample(names(group_sizes), length(group_sizes), replace = FALSE)

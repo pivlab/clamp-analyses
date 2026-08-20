@@ -162,47 +162,24 @@ paths:
 
 references:
   go_bp_url: https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=GO_Biological_Process_2025
-  go_bp_file: output/01_model_building/00_pseudobulk/references/GO_Biological_Process_2025.gmt
+  go_bp_file: data/pathways/GO_Biological_Process_2025.gmt
   go_bp_sha256: 0fc02458765cfce6c9348dce9f7a9397c6caf7c09ba318f468135d7ac60342ee
   cell_marker_file: data/pathways/Cell_marker_Human.xlsx
   allen_brain_gmt_file: data/pathways/Allen_Brain_Atlas_10x_scRNA_2021.gmt
-  # Canonical reference-atlas markers for all pseudobulk cell-type ORA and
-  # hard-pair loading panels. Each dataset is matched to its corresponding
-  # Azimuth atlas (PBMC, Motor Cortex, Heart, or Lung V2/HLCA).
+  # Dataset-matched reference-atlas markers used together with CellMarker and,
+  # for brain cohorts, Allen in pseudobulk cell-type ORA. The loading analysis
+  # also compares these marker resources explicitly.
   azimuth_file: data/pathways/Azimuth_2023.txt
   # Binary genes x tissue matrix, one of the evaluation collections the GO:BP
   # prior is tested against for orthogonality.
   gtex_tissues_pathmat: data/archs4/GTEx_Tissues_pathMat.rds
   brain_datasets: [Brain_Mathys2023, Brain_Xiong2023]
 
-# Gene filter applied after CPM normalization and the log2(x + 1) transform in
-# scripts/pseudobulk/preprocess.R.  Deliberately NOT the same as the GTEx values
-# (gtex.yaml keeps mean_cutoff: 0.5, var_cutoff: 0.1), and that is not an oversight.
-#
-# These cutoffs were originally tuned against linear CPM, where var_cutoff: 0.1 was
-# effectively inert: measured row variances had medians of 9-53 and maxima near 1e7,
-# so almost nothing was removed and the filter was in practice mean-only.  Once
-# preprocessing was corrected to log2 the same 0.1 became a real filter, removing
-# 16-23% of genes, and the elbow-based rank estimate on the largest dataset
-# collapsed from k=130 to k=62.  Values calibrated on one scale do not transfer to
-# another, so they were recalibrated to preserve the filter's previous effective
-# selectivity rather than its literal numbers.
-#
-# At 0.25/0.01 the inferred k is unchanged from the pre-log2 pipeline on five of the
-# six datasets (Brain_Mathys2023 19, Brain_Xiong2023 18, PBMC_1k1k 130,
-# PBMC_Perez2022 52, Heart_Datar2026 52); only Lung_Sikkema2023 moves, 18 -> 24, and
-# it does so under every cutoff tested.  Retained gene sets run 6-11% larger than the
-# pre-log2 ones.  It is mean_cutoff that governs the rank: lowering it readmits the
-# low-expression genes carrying those components, whereas varying var_cutoff alone
-# only moved PBMC_1k1k from 62 to 74.
-#
-# GTEx keeps its own values because it is bulk tissue rather than aggregated
-# single-cell profiles, with a different per-gene variance distribution.  Note this
-# is a deliberate exception to the method-parameter harmonization: the iteration caps
-# below are matched to GTEx, these preprocessing cutoffs are not.
+# Gene filter on linear pseudobulk CPM. CPM normalization happens once, upstream
+# of preprocess.R; no log transform or second CPM normalization is applied here.
 preprocess:
-  mean_cutoff: 0.25
-  var_cutoff: 0.01
+  mean_cutoff: 0.5
+  var_cutoff: 0.1
   seed: 123
 # CLAMPbase/CLAMPfull fit settings, shared by model building, the runtime
 # benchmark and grouped-CV refits. max_iter is headroom above the iteration
@@ -219,17 +196,7 @@ grouped_cv:
   bootstrap_seed: 123
   bootstrap_replicates: 10000
 # flashier: greedy factor addition followed by backfit_maxiter backfitting
-# iterations to refine loadings.  Matched to the GTEx pipeline
-# (backfit_maxiter: 20 in gtex.yaml) so the same method is fitted the same way
-# on both datasets and the two benchmarks are comparable.
-#
-# This sits below the package default (flash_backfit's own maxiter) on purpose.
-# The default is not computationally practical on the GTEx matrix, and flashier
-# does not reach its convergence tolerance at any cap we have run: the fit logs
-# show the between-iteration criterion still orders of magnitude above tolerance
-# when the cap is hit.  The benchmark therefore compares cost under a fixed,
-# equal iteration budget, not cost to convergence, and the timing figures must
-# not be read as convergence comparisons.
+# iterations to refine loadings, as defined in PR #21.
 flashier:
   backfit_maxiter: 20
 # CoGAPS Gibbs sampler settings, identical to the GTEx pipeline's cogaps
@@ -241,17 +208,7 @@ cogaps:
   n_iterations: 5000
   n_threads: 4
   seed: 123
-# MOFA-FLEX epoch budget under the Horseshoe weight prior.  Matched to the GTEx
-# pipeline (max_epochs: 1000 in gtex.yaml), which also now uses the same pinned
-# Enrichr GO:BP prior as CLAMP and PLIER, so the method is configured identically
-# on both datasets.
-#
-# As with flashier, this sits below the package default deliberately: the default
-# is not computationally practical on GTEx, and MOFA-FLEX does not converge at
-# either cap we have run.  Its logs show the full epoch budget consumed with the
-# built-in early stopper never triggering, so the epoch count is a budget rather
-# than a convergence point, and the timing figures compare cost under a fixed,
-# equal budget.
+# MOFA-FLEX epoch budget under the Horseshoe weight prior, as defined in PR #21.
 mofa_flex:
   max_epochs: 1000
   seed: 123

@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+# GenomicSuperSignature pseudobulk models
 suppressPackageStartupMessages({
   library(data.table)
   library(cluster)
@@ -14,7 +15,6 @@ loaded <- read_norm_and_k(required_arg(args, "norm"), required_arg(args, "k"))
 d_cluster <- as.integer(if (is.null(args$d_cluster)) 4L else args$d_cluster)
 set.seed(as.integer(if (is.null(args$seed)) 123L else args$seed))
 
-# PCA on the normalized matrix, keep the top k components
 pca <- prcomp(t(loaded$norm))
 rotation <- pca$rotation[, seq_len(loaded$k), drop = FALSE]
 colnames(rotation) <- paste0(dataset, ".PC", seq_len(loaded$k))
@@ -23,8 +23,6 @@ variance <- rbind(SD = sqrt(eigs), Variance = eigs / sum(eigs), Cumulative = cum
 variance <- variance[, seq_len(loaded$k), drop = FALSE]
 colnames(variance) <- colnames(rotation)
 
-# Cluster correlated PCs into RAVs (replicable axes of variation) and average
-# each cluster's loadings into a single RAV loading vector
 k_clust <- max(round(ncol(rotation) / d_cluster), 2L)
 distance <- as.dist(1 - cor(rotation, method = "spearman"))
 clusters <- cutree(hclust(distance, method = "ward.D"), k = k_clust)
@@ -32,7 +30,6 @@ avg <- GenomicSuperSignature::buildAvgLoading(rotation, k_clust, cluster = clust
 sil <- tryCatch(cluster::silhouette(avg$cluster, distance), error = function(e) NULL)
 avg$sw <- if (is.null(sil)) rep(NA_real_, k_clust) else summary(sil)$clus.avg.widths
 
-# Package the RAV loadings as a GenomicSuperSignature model
 training <- S4Vectors::DataFrame(PCAsummary = I(list(variance))); rownames(training) <- dataset
 model <- GenomicSuperSignature::PCAGenomicSignatures(
   assays = list(RAVindex = as.matrix(avg$avgLoading)), trainingData = training
@@ -43,7 +40,6 @@ GenomicSuperSignature::geneSets(model) <- "Custom"
 GenomicSuperSignature::studies(model) <- avg$studies
 GenomicSuperSignature::silhouetteWidth(model) <- avg$sw
 
-# Score samples against the RAV index, restricted to genes present in both
 index <- SummarizedExperiment::assays(model)[["RAVindex"]] |> as.matrix()
 common <- sort(intersect(rownames(loaded$norm), rownames(index)))
 B <- crossprod(index[common, , drop = FALSE], loaded$norm[common, , drop = FALSE])

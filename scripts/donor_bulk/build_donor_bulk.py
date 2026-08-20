@@ -173,7 +173,6 @@ def aggregate_h5(
         selected_lookup = np.zeros(n_cells, dtype=bool)
         selected_lookup[sample_index] = True
         sums = np.zeros((len(donors), n_genes), dtype=np.float64)
-        cpm_sums = np.zeros_like(sums)
         sampled_blocks = []
         retained_processed = 0
         for start in range(0, n_cells, chunk_cells):
@@ -196,8 +195,6 @@ def aggregate_h5(
                 )
                 donor_block = (indicator @ retained).tocoo()
                 np.add.at(sums, (donor_block.row, donor_block.col), donor_block.data)
-                donor_cpm = (indicator @ (sp.diags(1e6 / totals) @ retained)).tocoo()
-                np.add.at(cpm_sums, (donor_cpm.row, donor_cpm.col), donor_cpm.data)
                 retained_processed += int(local_keep.sum())
             if stop % (chunk_cells * 10) == 0 or stop == n_cells:
                 print(f"[{dataset}] checked {stop:,}/{n_cells:,} cells", flush=True)
@@ -218,7 +215,6 @@ def aggregate_h5(
     }
     return (
         sums,
-        cpm_sums / cell_counts[:, None],
         genes,
         truth,
         donors,
@@ -279,7 +275,6 @@ def aggregate_mtx(
         raise ValueError(f"{dataset}: retained zero-library cell")
 
     sums = np.zeros((len(donors), n_genes), dtype=np.float64)
-    cpm_sums = np.zeros_like(sums)
     temp_parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=f"{dataset}_sample_", dir=temp_parent) as temp_dir:
         temp = Path(temp_dir)
@@ -294,8 +289,6 @@ def aggregate_mtx(
                 kept_col = col[retained]
                 flat = codes[kept_col].astype(np.int64) * n_genes + row[retained]
                 sums += np.bincount(flat, weights=value[retained], minlength=sums.size).reshape(sums.shape)
-                scaled = value[retained] * (1e6 / totals[kept_col])
-                cpm_sums += np.bincount(flat, weights=scaled, minlength=sums.size).reshape(sums.shape)
             local_rows = sample_lookup[col]
             selected = local_rows >= 0
             count = int(selected.sum())
@@ -329,7 +322,6 @@ def aggregate_mtx(
     }
     return (
         sums,
-        cpm_sums / cell_counts[:, None],
         genes,
         truth,
         donors,
@@ -346,7 +338,6 @@ def aggregate_mtx(
 def write_outputs(args: argparse.Namespace, result: tuple, manifest: pd.DataFrame) -> None:
     (
         sums,
-        mean_cpm,
         genes,
         truth,
         donors,
@@ -360,14 +351,11 @@ def write_outputs(args: argparse.Namespace, result: tuple, manifest: pd.DataFram
     ) = result
     unique_genes, aggregator = gene_aggregator(genes)
     collapsed = np.asarray(sums @ aggregator)
-    collapsed_mean = np.asarray(mean_cpm @ aggregator)
     collapsed_sample = (sampled @ aggregator).tocsr()
     if not np.isclose(collapsed.sum(), sums.sum()):
         raise ValueError("duplicate-gene collapse changed total donor counts")
     if not np.isclose(collapsed_sample.sum(), sampled.sum()):
         raise ValueError("duplicate-gene collapse changed sampled-cell counts")
-    if not np.allclose(collapsed_mean.sum(axis=1), 1e6, atol=1e-3):
-        raise ValueError("matched mean-cell-CPM libraries do not sum to one million")
     if list(truth.index.astype(str)) != donors or not np.allclose(truth.sum(axis=1), 1):
         raise ValueError("truth rows and donor matrix columns are not aligned")
     implied = truth.to_numpy() * cell_counts[:, None]
@@ -379,7 +367,6 @@ def write_outputs(args: argparse.Namespace, result: tuple, manifest: pd.DataFram
 
     paths = [
         args.counts,
-        args.mean_cell_cpm,
         args.truth,
         args.patient_info,
         args.summary,
@@ -390,7 +377,6 @@ def write_outputs(args: argparse.Namespace, result: tuple, manifest: pd.DataFram
     for path in paths:
         repo_path(path).parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(collapsed.T, index=unique_genes, columns=donors).to_csv(repo_path(args.counts))
-    pd.DataFrame(collapsed_mean.T, index=unique_genes, columns=donors).to_csv(repo_path(args.mean_cell_cpm))
     truth.to_csv(repo_path(args.truth))
     info = manifest.set_index(manifest["sample"].astype(str)).loc[donors].reset_index(drop=True).copy()
     info["sample"] = donors
@@ -429,7 +415,6 @@ def main() -> None:
     parser.add_argument("--dataset", required=True)
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--counts", required=True)
-    parser.add_argument("--mean-cell-cpm", required=True)
     parser.add_argument("--truth", required=True)
     parser.add_argument("--patient-info", required=True)
     parser.add_argument("--summary", required=True)

@@ -20,6 +20,18 @@ include: "rules/archs4_coverage.smk"
 include: "rules/archs4_saturation.smk"
 include: "rules/panels.smk"
 
+rule pseudobulk_complete:
+    input:
+        rules.pseudobulk_data.input,
+        rules.full_models_pseudobulk.input,
+        rules.grouped_cv_models_pseudobulk.input,
+        rules.single_cell_projections.input,
+        rules.model_building_qc_pseudobulk.output.complete,
+        rules.computational_timing_analysis.input,
+        rules.biology_pseudobulk.input,
+        rules.donor_bulk_report.input,
+        rules.panels_pseudobulk.input,
+
 rule all:
     input:
         rules.pseudobulk_data.input,

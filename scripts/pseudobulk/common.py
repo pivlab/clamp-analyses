@@ -1,5 +1,3 @@
-"""Shared low-level helpers for pseudobulk production scripts."""
-
 from __future__ import annotations
 
 import gzip
@@ -142,7 +140,6 @@ def map_labels(values: np.ndarray, mapping: dict[str, str] | None) -> np.ndarray
 
 
 def analysis_excluded_cell_types(config: dict[str, Any], dataset: str) -> list[str]:
-    """Return the configured evaluation-only cell-type exclusions for a dataset."""
     values = (
         config.get("cell_type_analysis", {})
         .get("excluded_targets", {})
@@ -158,7 +155,6 @@ def filter_analysis_cell_types(
     *,
     strict: bool = True,
 ) -> pd.DataFrame:
-    """Remove configured evaluation targets without renormalizing compositions."""
     excluded = analysis_excluded_cell_types(config, dataset)
     missing = sorted(set(excluded) - set(truth.columns.astype(str)))
     if strict and missing:

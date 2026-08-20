@@ -1,6 +1,3 @@
-# Shared pseudobulk helpers used by multiple production scripts and reports.
-# Batch scripts must never fall back to R's implicit `Rplots.pdf` device.
-# Explicit devices (for example ggsave/cairo_pdf) are unaffected.
 options(device = function(...) grDevices::pdf(file = NULL))
 
 `%||%` <- function(x, y) if (is.null(x)) y else x
@@ -39,6 +36,27 @@ read_csv_matrix <- function(path) {
   mat
 }
 
+prepare_linear_cpm <- function(x, input_scale, label = "expression input") {
+  input_scale <- tolower(as.character(input_scale))
+  if (!input_scale %in% c("counts", "cpm")) {
+    stop(label, ": --input-scale must be either 'counts' or 'cpm'")
+  }
+  if (!all(is.finite(x)) || any(x < 0)) {
+    stop(label, ": input contains non-finite or negative values")
+  }
+
+  library_sizes <- colSums(x)
+  if (any(!is.finite(library_sizes)) || any(library_sizes <= 0)) {
+    stop(label, ": every sample must have a positive finite library size")
+  }
+  if (input_scale == "counts") return(CLAMP::cpmCLAMP(x))
+
+  if (any(abs(library_sizes - 1e6) > 1e4)) {
+    stop(label, ": input declared as CPM but sample totals are not approximately 1e6")
+  }
+  x
+}
+
 write_csv_matrix <- function(x, path) {
   ensure_parent(path)
   write.csv(as.data.frame(x), path)
@@ -58,11 +76,6 @@ read_norm_and_k <- function(norm_path, k_path) {
   list(norm = read_csv_matrix(norm_path), k = read_k(k_path))
 }
 
-# Apply the canonical, dataset-specific evaluation universe configured in
-# workflow/config/cell_type_analysis.yaml. Excluded annotations remain part of the
-# expression mixture and raw truth denominator; only their columns are removed
-# from LV matching, prediction, and recovery evaluation. Fractions are therefore
-# intentionally not renormalized after filtering.
 filter_analysis_cell_types <- function(x, dataset, excluded_targets, strict = TRUE) {
   excluded <- as.character(excluded_targets[[dataset]] %||% character())
   missing <- setdiff(excluded, colnames(x))
@@ -73,8 +86,6 @@ filter_analysis_cell_types <- function(x, dataset, excluded_targets, strict = TR
   x[, setdiff(colnames(x), excluded), drop = FALSE]
 }
 
-# Greedy one-to-one assignment used by the pseudobulk benchmark.
-# Rows and columns can each be selected at most once.
 oneToOneMask <- function(cc) {
   if (!is.matrix(cc)) cc <- as.matrix(cc)
   mask <- matrix(NA_real_, nrow(cc), ncol(cc), dimnames = dimnames(cc))
@@ -94,26 +105,8 @@ oneToOneMask <- function(cc) {
   mask
 }
 
-# Read a factorization's B matrix and transpose it to samples x LVs, the
-# orientation score_per_ct/assign_with_margins expect. B.csv is stored on
-# disk as LVs x samples.
-# path: path to a B.csv written by a CLAMP/PLIER/NMF/... factorization run.
-# Returns: numeric matrix, samples x LVs.
 read_B <- function(path) t(read_csv_matrix(path))
 
-# Score a factorization's LVs against ground-truth cell-type fractions, using
-# oneToOneMask so each LV can be claimed by at most one cell type -- a method
-# can't get credit for the same LV matching multiple cell types. When there
-# are more cell types than LVs, some cell types will have no LV left to
-# claim; that's a real limitation of the factorization for that dataset, not
-# an artifact to mask.
-# fac: samples x LVs numeric matrix (e.g. from read_B()).
-# truth: samples x cell-types numeric matrix of ground-truth fractions.
-# ct_names: character vector of cell-type names to report a score for.
-# Returns: named numeric vector (one entry per ct_names) with the Pearson
-# correlation of the assigned LV for each cell type, or NA where fac and
-# truth share no samples, fac has no non-constant columns, or the cell type
-# had no LV left to claim.
 score_per_ct <- function(fac, truth, ct_names) {
   shared <- intersect(rownames(fac), rownames(truth))
   if (length(shared) == 0) return(setNames(rep(NA_real_, length(ct_names)), ct_names))
@@ -130,23 +123,6 @@ score_per_ct <- function(fac, truth, ct_names) {
   setNames(v, ct_names)
 }
 
-# Same one-to-one assignment as score_per_ct, but also returns the full
-# unmasked correlation matrix and per-assignment specificity margins: how
-# much higher the assigned pair's correlation is than the next-best
-# competing LV/cell type. Used to check whether related cell types map to
-# distinct LVs (e.g. by 02_disentangle.ipynb).
-# fac, truth: as in score_per_ct().
-# ct_names: cell types to compute an assignment and margin for.
-# Returns: a list with
-#   cc: long data.frame (LV, cell_type, cor) of the full unmasked correlation
-#     matrix, or NULL if fac and truth share no samples or fac has no
-#     non-constant columns.
-#   assignment: data.frame with one row per assigned cell type -- cell_type,
-#     LV, cor, r_next_best_ct/r_next_best_lv (next-best competing
-#     correlation for the same cell type / LV), margin_ct/margin_lv (how
-#     much the assigned pair beats that next-best competitor). NULL under
-#     the same conditions as cc, or if no cell type in ct_names got an
-#     assignment.
 assign_with_margins <- function(fac, truth, ct_names) {
   shared <- intersect(rownames(fac), rownames(truth))
   if (length(shared) == 0) return(list(cc = NULL, assignment = NULL))
@@ -166,12 +142,10 @@ assign_with_margins <- function(fac, truth, ct_names) {
     lv <- rownames(mask)[assigned[1]]
     r  <- col_vals[assigned[1]]
 
-    # Next-best LV for this cell type (excluding the assigned LV itself).
     ct_col         <- cc[, ct]
     ct_col_other   <- ct_col[names(ct_col) != lv]
     r_next_best_ct <- if (length(ct_col_other) > 0) max(ct_col_other, na.rm = TRUE) else NA_real_
 
-    # Next-best cell type for this LV (excluding the assigned cell type itself).
     lv_row         <- cc[lv, ]
     lv_row_other   <- lv_row[names(lv_row) != ct]
     r_next_best_lv <- if (length(lv_row_other) > 0) max(lv_row_other, na.rm = TRUE) else NA_real_

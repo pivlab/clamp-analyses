@@ -1,5 +1,10 @@
 #!/usr/bin/env Rscript
-# Fit CLAMPfull on the grouped training folds and project the untouched fold.
+# Held-out fold evaluation: we train CLAMPfull on every sample except this
+# fold, then project the held-out samples onto the resulting gene-to-LV
+# mapping to get their LV activity, the input a later regression needs to
+# predict each held-out sample's known cell-type proportion and check it
+# against the truth. Because the held-out samples never influenced training,
+# this is a leakage-free test of whether the model generalizes.
 suppressPackageStartupMessages({
   library(CLAMP)
   library(data.table)
@@ -12,7 +17,11 @@ args <- parse_cli()
 
 dataset <- required_arg(args, "dataset")
 fold <- as.integer(required_arg(args, "fold"))
-counts <- read_csv_matrix(required_arg(args, "bulk"))
+input_scale <- required_arg(args, "input_scale")
+counts <- prepare_linear_cpm(
+  read_csv_matrix(required_arg(args, "bulk")), input_scale,
+  paste0(dataset, " fold ", fold, ": clampfull_grouped_cv.R")
+)
 truth <- read_csv_matrix(required_arg(args, "truth"))
 membership <- fread(required_arg(args, "membership"), data.table = FALSE)
 membership$sample <- as.character(membership$sample)
@@ -28,8 +37,6 @@ dir.create(out, recursive = TRUE, showWarnings = FALSE)
 if (!all(c("dataset", "sample", "group_id", "fold", "split_seed") %in% names(membership))) {
   stop(dataset, ": malformed fold membership file")
 }
-# Restrict to this dataset's fold assignment, then split into this fold's
-# held-out test samples vs. every other sample for training.
 membership <- membership[membership$dataset == dataset, , drop = FALSE]
 split_seed <- unique(membership$split_seed)
 if (length(split_seed) != 1L) stop(dataset, ": split seed is not unique")
@@ -39,16 +46,14 @@ train_samples <- sort(setdiff(samples, test_samples))
 if (length(test_samples) < 2L) stop(dataset, " fold ", fold, ": fewer than two held-out samples")
 if (length(train_samples) < 2L) stop(dataset, " fold ", fold, ": fewer than two training samples")
 
-# Guard against a group (e.g. patient) appearing on both sides of the split
 train_groups <- unique(membership$group_id[membership$sample %in% train_samples])
 test_groups <- unique(membership$group_id[membership$sample %in% test_samples])
 if (length(intersect(train_groups, test_groups)) > 0L) stop(dataset, " fold ", fold, ": group leakage")
 
-# Every data-derived preprocessing decision is learned from the training fold.
-train_cpm <- CLAMP::cpmCLAMP(counts[, train_samples, drop = FALSE])
+train_cpm <- counts[, train_samples, drop = FALSE]
 prep <- CLAMP::preprocessCLAMP(train_cpm, mean_cutoff = mean_cutoff, var_cutoff = var_cutoff)
 train_norm <- CLAMP::zscoreCLAMP(prep$Y_filtered, prep$rowStats)
-test_cpm <- CLAMP::cpmCLAMP(counts[, test_samples, drop = FALSE])
+test_cpm <- counts[, test_samples, drop = FALSE]
 genes <- intersect(rownames(train_norm), rownames(test_cpm))
 if (length(genes) < 2L) stop(dataset, " fold ", fold, ": insufficient retained genes")
 train_norm <- train_norm[genes, , drop = FALSE]
@@ -59,24 +64,17 @@ gmt <- read_gmt_file(required_arg(args, "gmt"))
 pathways <- CLAMP::gmtListToSparseMat(list(BP = gmt))
 set.seed(model_seed)
 
-# SVD (needed by CLAMPbase and CLAMPfull). Sized from this fold's own
-# training data, not the full dataset, so it never leaks held-out samples.
 svd_k <- max(2L, floor((min(nrow(train_norm), ncol(train_norm)) - 1) / 4))
 svdres <- rsvd::rsvd(train_norm, k = svd_k)
 
-# Rank selection, mirroring preprocess.R's elbow-based selection but scoped
-# to this fold's training data only (no leakage from held-out samples).
 fold_k <- CLAMP::num.pc(data = train_norm, method = "elbow") * 2
 fold_k <- max(as.integer(fold_k), 2L)
-fold_k <- min(fold_k, svd_k)  # cannot use more singular vectors than computed
+fold_k <- min(fold_k, svd_k)
 
-# CLAMPbase
 base <- CLAMP::CLAMPbase(Y = train_norm, svdres = svdres, clamp_k = fold_k, trace = FALSE)
 
-# Match BP prior to dataset genes
 matched <- CLAMP::getMatchedPathwayMat(pathways, rownames(train_norm))
 
-# CLAMPfull
 model <- CLAMP::CLAMPfull(
   Y                 = train_norm,
   svdres            = svdres,
@@ -91,7 +89,6 @@ model$Z <- as.data.frame(model$Z); rownames(model$Z) <- rownames(train_norm)
 model$B <- as.data.frame(model$B); colnames(model$B) <- colnames(train_norm)
 model$Z <- as.matrix(model$Z[genes, , drop = FALSE])
 
-# Project the held-out fold onto the LVs learned from training only
 test_B <- CLAMP::projectCLAMP(model, test_norm)
 
 write.csv(model$B, file.path(out, "train_B.csv"))
