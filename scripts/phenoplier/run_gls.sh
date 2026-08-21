@@ -18,13 +18,20 @@ lv_percentile="$5"
 executor="$6"
 cluster="$7"
 n_jobs="$8"
-summary_out="$9"
+trait_filter="$9"
+summary_out="${10}"
 
 name="$(printf '%s' "$model_key" | tr '/' '_')"
 workspace="${PHENOPLIER_HOME:-$HOME/phenoplier}"
 
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate "$conda_env"
+
+# `phenoplier` shells out to a bare `snakemake`, and each Snakemake rule shells
+# out to a bare `phenoplier`, so the env's bin has to be ON PATH -- `conda
+# activate` does that, but keep it explicit so a non-interactive shell that
+# skips conda's hooks still works.
+export PATH="${CONDA_PREFIX:-}/bin:${PATH}"
 
 cluster_args=()
 if [[ -n "$cluster" ]]; then
@@ -36,6 +43,7 @@ phenoplier shortcut gls \
   --name "$name" \
   --model-namespace "$namespace" \
   --lv-percentile "$lv_percentile" \
+  --trait-filter "$trait_filter" \
   --executor "$executor" \
   --n-jobs "$n_jobs" \
   "${cluster_args[@]}"
@@ -50,6 +58,24 @@ if [[ -z "$project_dir" ]]; then
 fi
 
 mkdir -p "$(dirname "$summary_out")"
-cp "$project_dir/results/gls/gls-summary-phenomexcan.tsv.gz" "$summary_out"
-cp "$project_dir/results/gls/gls-summary-phenomexcan.pkl.gz" "$(dirname "$summary_out")/" \
-  2>/dev/null || true
+
+# The summary is written under results/gls/phenoplier/, named after the cohort
+# (`gls-summary-<cohort-slug>.tsv.gz`); for the default phenomexcan cohort a
+# `gls-summary-phenomexcan.*` alias is kept for backwards compatibility. Take
+# the alias when present and fall back to whatever cohort-named summary exists,
+# so a non-default --cohort still works.
+summary_dir="$project_dir/results/gls/phenoplier"
+src="$summary_dir/gls-summary-phenomexcan.tsv.gz"
+if [[ ! -f "$src" ]]; then
+  src="$(ls -1 "$summary_dir"/gls-summary-*.tsv.gz 2>/dev/null | head -n1 || true)"
+fi
+if [[ -z "$src" || ! -f "$src" ]]; then
+  echo "No gls-summary-*.tsv.gz found in $summary_dir" >&2
+  exit 1
+fi
+cp "$src" "$summary_out"
+cp "${src%.tsv.gz}.pkl.gz" "$(dirname "$summary_out")/" 2>/dev/null || true
+
+# The filter's exclusion log travels with the results: which traits were
+# dropped, and why, is part of the provenance of these numbers.
+cp "$project_dir/trait_filter_excluded.tsv" "$(dirname "$summary_out")/" 2>/dev/null || true

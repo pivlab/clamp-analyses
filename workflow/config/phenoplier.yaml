@@ -29,25 +29,24 @@ phenoplier:
   #   snakemake phenoplier_traits --config phenoplier_target=server_cu
   target: local
 
-  # UK Biobank Category-tree branches to drop before computing cross-model
-  # trait comparisons: administrative/behavioral fields, not health
-  # phenotypes, that would otherwise inflate or deflate "traits recovered"
-  # counts across fractions/seeds. Matched case-insensitively, by substring,
-  # against phenoplier.entity.Trait.category -- phenoplier-cli's own category
-  # derivation from the UK Biobank data dictionary in the linked reference
-  # data bundle. These strings should be checked against that real dictionary
-  # once it's available (see scripts/phenoplier/filter_phenotypes.py); they
-  # are not yet verified against actual category-tree spelling.
-  excluded_ukb_categories:
-    - "Employment"
-    - "Occupation"
-    - "Occupational history"
-    - "Food preferences"
-    - "24-hour dietary recall"
-    - "Household"
-    - "Accommodation"
-    - "Education"
-    - "Transport"
-    - "Leisure"
-    - "Hobbies"
-    - "Questionnaire administrative"
+  # Which traits to test. Passed straight to `phenoplier shortcut gls
+  # --trait-filter`, so the excluded traits are never computed rather than
+  # filtered out afterwards.
+  #
+  # `biomedical` drops the 1,683 of 4,049 phenotypes that are not biomedical
+  # traits -- 709 occupational codes ("Job SOC coding: ..."), 576
+  # medication/treatment codes, 187 24-hour dietary-recall items, 117
+  # household/administrative fields, 58 food-frequency items, 36
+  # residence-level exposures -- keeping 2,366. Behavioural-but-heritable
+  # phenotypes (smoking, alcohol, physical activity, sleep, family history,
+  # death register, cognitive tests) are deliberately KEPT.
+  #
+  # The standard, its decision record, and the FDR-comparability rules live in
+  # phenoplier-cli: docs/development/trait-filtering-standard.md. Audit what a
+  # preset does with `phenoplier pipeline filter-traits`.
+  #
+  # NOTE: filtering shrinks the Benjamini-Hochberg test count, so numbers
+  # produced with a filter are not comparable to unfiltered runs. Keep this
+  # setting fixed across a whole coverage/saturation sweep.
+  # Use `all` to reproduce the historical unfiltered behaviour.
+  trait_filter: biomedical

@@ -102,6 +102,7 @@ rule phenoplier_gls:
         lv_percentile=PHENOPLIER_CFG["lv_percentile"],
         executor=PHENOPLIER_CLUSTER_CFG["executor"],
         cluster=PHENOPLIER_CLUSTER_CFG.get("cluster", ""),
+        trait_filter=PHENOPLIER_CFG.get("trait_filter", "biomedical"),
     resources:
         # Matches phenoplier-cli's own documented per-job defaults
         # (scripts/slurm/submit.py: 15 CPUs / 45 GB / 7-day wall clock).
@@ -113,10 +114,16 @@ rule phenoplier_gls:
     shell:
         "bash {input.script} {input.rds} {wildcards.model_key} "
         "{params.conda_env} {params.namespace} {params.lv_percentile} "
-        "{params.executor} '{params.cluster}' {threads} {output.summary} "
-        "> {log} 2>&1"
+        "{params.executor} '{params.cluster}' {threads} {params.trait_filter} "
+        "{output.summary} > {log} 2>&1"
 
 
+# Traits are filtered by phenoplier-cli itself, at run time (see
+# phenoplier.yaml: trait_filter), so the excluded ones never reach these
+# summaries and there is nothing left to filter here -- this rule is now a
+# plain concatenation. Each model's own exclusion log (copied next to its
+# summary by run_gls.sh as trait_filter_excluded.tsv) records what was
+# dropped and why.
 rule aggregate_phenoplier_traits:
     input:
         summaries=expand(
@@ -124,25 +131,19 @@ rule aggregate_phenoplier_traits:
             model_key=PHENOPLIER_MODEL_KEYS,
         ),
         aggregate_script="scripts/phenoplier/aggregate_traits.py",
-        filter_script="scripts/phenoplier/filter_phenotypes.py",
         wrapper="scripts/phenoplier/aggregate_traits.sh",
     output:
-        # Raw concatenation kept alongside the filtered table so the category
-        # filter's effect is auditable rather than silently baked in.
-        raw=f"{PHENOPLIER_OUT}/phenoplier_traits_long_raw.csv",
         long=f"{PHENOPLIER_OUT}/phenoplier_traits_long.csv",
-        excluded=f"{PHENOPLIER_OUT}/phenoplier_traits_excluded_ukb_categories.csv",
     log:
         f"{PHENOPLIER_OUT}/aggregate.log"
     params:
         conda_env=PHENOPLIER_CFG["conda_env"],
-        exclude=" ".join(f"'{term}'" for term in PHENOPLIER_CFG["excluded_ukb_categories"]),
     resources:
         mem_mb=16000,
         runtime=120,
     shell:
-        "bash {input.wrapper} {PHENOPLIER_OUT} {output.raw} {output.long} "
-        "{output.excluded} {params.conda_env} {params.exclude} > {log} 2>&1"
+        "bash {input.wrapper} {PHENOPLIER_OUT} {output.long} "
+        "{params.conda_env} > {log} 2>&1"
 
 
 rule phenoplier_traits:

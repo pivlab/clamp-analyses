@@ -7,11 +7,14 @@
 # see https://github.com/pivlab/phenoplier-cli#installation.
 set -euo pipefail
 
-# Pinned to the open fix for the GLS standard-error collapse (PR #85) rather
-# than `main`: that bug produces artifactual ~0 p-values specifically in the
-# hall_coverage_rs*-style sub-sampling models this integration runs against
-# (see workflow/rules/phenoplier.smk). Switch back to `main` once #85 merges.
-REF="${PHENOPLIER_REF:-fix/gls-se-collapse-guard-reopen}"
+# Pinned to a release tag so every machine installs the same code. v0.5.1 is
+# the first release carrying both pieces this integration depends on:
+#   * the GLS standard-error collapse fix (phenoplier-cli #85), which removes
+#     the artifactual ~0 p-values that hit the sub-sampling models this runs
+#     against (see workflow/rules/phenoplier.smk);
+#   * the trait filter (#99 + the #100 settings fix), used via
+#     `--trait-filter` in run_gls.sh.
+REF="${PHENOPLIER_REF:-v0.5.1}"
 CLONE_DIR="${PHENOPLIER_CLONE_DIR:-$HOME/phenoplier-cli}"
 TARGET_ENV="${PHENOPLIER_TARGET_ENV:-phenoplier-cli-neo}"
 
