@@ -7,14 +7,20 @@
 # see https://github.com/pivlab/phenoplier-cli#installation.
 set -euo pipefail
 
-# Pinned to a release tag so every machine installs the same code. v0.5.1 is
-# the first release carrying both pieces this integration depends on:
-#   * the GLS standard-error collapse fix (phenoplier-cli #85), which removes
-#     the artifactual ~0 p-values that hit the sub-sampling models this runs
+# Track `main` (latest) rather than a release tag. This integration depends on
+# fixes that are on main but land *after* the v0.5.1 tag, so v0.5.1 is not
+# enough:
+#   * the GLS standard-error collapse fix (phenoplier-cli #85) -- removes the
+#     artifactual ~0 p-values that hit the sub-sampling models this runs
 #     against (see workflow/rules/phenoplier.smk);
-#   * the trait filter (#99 + the #100 settings fix), used via
-#     `--trait-filter` in run_gls.sh.
-REF="${PHENOPLIER_REF:-v0.5.1}"
+#   * the trait filter (#99) AND the two #100 fixes that make `--trait-filter`
+#     actually take effect (load workspace settings before classifying; apply
+#     the filter where step 7 discovers its inputs) -- both are post-v0.5.1 on
+#     main.
+# The env is created from phenoplier-cli's environment.yml, which pulls rpy2 +
+# r-base: reading a CLAMP .rds model (and `store build --clamp-rds`) needs R.
+# Pin PHENOPLIER_REF to a specific commit/tag for a frozen install.
+REF="${PHENOPLIER_REF:-main}"
 CLONE_DIR="${PHENOPLIER_CLONE_DIR:-$HOME/phenoplier-cli}"
 TARGET_ENV="${PHENOPLIER_TARGET_ENV:-phenoplier-cli-neo}"
 

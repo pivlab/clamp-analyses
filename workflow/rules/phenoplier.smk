@@ -76,6 +76,19 @@ for _fraction, _k, _seed in A4_SAT_CELLS:
 PHENOPLIER_MODELS["gtex/CLAMPfull"] = f"{GTEX_PROD}/CLAMPfull.rds"
 PHENOPLIER_MODELS["gtex/CLAMPbase"] = f"{GTEX_PROD}/CLAMPbase.rds"
 
+# Final production models: one CLAMPfull_bp per dataset, built outside the
+# coverage/saturation matrix above (Marc's coverage-bp output tree). These are
+# the models item 0 of PR #28 runs GLS for. Paths come from phenoplier.yaml:
+# final_models_root, so a cluster that stages a local copy overrides only that
+# one key. The executed run (pre-register once, then GLS per model with the
+# local executor, then `store build`) is committed under
+# scripts/phenoplier/final_models/.
+PHENOPLIER_FINAL_ROOT = PHENOPLIER_CFG["final_models_root"]
+for _dataset in PHENOPLIER_CFG["final_datasets"]:
+    PHENOPLIER_MODELS[f"final/{_dataset}/CLAMPfull_bp"] = (
+        f"{PHENOPLIER_FINAL_ROOT}/{_dataset}/CLAMPfull_bp.rds"
+    )
+
 PHENOPLIER_MODEL_KEYS = list(PHENOPLIER_MODELS)
 PHENOPLIER_KEY_PATTERN = "|".join(re.escape(key) for key in PHENOPLIER_MODEL_KEYS)
 
@@ -180,4 +193,48 @@ rule phenoplier_gtex:
         expand(
             f"{PHENOPLIER_OUT}/{{model_key}}/gls-summary-phenomexcan.tsv.gz",
             model_key=phenoplier_keys("gtex/"),
+        ),
+
+
+rule phenoplier_final:
+    input:
+        expand(
+            f"{PHENOPLIER_OUT}/{{model_key}}/gls-summary-phenomexcan.tsv.gz",
+            model_key=phenoplier_keys("final/"),
+        ),
+
+
+# One-file HDF5 composite study store per final model: the CLAMP .rds (Z,
+# hyperparameters, provenance) plus that model's GLS phenomexcan results, via
+# `phenoplier store build` (phenoplier-cli #70). One store per model because a
+# store holds a single /clamp model but may hold many GWAS cohorts. Depends on
+# the model's GLS summary so the run has finished; the wrapper then reads the
+# per-phenotype results from the workspace project dir.
+rule phenoplier_store:
+    input:
+        rds=phenoplier_model_rds,
+        summary=f"{PHENOPLIER_OUT}/{{model_key}}/gls-summary-phenomexcan.tsv.gz",
+        script="scripts/phenoplier/store_build.sh",
+    output:
+        store=f"{PHENOPLIER_OUT}/{{model_key}}/study.h5",
+    log:
+        f"{PHENOPLIER_OUT}/{{model_key}}/store_build.log"
+    params:
+        conda_env=PHENOPLIER_CFG["conda_env"],
+        cohort="phenomexcan_rapid_gwas",
+    resources:
+        mem_mb=32000,
+        runtime=120,
+    wildcard_constraints:
+        model_key=PHENOPLIER_KEY_PATTERN,
+    shell:
+        "bash {input.script} {input.rds} {wildcards.model_key} "
+        "{params.conda_env} {params.cohort} {output.store} > {log} 2>&1"
+
+
+rule phenoplier_final_stores:
+    input:
+        expand(
+            f"{PHENOPLIER_OUT}/{{model_key}}/study.h5",
+            model_key=phenoplier_keys("final/"),
         ),

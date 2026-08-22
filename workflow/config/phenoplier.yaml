@@ -11,6 +11,19 @@ phenoplier:
   lv_percentile: 0.01
   output_root: output/03_model_biology/00_phenoplier
 
+  # Final production models -- one CLAMPfull_bp per dataset, built outside this
+  # repo's coverage/saturation matrix (Marc's coverage-bp output tree). These
+  # are the models item 0 of PR #28 runs GLS for. `final_models_root` is the
+  # directory holding <dataset>/CLAMPfull_bp.rds; override it per cluster to a
+  # local staging copy (e.g. on Alpine the models are streamed to
+  # /pl/active/pivlab/projects/hzhang/clamp_final_models). See rule
+  # phenoplier_final and scripts/phenoplier/final_models/.
+  final_models_root: /pividori_lab/marc_projects/clamp-analyses-coverage-bp/output/98_final_models
+  final_datasets:
+    - archs4
+    - gtex
+    - recount2
+
   # Which of phenoplier-cli's built-in cluster profiles (see its
   # phenoplier/workflow/clusters.py) to submit to. Account/partition specifics
   # stay inside phenoplier-cli's own profiles, not here -- same reasoning as
