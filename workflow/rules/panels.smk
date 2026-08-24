@@ -1,6 +1,11 @@
 PANELS = config["paths"]["panels"]
 PANELS_NB = os.path.join(REPO_ROOT, config["paths"]["panels_notebooks"])
 
+
+def frozen_gtex(relative_path):
+    """Reuse an existing GTEx result without adding its producer to this DAG."""
+    return ancient(f"{GTEX_BIO}/{relative_path}")
+
 # ============================================================
 # Publication figure panels: load CSV outputs from the
 # biology_pseudobulk analysis notebooks directly and build native
@@ -18,12 +23,11 @@ rule fig2_panel:
         related_corr=rules.hard_cell_types_pseudobulk.output.correlations,
         hard_pair_loading_ready=rules.hard_pair_loadings_pseudobulk.output.panel_ready,
         hard_pair_loading_stats=rules.hard_pair_loadings_pseudobulk.output.stats,
-        subtissue_confusion=rules.subtissue_lr_eval_gtex.output.canonical_confusion,
-        subtissue_anatomical=rules.subtissue_lr_eval_gtex.output.anatomical,
-        subtissues_complete=rules.subtissues_report_gtex.output.complete,
-        liver_xcell_scatter=rules.liver_disentangle_xcell_rf_true_labels_gtex.output.xcell_scatter,
-        liver_lv_pathways=rules.liver_disentangle_xcell_rf_true_labels_gtex.output.lv_pathways,
-        multitissue_panel_ready=rules.multitissue_xcell_recovery_gtex.output.panel_ready,
+        subtissue_confusion=frozen_gtex("04_subtissues/subtissue_confusion_matrices.tsv"),
+        subtissue_anatomical=frozen_gtex("04_subtissues/anatomical_subtissue_results.tsv"),
+        liver_xcell_scatter=frozen_gtex("04_liver_disentangle_xcell_rf_true_labels/liver_xcell_scatter.csv"),
+        liver_lv_pathways=frozen_gtex("04_liver_disentangle_xcell_rf_true_labels/liver_lv_pathways.csv"),
+        multitissue_panel_ready=frozen_gtex("06_multitissue_xcell_recovery/multitissue_recovery_panel_ready.csv"),
         donor_bulk_predictions=rules.donor_bulk_recovery_report.output.fig2_predictions,
         donor_bulk_statistics=rules.donor_bulk_recovery_report.output.fig2_statistics,
         donor_bulk_perez_annotation=rules.donor_bulk_recovery_report.output.perez_annotation,
@@ -60,16 +64,16 @@ rule supp1_panel:
         corr_full=rules.benchmark_pseudobulk.output.corr,
         assignments=rules.benchmark_pseudobulk.output.assignments,
         related_corr=rules.hard_cell_types_pseudobulk.output.correlations,
-        ari_data=rules.kmeans_clustering_report_gtex.output.ari_data,
-        ari_comparisons=rules.kmeans_clustering_report_gtex.output.ari_comparisons,
-        gene_fraction_ari_data=rules.kmeans_clustering_report_gtex.output.gene_fraction_ari_data,
-        gene_fraction_ari_comparisons=rules.kmeans_clustering_report_gtex.output.gene_fraction_ari_comparisons,
-        tissue_subtissue_heatmap=rules.lv_importance_rf_true_labels_biology_gtex.output.tissue_subtissue_heatmap,
-        z_matrix_subtissue=rules.global_alignment_rf_true_labels_gtex.output.subtissue_summary,
+        ari_data=frozen_gtex("00_kmeans_clustering/ari_data.csv"),
+        ari_comparisons=frozen_gtex("00_kmeans_clustering/ari_comparisons.csv"),
+        gene_fraction_ari_data=frozen_gtex("00_kmeans_clustering/gene_fraction_ari_data.csv"),
+        gene_fraction_ari_comparisons=frozen_gtex("00_kmeans_clustering/gene_fraction_ari_comparisons.csv"),
+        tissue_subtissue_heatmap=frozen_gtex("02_LV_importance_rf_true_labels_biology/tissue_subtissue_heatmap.csv"),
+        z_matrix_subtissue=frozen_gtex("07_global_alignment_rf_true_labels/cumulative20/gtex_global_alignment_summary.csv"),
         marker=rules.disentangle_pseudobulk.output.module_panel_ready,
         hard=rules.hard_cell_types_pseudobulk.output.group_dot_ready,
-        orthogonality_per_term=rules.geneset_orthogonality_gtex.output.per_term,
-        orthogonality_summary=rules.geneset_orthogonality_gtex.output.summary,
+        orthogonality_per_term=frozen_gtex("07_geneset_orthogonality/orthogonality_per_term.csv"),
+        orthogonality_summary=frozen_gtex("07_geneset_orthogonality/orthogonality_summary.csv"),
         notebook=f"{PANELS_NB}/supp1.ipynb",
     output:
         png=f"{PANELS}/supp1/supp1.png",
@@ -113,16 +117,16 @@ rule supp3_panel:
         corr_full=rules.benchmark_pseudobulk.output.corr,
         assignments=rules.benchmark_pseudobulk.output.assignments,
         related_corr=rules.hard_cell_types_pseudobulk.output.correlations,
-        ari_data=rules.kmeans_clustering_report_gtex.output.ari_data,
-        ari_comparisons=rules.kmeans_clustering_report_gtex.output.ari_comparisons,
-        gene_fraction_ari_data=rules.kmeans_clustering_report_gtex.output.gene_fraction_ari_data,
-        gene_fraction_ari_comparisons=rules.kmeans_clustering_report_gtex.output.gene_fraction_ari_comparisons,
-        tissue_subtissue_heatmap=rules.lv_importance_rf_true_labels_biology_gtex.output.tissue_subtissue_heatmap,
-        z_matrix_subtissue=rules.global_alignment_rf_true_labels_gtex.output.subtissue_summary,
+        ari_data=frozen_gtex("00_kmeans_clustering/ari_data.csv"),
+        ari_comparisons=frozen_gtex("00_kmeans_clustering/ari_comparisons.csv"),
+        gene_fraction_ari_data=frozen_gtex("00_kmeans_clustering/gene_fraction_ari_data.csv"),
+        gene_fraction_ari_comparisons=frozen_gtex("00_kmeans_clustering/gene_fraction_ari_comparisons.csv"),
+        tissue_subtissue_heatmap=frozen_gtex("02_LV_importance_rf_true_labels_biology/tissue_subtissue_heatmap.csv"),
+        z_matrix_subtissue=frozen_gtex("07_global_alignment_rf_true_labels/cumulative20/gtex_global_alignment_summary.csv"),
         marker=rules.disentangle_pseudobulk.output.module_panel_ready,
         hard=rules.hard_cell_types_pseudobulk.output.group_dot_ready,
-        orthogonality_per_term=rules.geneset_orthogonality_gtex.output.per_term,
-        orthogonality_summary=rules.geneset_orthogonality_gtex.output.summary,
+        orthogonality_per_term=frozen_gtex("07_geneset_orthogonality/orthogonality_per_term.csv"),
+        orthogonality_summary=frozen_gtex("07_geneset_orthogonality/orthogonality_summary.csv"),
         runtime_gtex_per_fit=rules.computational_timing_report_gtex.output.per_fit,
         notebook=f"{PANELS_NB}/supp3.ipynb",
     output:

@@ -46,6 +46,8 @@ def all_pseudobulk_inputs(filename):
 # ============================================================
 # Reference gene set for pathway priors
 # ============================================================
+# Downloads and checksums the fixed GO:BP gene-set file used as the shared
+# pathway prior by every method that needs one (CLAMPfull, PLIER, MOFA-FLEX).
 
 rule pathway_prior:
     output:
@@ -64,6 +66,10 @@ rule pathway_prior:
 # ============================================================
 # Step 1: build pseudobulk data
 # ============================================================
+# For each dataset, produces
+# the pseudobulk expression matrix: which samples qualify, the CPM-averaged
+# expression matrix built from raw single cells, and the matching
+# ground-truth cell-type composition table used to score every model later.
 
 rule cohort_manifest:
     input:
@@ -117,6 +123,8 @@ rule pseudobulk_data:
 # ============================================================
 # Step 2: preprocess pseudobulk data
 # ============================================================
+# filters out low-signal genes, z-scores and
+# picks the model rank (k) via SVD elbow selection
 
 rule preprocess_pseudobulk:
     input:
@@ -139,7 +147,7 @@ rule preprocess_pseudobulk:
     conda: "clamp-analyses"
     shell:
         "MKL_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 "
-        "Rscript scripts/pseudobulk/preprocess.R --input {input.bulk} "
+        "Rscript scripts/pseudobulk/preprocess.R --input {input.bulk} --input-scale cpm "
         "--norm {output.norm} --cpm-filt {output.cpm_filt} --row-stats {output.row_stats} --k {output.k} "
         "--diagnostics {output.diagnostics} "
         "--mean-cutoff {params.mean_cutoff} --var-cutoff {params.var_cutoff} --seed {params.seed}"
@@ -148,6 +156,8 @@ rule preprocess_pseudobulk:
 # ============================================================
 # Step 3: decomposition pseudobulk models
 # ============================================================
+# CLAMPbase/CLAMPfull, PLIER, PCA/NMF/ICA,
+# Flashier, MOFA-FLEX, GSSig, CoGAPS models with pseudobulk data
 
 rule clamp_pseudobulk:
     input:
@@ -340,6 +350,10 @@ rule model_building_qc_pseudobulk:
 # ============================================================
 # Step 4: grouped cross-validation for CLAMPfull
 # ============================================================
+# Splits each dataset into 5 donor-preserving folds, refits CLAMPfull per
+# fold on the training samples, projects the held-out samples onto the
+# resulting latent variables, and pools all folds into out-of-fold
+# predictions and metrics
 
 rule grouped_cv_folds_pseudobulk:
     input:
@@ -391,7 +405,7 @@ rule clampfull_grouped_cv_pseudobulk:
     conda: "clamp-analyses"
     shell:
         "Rscript scripts/pseudobulk/clampfull_grouped_cv.R --dataset {wildcards.dataset} "
-        "--fold {wildcards.fold} --bulk {input.bulk} --truth {input.truth} "
+        "--fold {wildcards.fold} --bulk {input.bulk} --input-scale cpm --truth {input.truth} "
         "--membership {input.membership} --gmt {input.gmt} "
         "--out-dir {params.out_dir} --seed {params.seed} "
         "--max-iter {params.max_iter} --mean-cutoff {params.mean_cutoff} --var-cutoff {params.var_cutoff}"
@@ -460,6 +474,10 @@ rule grouped_cv_analysis_pseudobulk:
 # ============================================================
 # Step 5: project single cells onto the CLAMP latent variables
 # ============================================================
+# Projects every raw single cell from each
+# dataset onto the full-data CLAMPfull models
+# so each individual cell's LV activity can later be checked against its annotated
+# cell type
 
 rule single_cell_projection_pseudobulk:
     input:
@@ -492,6 +510,10 @@ rule single_cell_projections:
 # ============================================================
 # Step 6: biology analyses
 # ============================================================
+# Turns model outputs into biological results: benchmarking every method
+# against the ground truth, the held-out cross-validation report,
+# disentangling latent variables against marker genes, single-cell recovery,
+# and the hard-to-distinguish cell-type-pair panels.
 
 rule benchmark_pseudobulk:
     input:
@@ -544,6 +566,8 @@ rule disentangle_pseudobulk:
         assignments=rules.benchmark_pseudobulk.output.assignments,
         corr=rules.benchmark_pseudobulk.output.corr,
         truths=all_pseudobulk_inputs("truthFrac_v0.csv"),
+        cell_marker_file=CELL_MARKER_FILE,
+        allen_brain_gmt_file=ALLEN_BRAIN_GMT_FILE,
         azimuth_file=AZIMUTH_FILE,
         notebook=f"{BIO_NB}/02_disentangle.ipynb",
     output:
