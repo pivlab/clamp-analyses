@@ -238,8 +238,7 @@ Paths are relative to `output/01_model_building/01_gtex/`.
    the production models. Fits run strictly one at a time, so it **must** be invoked
    with `--resources timing_slot=1`; the report notebook hard-fails on overlapping fit
    intervals if that flag was omitted. CoGAPS is excluded (killed at its 7-day budget
-   without converging) and MOFA-FLEX base is excluded (no working GTEx production fit
-   exists); both exclusions and their reasons live in
+   without converging); the exclusion and its reason live in
    `workflow/config/runtime_benchmark_gtex.yaml` and are printed by the report.
 4. **Clustering** (`kmeans_clustering_gtex` → `kmeans_clustering_report_gtex`) - GPU
    k-means ensemble across methods and gene subsampling fractions (`gpu-kmeans` env).

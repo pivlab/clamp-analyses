@@ -123,6 +123,7 @@ rule supp3_panel:
         hard=rules.hard_cell_types_pseudobulk.output.group_dot_ready,
         orthogonality_per_term=rules.geneset_orthogonality_gtex.output.per_term,
         orthogonality_summary=rules.geneset_orthogonality_gtex.output.summary,
+        runtime_gtex_per_fit=rules.computational_timing_report_gtex.output.per_fit,
         notebook=f"{PANELS_NB}/supp3.ipynb",
     output:
         png=f"{PANELS}/supp3/supp3.png",
