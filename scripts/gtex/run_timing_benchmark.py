@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""Run one GTEx factorization and record auditable wall-clock timing and peak RAM.
-
-Sibling of scripts/pseudobulk/run_timing_benchmark.py.  Three GTEx-specific
-differences:
-
-  * the R scripts read .rds and the Python scripts read .csv, so both forms of the
-    matrix and of K are taken and dispatched per method;
-  * df_gtex_fbm_filt.csv is 6.8 GB, so its shape is probed once for the whole
-    benchmark (--probe-shape) instead of once per fit;
-  * peak RSS is measured with os.wait4 rather than getrusage(RUSAGE_CHILDREN).
-"""
+# GTEx timming and RAM for all models, 3 seeds per each
 
 from __future__ import annotations
 
@@ -42,13 +32,6 @@ CHUNK = 64 << 20
 
 
 def matrix_shape(path: Path) -> tuple[int, int]:
-    """Return genes x samples for a CSV matrix with row names in column one.
-
-    Streamed in binary chunks rather than through csv.reader: this file is 6.8 GB.
-    It is probed once per benchmark (rule runtime_gtex_matrix_shape), not once per
-    fit, so 27 fits do not read 185 GB and do not flush the page cache immediately
-    after each timed interval.
-    """
     with path.open("rb") as handle:
         header = handle.readline()
         n_samples = header.count(b",")
@@ -69,7 +52,6 @@ def read_shape(path: Path) -> tuple[int, int]:
 
 
 def command_for(args: argparse.Namespace) -> tuple[list[str], list[str]]:
-    """Return the command to time and the input files to pre-warm the page cache."""
     scripts = Path("scripts/gtex")
     seed = str(args.seed)
 
@@ -134,13 +116,6 @@ def command_for(args: argparse.Namespace) -> tuple[list[str], list[str]]:
 
 
 def warm_page_cache(paths: list[str]) -> None:
-    """Read this fit's inputs before the clock starts, identically for every method.
-
-    Strict serialization plus a deterministic job order means a memory-hungry fit
-    evicts the page cache for whichever method always follows it.  Reading in
-    bounded chunks fills the kernel cache without growing this process's RSS, so it
-    cannot perturb the wait4 measurement of the child.
-    """
     for path in paths:
         with open(path, "rb") as handle:
             while handle.read(CHUNK):
@@ -172,14 +147,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--seed", type=int)
     parser.add_argument("--threads", type=int)
 
-    # R methods read these
     parser.add_argument("--fbm-filt")
     parser.add_argument("--svd-res")
     parser.add_argument("--genes")
     parser.add_argument("--samples")
     parser.add_argument("--df-rds")
     parser.add_argument("--k-rds")
-    # Python methods read these
     parser.add_argument("--df-csv")
     parser.add_argument("--k-csv")
 
@@ -188,9 +161,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timing-csv")
     parser.add_argument("--log-file")
 
-    # GTEx production hyperparameters (workflow/config/gtex.yaml).  Several differ
-    # from the pseudobulk benchmark: flashier 20 vs 10 backfit iterations,
-    # MOFA-FLEX 1000 vs 200 epochs.
     parser.add_argument("--clamp-max-iter", type=int, default=500)
     parser.add_argument("--flashier-backfit", type=int, default=20)
     parser.add_argument("--gss-d-cluster", type=int, default=4)
@@ -252,11 +222,6 @@ def main() -> None:
         process = subprocess.Popen(
             command, cwd=Path.cwd(), env=env, stdout=log, stderr=subprocess.STDOUT
         )
-        # os.wait4 returns rusage scoped to THIS child, not the process-wide
-        # RUSAGE_CHILDREN high-water mark.  ru_maxrss is a running maximum that
-        # never decreases, so under RUSAGE_CHILDREN an earlier child would
-        # permanently mask a smaller timed one, and a maximum cannot have a
-        # baseline subtracted back out.
         _pid, status, usage = os.wait4(process.pid, 0)
     elapsed_seconds = time.perf_counter() - started
     finished_at = datetime.now(timezone.utc)
@@ -285,7 +250,6 @@ def main() -> None:
         "command": shlex.join(command),
         "status": run_status,
         "exit_code": returncode,
-        # ru_maxrss is KiB on Linux.
         "peak_rss_mb": f"{usage.ru_maxrss / 1024:.3f}",
         "peak_rss_source": "os.wait4:ru_maxrss",
         "user_cpu_seconds": f"{usage.ru_utime:.3f}",
@@ -294,8 +258,6 @@ def main() -> None:
         "started_epoch": f"{started_at.timestamp():.6f}",
         "finished_epoch": f"{finished_at.timestamp():.6f}",
         "term_signal": term_signal,
-        # Snakemake only checks that a directory() output exists, so a script that
-        # silently produced nothing would still be marked successful.
         "output_bytes": directory_bytes(output_dir),
     }
     write_timing(timing_csv, row)

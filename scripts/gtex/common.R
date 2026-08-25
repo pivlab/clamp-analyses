@@ -26,11 +26,6 @@ required_arg <- function(args, name) {
 }
 
 # Build the GO:BP pathway prior used by clamp.R and plier.R.
-# genes: character vector of gene symbols to match the prior against.
-# gmt_path: path to a pinned local copy of the GO_Biological_Process gene-set
-#   library (same source pseudobulk's rule pathway_prior downloads), read
-#   with CLAMP:::read_gmt() instead of a live Enrichr call.
-# Returns: list(matched = <matched pathway matrix>, chat = <getChat() result>).
 build_go_bp_prior <- function(genes, gmt_path) {
   bp_gmt <- CLAMP:::read_gmt(gmt_path)
   names(bp_gmt) <- paste0("BP_", names(bp_gmt))

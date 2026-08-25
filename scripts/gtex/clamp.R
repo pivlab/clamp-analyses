@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+# CLAMPbase and CLAMPfull GTEx models
 suppressPackageStartupMessages({
   library(bigstatsr)
   library(data.table)
@@ -20,22 +21,11 @@ n_cores <- as.integer(args$n_cores %||% 1L)
 max_iter <- as.integer(args$max_iter %||% 500L)
 seed <- as.integer(args$seed %||% 123L)
 
-# --model selects which of the two published CLAMP models get written, mirroring
-# scripts/pseudobulk/clamp.R.  The default, both, is the production behavior.
 model <- tolower(as.character(args$model %||% "both"))
 if (!model %in% c("base", "full", "both")) {
   stop("--model must be one of: base, full, both")
 }
 
-# Two input modes.
-#  (a) production (--raw-gct): this script does the whole ~48 min of GCT parse /
-#      FBM build / preprocess / z-score / rsvd / K estimation before fitting.
-#  (b) precomputed (--fbm-filt --svd-res --k --genes --samples, all readRDS, same
-#      signature style as scripts/gtex/plier.R): the preprocessing stage is
-#      skipped entirely.  The computational-timing benchmark uses this so the
-#      reported CLAMPbase/CLAMPfull runtimes measure factorization only, matching
-#      the pseudobulk benchmark, which excludes preprocessing by construction by
-#      reusing rules.preprocess_pseudobulk.output.
 precomputed <- !is.null(args$fbm_filt)
 set.seed(seed)
 
@@ -49,10 +39,6 @@ CLAMP_K_gtex <- readRDS(required_arg(args, "k"))
 gtex_genes <- readRDS(required_arg(args, "genes"))
 samples <- readRDS(required_arg(args, "samples"))
 
-# The FBM object embeds an absolute path to the production backing file
-# (output/01_model_building/01_gtex/FBMgtex_preproc_filtered.bk).  Nothing on this
-# code path should write to it; make that a hard error rather than a silent
-# corruption of the matrix underlying every downstream GTEx result.
 gtex_fbm_filt$is_read_only <- TRUE
 
 message("Reusing precomputed inputs: ", nrow(gtex_fbm_filt), " genes x ",
@@ -62,7 +48,6 @@ message("Reusing precomputed inputs: ", nrow(gtex_fbm_filt), " genes x ",
 
 raw_gct <- required_arg(args, "raw_gct")
 
-# Aggregate raw GTEx TPM matrix to gene level
 exprs_data <- read.table(raw_gct, header = TRUE, sep = "\t", skip = 2, check.names = FALSE)
 gtex <- as.data.table(exprs_data)
 aggregated_gtex <- gtex[, lapply(.SD, sum), by = Description, .SDcols = is.numeric]
@@ -71,7 +56,6 @@ genes <- aggregated_gtex$Description
 samples <- colnames(aggregated_gtex[, -1])
 data_mat <- as.matrix(aggregated_gtex[, -1])
 
-# Create the FBM
 fbm_files <- c(
   file.path(out_dir, "FBMgtex.bk"),
   file.path(out_dir, "FBMgtex_preproc.bk"),
@@ -99,7 +83,8 @@ for (i in 1:n_blocks) {
   gtexFBM[start_row:end_row, ] <- as.matrix(data_mat[start_row:end_row, ])
 }
 
-# Preprocess and z-score FBM
+linear_tpm_row_stats <- CLAMP:::computeRowStatsFBM(gtexFBM, ncores = n_cores)
+
 prep_gtex <- preprocessCLAMPFBM(
   fbm = gtexFBM,
   mean_cutoff = mean_cutoff,
@@ -109,9 +94,21 @@ prep_gtex <- preprocessCLAMPFBM(
 
 gtex_fbm_filt <- prep_gtex$fbm_filtered
 gtex_rowStats <- prep_gtex$rowStats
+gtex_genes <- genes[prep_gtex$kept_rows]
+
+gtex_gene_stats <- data.frame(
+  gene = gtex_genes,
+  mean_tpm = linear_tpm_row_stats$row_means[prep_gtex$kept_rows],
+  variance_tpm = linear_tpm_row_stats$row_variances[prep_gtex$kept_rows],
+  check.names = FALSE
+)
+write.csv(
+  gtex_gene_stats,
+  file = file.path(out_dir, "gtex_gene_stats.csv"),
+  row.names = FALSE
+)
 
 zscoreCLAMPFBM(gtex_fbm_filt, gtex_rowStats, ncores = n_cores)
-gtex_genes <- genes[prep_gtex$kept_rows]
 
 saveRDS(samples, file = file.path(out_dir, "gtex_samples.rds"))
 saveRDS(gtex_genes, file = file.path(out_dir, "gtex_genes.rds"))
@@ -124,7 +121,6 @@ rownames(df_gtex_fbm_filt) <- gtex_genes
 saveRDS(df_gtex_fbm_filt, file = file.path(out_dir, "df_gtex_fbm_filt.rds"))
 write.csv(df_gtex_fbm_filt, file = file.path(out_dir, "df_gtex_fbm_filt.csv"))
 
-# SVD computation
 g_fb <- nrow(gtex_fbm_filt)
 samples_fb <- ncol(gtex_fbm_filt)
 SVD_K_gtex <- min(g_fb, samples_fb) - 1
@@ -134,7 +130,6 @@ message("Using SVD K = ", SVD_K_gtex)
 gtex_svdRes <- rsvd(gtex_fbm_filt[], k = SVD_K_gtex)
 saveRDS(gtex_svdRes, file = file.path(out_dir, "gtex_svdRes.rds"))
 
-# Estimate K for CLAMP
 n_genes_gtex <- nrow(gtex_fbm_filt)
 n_samples_gtex <- ncol(gtex_fbm_filt)
 eigenvalues <- sort(gtex_svdRes$d^2 / (n_samples_gtex - 1), decreasing = TRUE)
@@ -153,13 +148,8 @@ write.csv(
   row.names = TRUE
 )
 
-}  # end of the preprocessing stage; the body above is left unindented so the
-   # diff against the pre-benchmark version stays reviewable.
+}
 
-# CLAMPfull takes the fitted base model as clamp.base.result, so a full run always
-# refits CLAMPbase first.  --model controls which requested model artifacts get
-# written and lets the timing workflow invoke the two published methods as
-# independent jobs.  (Same rationale as scripts/pseudobulk/clamp.R.)
 message("Running CLAMPbase ...")
 gtex_baseRes <- CLAMPbase(
   Y = gtex_fbm_filt,
@@ -185,11 +175,9 @@ if (model == "base") {
   quit(save = "no", status = 0L)
 }
 
-# Prepare pathway priors (pinned GO:BP file, see common.R::build_go_bp_prior)
 prior <- build_go_bp_prior(gtex_genes, gmt_path)
 gtex_matched <- prior$matched
 
-# CLAMPfull
 message("Running CLAMPfull ...")
 gtex_fullRes <- CLAMPfull(
   Y = gtex_fbm_filt,

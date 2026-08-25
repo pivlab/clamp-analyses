@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""GTEx subtissue-recovery donor-grouped fold assignment (runs once).
-
-Fixes the valid sample universe (SMTS categories with >= min-samples samples,
-same filter as the main true-labels pipeline) and assigns every sample to one
-of n-folds donor-grouped folds, stratified on the 27-class SMTS label so no
-downstream one-vs-rest RF's negative class is skewed by an uneven fold split.
-"""
+# GTEx subtissue-recovery donor-grouped fold assignment
 
 from __future__ import annotations
 

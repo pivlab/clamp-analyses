@@ -12,8 +12,12 @@ SUBTISSUE_TISSUES_ARG = " ".join(shlex.quote(t) for t in config["gtex"]["subtiss
 
 
 # ============================================================
-# Step 1: download + build the base FBM, SVD, CLAMPbase/full
+# Step 1: build the base FBM, SVD, CLAMPbase/full
 # ============================================================
+# Downloads the raw GTEx bulk RNA-seq matrix, builds the filtered/z-scored
+# backing matrix and its SVD, then fits CLAMPbase/CLAMPfull and every
+# comparator decomposition model (PLIER, PCA/NMF/ICA, flashier, MOFA-FLEX,
+# CoGAPS, GenomicSuperSignature) on the same production matrix.
 
 rule download_gtex_raw:
     output:
@@ -34,6 +38,7 @@ rule clamp_gtex:
     output:
         samples=f"{GTEX_PROD}/gtex_samples.rds",
         genes=f"{GTEX_PROD}/gtex_genes.rds",
+        gene_stats=f"{GTEX_PROD}/gtex_gene_stats.csv",
         fbm_filt=f"{GTEX_PROD}/gtex_fbm_filt.rds",
         df_rds=f"{GTEX_PROD}/df_gtex_fbm_filt.rds",
         df_csv=f"{GTEX_PROD}/df_gtex_fbm_filt.csv",
@@ -156,14 +161,6 @@ rule mofa_flex_prior_gtex:
 
 
 rule cogaps_gtex:
-    # Distributed genome-wide CoGAPS is slow enough on this dataset that convergence
-    # isn't guaranteed within any fixed budget. Rather than let a stalled run fail the
-    # whole job (or hang indefinitely), it gets a hard wall-clock budget
-    # (cogaps.timeout_days, default 7d): on convergence the usual gtex_B.csv/
-    # cogaps_model.rds are written; on timeout NOT_CONVERGED.txt is written instead so
-    # the rule still completes and the non-convergence is visible on disk rather than
-    # only in a log. A genuine R/CoGAPS error (any other non-zero exit) still fails the
-    # rule normally.
     input:
         df_gtex_fbm_filt=rules.clamp_gtex.output.df_rds,
         k=rules.clamp_gtex.output.k_rds,
@@ -219,10 +216,6 @@ rule full_models_gtex:
         rules.flashier_gtex.output.B,
         rules.mofa_flex_prior_gtex.output.B,
         rules.gss_gtex.output.B,
-        # cogaps_gtex intentionally excluded: distributed genome-wide CoGAPS with
-        # nIterations=5000 does not converge in practical time on this dataset.
-        # Rule kept and fully runnable on demand (`snakemake cogaps_gtex`), just
-        # not part of the default pipeline.
 
 
 rule model_building_qc_gtex:
@@ -246,11 +239,16 @@ rule model_building_qc_gtex:
 # ============================================================
 # Step 2: GPU k-means clustering ensemble
 # ============================================================
+# Scores every model's sample embedding by how well each method
+# recovers known GTEx tissue labels
+# using k-means fits and ARI
+# RNA-seq baseline and a gene-subsampling
 
 rule kmeans_clustering_gtex:
     input:
         gtex_meta=config["gtex"]["metadata"],
         df_gtex_fbm_filt=rules.clamp_gtex.output.df_csv,
+        gene_stats=rules.clamp_gtex.output.gene_stats,
         clamp_base_rds=rules.clamp_gtex.output.base_rds,
         clamp_full_rds=rules.clamp_gtex.output.full_rds,
         plier_rds=rules.plier_gtex.output.rds,
@@ -265,6 +263,7 @@ rule kmeans_clustering_gtex:
         model=f"{GTEX_BIO}/00_kmeans_clustering/kmeans_models/gtex_CLAMPfull_kmeans_model.pkl",
     params:
         min_samples=config["gtex"]["kmeans_clustering"]["ari_min_samples"],
+        n_clusters=config["gtex"]["kmeans_clustering"]["n_clusters"],
         base_seed=config["gtex"]["kmeans_clustering"]["base_seed"],
         n_reps_per_k=config["gtex"]["kmeans_clustering"]["n_reps_per_k"],
         gene_fractions=" ".join(str(x) for x in config["gtex"]["kmeans_clustering"]["gene_fractions"]),
@@ -274,11 +273,13 @@ rule kmeans_clustering_gtex:
     conda: "gpu-kmeans"
     shell:
         "python scripts/gtex/kmeans_clustering.py --gtex-meta {input.gtex_meta} "
-        "--df-gtex-fbm-filt {input.df_gtex_fbm_filt} --clamp-base-rds {input.clamp_base_rds} "
+        "--df-gtex-fbm-filt {input.df_gtex_fbm_filt} --gene-stats {input.gene_stats} "
+        "--clamp-base-rds {input.clamp_base_rds} "
         "--clamp-full-rds {input.clamp_full_rds} --plier-rds {input.plier_rds} "
         "--gss-b {input.gss_b} --flashier-b {input.flashier_b} "
         "--mofa-flex-prior-b {input.mofa_flex_prior_b} --pca-b {input.pca_b} "
         "--ica-b {input.ica_b} --nmf-b {input.nmf_b} --min-samples {params.min_samples} "
+        "--n-clusters {params.n_clusters} "
         "--base-seed {params.base_seed} --n-reps-per-k {params.n_reps_per_k} "
         "--gene-fractions {params.gene_fractions} --cache-dir {output.cache} "
         "--model-out-dir {GTEX_BIO}/00_kmeans_clustering/kmeans_models"
@@ -303,8 +304,11 @@ rule kmeans_clustering_report_gtex:
 
 
 # ============================================================
-# Step 3: LV importance (RF + SHAP), two label sources
+# Step 3: LV importance (RF + SHAP)
 # ============================================================
+# Trains one-vs-rest random-forest classifiers on the CLAMPfull latent
+# variables against true GTEx tissue labels and computes SHAP to explain
+# which LVs drive each tissue.
 
 rule lv_importance_rf_true_labels_gtex:
     input:
@@ -341,9 +345,11 @@ rule lv_importance_rf_true_labels_report_gtex:
 
 
 # ============================================================
-# Step 4: biology / ORA / plotting notebooks (small analyses,
-# kept as notebooks per the "nb are for plotting" convention)
+# Step 4: biology / ORA / plotting notebooks
 # ============================================================
+# subtissue concordance, global B-matrix/Z-matrix alignment,
+# liver xCell disentangling, multi-tissue xCell recovery, and GO:BP prior
+# orthogonality against every evaluation gene-set collection.
 
 rule lv_importance_rf_true_labels_biology_gtex:
     input:
@@ -414,8 +420,6 @@ rule multitissue_xcell_recovery_gtex:
         f"{GTEX_BIO_NB}/06_multitissue_xcell_recovery.ipynb"
 
 
-# Measures the shared GO:BP prior rather than anything GTEx-specific; it lives in
-# this rule file because the GTEx supplement is what consumes the output.
 rule geneset_orthogonality_gtex:
     input:
         go_bp_file=GTEX_GMT,
@@ -439,10 +443,12 @@ rule geneset_orthogonality_gtex:
 
 
 # ============================================================
-# Step 5: subtissue recovery from out-of-fold RF/SHAP (independent
-# of the true-labels chain above: this RF is always trained blind
-# to subtissue, on broad SMTS only, regardless of Steps 3-4's label scheme)
+# Step 5: subtissue recovery from donor-grouped out-of-fold RF/SHAP
 # ============================================================
+# Assigns every sample to donor-grouped folds stratified on broad GTEx
+# tissue (SMTS), trains fold-blind one-vs-rest random forests per tissue,
+# and evaluates recovery of detailed subtissue (SMTSD) labels from the
+# resulting out-of-fold SHAP profiles against the full CLAMP latent space.
 
 rule subtissue_cv_folds_gtex:
     input:

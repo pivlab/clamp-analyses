@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GTEx model building with PCA, NMF and ICA."""
+# GTEx model building with PCA, NMF and ICA.
 
 from __future__ import annotations
 
@@ -46,14 +46,13 @@ def main() -> None:
         directory.mkdir(parents=True, exist_ok=True)
         return directory
 
-    # PCA
     if args.method in ("all", "PCA"):
         pca_dir = out_for("PCA")
-        X = gtex_data.T  # samples x genes
+        X = gtex_data.T
 
         pca = PCA(n_components=n_components, svd_solver="auto", random_state=args.seed)
-        W = pca.fit_transform(X)  # samples x comps
-        H = pca.components_  # comps x genes
+        W = pca.fit_transform(X)
+        H = pca.components_
 
         pc_names = [f"PC{i + 1}" for i in range(W.shape[1])]
 
@@ -67,14 +66,13 @@ def main() -> None:
         gtex_pca_loadings.to_pickle(pca_dir / "gtex_pca_loadings.pkl")
         print(f"[gtex] PCA saved -> {pca_dir}", flush=True)
 
-    # ICA
     if args.method in ("all", "ICA"):
         ica_dir = out_for("ICA")
-        X = gtex_data.T  # samples x genes
+        X = gtex_data.T
 
         ica = FastICA(n_components=n_components, random_state=args.seed, max_iter=2000)
-        W = ica.fit_transform(X)  # samples x comps
-        H = ica.mixing_.T  # comps x genes
+        W = ica.fit_transform(X)
+        H = ica.mixing_.T
 
         ic_names = [f"IC{i + 1}" for i in range(W.shape[1])]
 
@@ -88,17 +86,16 @@ def main() -> None:
         gtex_ica_loadings.to_pickle(ica_dir / "gtex_ica_loadings.pkl")
         print(f"[gtex] ICA saved -> {ica_dir}", flush=True)
 
-    # NMF (non-negative input needed)
     if args.method in ("all", "NMF"):
         nmf_dir = out_for("NMF")
         gene_min = gtex_data.min(axis=1)
         gtex_data_nmf = gtex_data.sub(gene_min, axis=0)
 
-        X = gtex_data_nmf.T  # samples x genes (non-negative)
+        X = gtex_data_nmf.T
 
         nmf = NMF(n_components=n_components, init="nndsvd", random_state=args.seed, max_iter=1000)
-        W = nmf.fit_transform(X)  # samples x comps
-        H = nmf.components_  # comps x genes
+        W = nmf.fit_transform(X)
+        H = nmf.components_
 
         lv_names = [f"LV{i + 1}" for i in range(W.shape[1])]
 

@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
-"""GTEx tissue feature importance analysis (true GTEx SMTSD labels + SHAP).
-
-1. Load GTEx LV data and tissue metadata
-2. Use true GTEx SMTSD tissue labels directly as one-vs-rest RF targets
-3. For each tissue, train a binary RF classifier (tissue vs. rest)
-4. Compute SHAP values to explain which LVs drive each tissue
-
-Training half of
-nbs/03_model_biology/01_gtex/03_LV_importance_rf_true_labels.ipynb (formerly
-03_rf_true_labels/00_LV_importance_true_labels.ipynb); the notebook itself
-only reads this script's output TSVs and plots the LV correlation heatmap.
-"""
+# GTEx tissue feature importance analysis (true GTEx SMTSD labels + SHAP).
+#
+# Load GTEx LV data and tissue metadata
+# Use true GTEx SMTSD tissue labels directly as one-vs-rest RF targets
+# For each tissue, train a binary RF classifier (tissue vs. rest)
+# Compute SHAP values to explain which LVs drive each tissue
 
 from __future__ import annotations
 
@@ -54,7 +48,6 @@ def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     print(f"[gtex] Output directory: {OUTPUT_DIR}", flush=True)
 
-    # Load data
     gtex_CLAMPfull_rds = readRDS(str(args.clamp_full_rds))
     gtex_CLAMPfull = extract_B_matrix(gtex_CLAMPfull_rds)
     lv_data = gtex_CLAMPfull
@@ -76,15 +69,12 @@ def main() -> None:
     )
     print(gtex_meta.shape, flush=True)
 
-    # transpose to get samples as rows, LVs as columns
     lv_matrix = lv_data.T
 
-    # filter metadata to only include samples in LV matrix
     meta_filtered = gtex_meta[gtex_meta["SAMPID"].isin(lv_matrix.index)].copy()
     meta_filtered = meta_filtered.set_index("SAMPID")
     meta_filtered = meta_filtered.loc[lv_matrix.index]
 
-    # filter to tissues with >= MIN_SAMPLES samples
     tissue_counts = meta_filtered["SMTSD"].value_counts()
     valid_tissues = tissue_counts[tissue_counts >= MIN_SAMPLES].index
     mask = meta_filtered["SMTSD"].isin(valid_tissues)
@@ -97,12 +87,10 @@ def main() -> None:
     print(f"[gtex] Number of LVs: {lv_matrix.shape[1]}", flush=True)
     print(f"[gtex] Number of unique tissues (>= {MIN_SAMPLES} samples): {tissue_labels.nunique()}", flush=True)
 
-    # Use true GTEx SMTSD labels directly for one-vs-rest RF targets.
     true_tissue_labels = tissue_labels.copy()
     print("[gtex] GTEx true tissue label distribution:", flush=True)
     print(true_tissue_labels.value_counts(), flush=True)
 
-    # Feature importance analysis (true-label binary + SHAP)
     tissues = sorted(true_tissue_labels.unique())
     print(f"[gtex] GTEx true-label tissues: {tissues}", flush=True)
 

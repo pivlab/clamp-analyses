@@ -47,6 +47,7 @@ gtex:
   kmeans_clustering:
     min_samples: 50
     ari_min_samples: 1
+    n_clusters: 54
     base_seed: 10000
     n_reps_per_k: 50
     gene_fractions: [1.0, 0.75, 0.50, 0.25, 0.10, 0.05, 0.01]
@@ -60,7 +61,7 @@ gtex:
     global_seed: 42
     min_rf_accuracy: 0.85
     min_subtissue_samples: 20
-    n_jobs_per_fold: 8 
+    n_jobs_per_fold: 8
     anatomical_spec: workflow/config/gtex_anatomical_subtissues.tsv
     permutation_repeats: 1000
     bootstrap_repeats: 1000

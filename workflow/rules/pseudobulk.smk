@@ -588,6 +588,10 @@ rule disentangle_pseudobulk:
         datasets=DATASETS,
         mod_root=PROD,
         out_dir=f"{BIO}/02_disentangle",
+        top_gene_fraction=config["module_recovery"]["top_gene_fraction"],
+        retry_gene_fraction=config["module_recovery"]["retry_gene_fraction"],
+        fdr_threshold=config["module_recovery"]["fdr_threshold"],
+        top_terms=config["module_recovery"]["top_terms"],
     conda: "clamp-analyses"
     notebook:
         f"{BIO_NB}/02_disentangle.ipynb"
