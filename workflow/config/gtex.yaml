@@ -2,9 +2,6 @@ gtex:
   raw_url: https://storage.googleapis.com/adult-gtex/bulk-gex/v8/rna-seq/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz
   raw_gz: data/gtex/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz
   metadata: data/gtex/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt
-  # Deconvolution scores, 7 cell types x 17,382 samples. Read via here() by
-  # 05_liver_disentangle_xcell.ipynb already; declared here so the multi-tissue
-  # recovery rule can list it as a proper input.
   xcell_scores: data/gtex/GTEx_Analysis_v8_xCell_scores_7_celltypes.txt
 
   paths:
@@ -26,21 +23,9 @@ gtex:
     max_iter: 500
     seed: 123
 
-  # Matched to the pseudobulk pipeline (backfit_maxiter: 20 in pseudobulk.yaml).
-  # Below the package default on purpose: the default is not computationally
-  # practical on this matrix, and flashier does not reach its convergence
-  # tolerance at any cap we have run.  See the note in pseudobulk.yaml.
   flashier:
     backfit_maxiter: 20
 
-  # Pathway prior comes from the pinned Enrichr GO:BP GMT built by rule
-  # pathway_prior (references.go_bp_file), the same file CLAMP and PLIER use, so
-  # every GTEx model is trained against the same prior and the pseudobulk and
-  # GTEx MOFA-FLEX models are directly comparable.  This replaced a live
-  # mfl.tl.msigdb_get_features() download of MSigDB c5.go.bp, which was both a
-  # different curation from the rest of the pipeline and a network dependency
-  # inside the fit.  max_epochs matches pseudobulk; see the note there on why it
-  # sits below the package default.
   mofa_flex_prior:
     min_fraction: 0.4
     min_count: 40
@@ -61,10 +46,6 @@ gtex:
 
   kmeans_clustering:
     min_samples: 50
-    # ARI benchmark only (kmeans_clustering_gtex): no lower bound, so every
-    # GTEx-labeled tissue subtype counts, not just the well-sampled ones.
-    # min_samples above stays 50 for lv_importance/subtissue_inference,
-    # which are unrelated analyses that happen to read the same block.
     ari_min_samples: 1
     base_seed: 10000
     n_reps_per_k: 50
@@ -77,11 +58,9 @@ gtex:
   subtissue_inference:
     n_folds: 5
     global_seed: 42
-    min_rf_accuracy: 0.85   # slightly below the main pipeline's 0.9: donor-grouped OOF removes a
-                             # leakage channel ungrouped CV can exploit, and folds have less data
+    min_rf_accuracy: 0.85
     min_subtissue_samples: 20
-    n_jobs_per_fold: 8       # RandomizedSearchCV n_jobs, explicit (never -1) so parallel folds don't
-                             # each grab every core
+    n_jobs_per_fold: 8 
     anatomical_spec: workflow/config/gtex_anatomical_subtissues.tsv
     permutation_repeats: 1000
     bootstrap_repeats: 1000

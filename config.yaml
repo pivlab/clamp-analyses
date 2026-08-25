@@ -9,7 +9,6 @@ MODEL_COLORS:
   ICA: "#888888"
   NMF: "#DDCC77"
   Flashier: "#44AA99"
-  MOFA-FLEX_base: "#882255"
   MOFA-FLEX: "#117733"
   WGCNA: "#999933"
   CoGAPS: "#CC6677"
