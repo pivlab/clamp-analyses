@@ -1,19 +1,7 @@
 #!/usr/bin/env python3
-"""Evaluate donor-grouped GTEx anatomical subtissue recovery.
+# Evaluate donor-grouped GTEx anatomical subtissue recovery.
+# test recovery of detailed SMTSD labels within each broad tissue.
 
-The expensive upstream models predict broad GTEx ``SMTS`` labels and emit
-sample-level, out-of-fold SHAP profiles.  This script reuses those profiles,
-the matching full CLAMP LV matrix, and the fixed donor-grouped folds to test
-recovery of detailed ``SMTSD`` labels within each broad tissue.
-
-Two analysis sets are emitted:
-
-* ``anatomical`` contains only the explicitly curated anatomical comparisons.
-* ``all_smtsd`` retains every original eligible detailed-label comparison.
-
-The complete CLAMP LV space is the primary representation.  Broad-tissue RF
-SHAP profiles are a secondary, deliberately lossy representation.
-"""
 
 from __future__ import annotations
 

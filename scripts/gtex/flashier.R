@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+# flashier GTEx models
 suppressPackageStartupMessages({
   library(flashier)
   library(ebnm)
@@ -14,7 +15,6 @@ backfit_maxiter <- as.integer(args$backfit_maxiter %||% 20L)
 seed <- as.integer(args$seed %||% 123L)
 set.seed(seed)
 
-# flashier wants samples x genes
 X <- t(as.matrix(gtex_data))
 
 stopifnot(is.numeric(K), length(K) == 1)
@@ -33,7 +33,7 @@ fit <- flash_fit(fl)
 pm1 <- flash_fit_get_pm(fit, n = 1)
 F_scores <- pm1
 
-B <- t(F_scores)  # K x samples
+B <- t(F_scores)
 
 sample_names <- colnames(gtex_data)
 stopifnot(nrow(F_scores) == length(sample_names))

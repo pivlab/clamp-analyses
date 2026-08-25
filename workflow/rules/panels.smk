@@ -127,7 +127,7 @@ rule supp3_panel:
         hard=rules.hard_cell_types_pseudobulk.output.group_dot_ready,
         orthogonality_per_term=frozen_gtex("07_geneset_orthogonality/orthogonality_per_term.csv"),
         orthogonality_summary=frozen_gtex("07_geneset_orthogonality/orthogonality_summary.csv"),
-        runtime_gtex_per_fit=rules.computational_timing_report_gtex.output.per_fit,
+        runtime_gtex_per_fit=ancient(f"{RUNTIME_GTEX_ROOT}/runtime_per_fit.csv"),
         notebook=f"{PANELS_NB}/supp3.ipynb",
     output:
         png=f"{PANELS}/supp3/supp3.png",

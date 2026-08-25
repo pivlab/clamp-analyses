@@ -1,17 +1,11 @@
 #!/usr/bin/env python3
-"""Per-fold donor-grouped RF + out-of-fold SHAP for the subtissue-recovery analysis.
+# Per-fold donor-grouped RF + out-of-fold SHAP for the subtissue-recovery analysis.
+#
+# For a single held-out fold: for each broad (SMTS) tissue eligible for subtissue
+# recovery, trains a one-vs-rest RandomForest on this fold's training donors
+# only (blind to SMTSD subtissue labels throughout), then computes SHAP for the
+# held-out fold's tissue-positive samples using the training fold as background.
 
-For a single held-out fold: for each broad (SMTS) tissue eligible for subtissue
-recovery, trains a one-vs-rest RandomForest on this fold's *training* donors
-only (blind to SMTSD subtissue labels throughout), then computes SHAP for the
-held-out fold's tissue-positive samples using the training fold as background.
-
-This differs from common.py::run_tissue_rf_shap in two ways that matter for
-this analysis: (1) the inner hyperparameter-search CV is donor-grouped
-(StratifiedGroupKFold), not plain StratifiedKFold, and (2) SHAP is computed
-out-of-fold (explainer background = train fold only; explained samples = held-
-out fold only), not in-sample on a model refit over the whole dataset.
-"""
 
 from __future__ import annotations
 

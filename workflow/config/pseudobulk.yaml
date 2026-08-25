@@ -181,6 +181,11 @@ preprocess:
   mean_cutoff: 0.5
   var_cutoff: 0.1
   seed: 123
+module_recovery:
+  top_gene_fraction: 0.01
+  retry_gene_fraction: 0.03
+  fdr_threshold: 0.05
+  top_terms: 3
 # CLAMPbase/CLAMPfull fit settings, shared by model building, the runtime
 # benchmark and grouped-CV refits. max_iter is headroom above the iteration
 # count CLAMP actually needs to reach its 5e-4 relative-change convergence
