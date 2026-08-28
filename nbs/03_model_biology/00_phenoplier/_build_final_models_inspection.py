@@ -50,8 +50,16 @@ cells = [
 
 Inspection of `phenoplier shortcut gls` output for the three **final production
 models**, one `CLAMPfull_bp` per dataset, run against the `phenomexcan_rapid_gwas`
-cohort with `--trait-filter biomedical` (2,366 of 4,049 traits tested). The exact
-launcher is committed under `scripts/phenoplier/final_models/`.
+cohort. The exact launcher is committed under `scripts/phenoplier/final_models/`.
+
+> **The GLS step ran on the biomedical trait subset only.** Every run used
+> `--trait-filter biomedical`, which **drops the 1,683 non-biomedical phenotypes**
+> (occupational/job codes, medication codes, 24-hour diet-recall, household/admin
+> and environmental-exposure fields) *before* computing — so results below cover
+> the **2,366 of 4,049** biomedical traits, and the excluded traits are never
+> tested. This also shrinks the Benjamini–Hochberg test count, so these numbers
+> are not comparable to an unfiltered run (keep the filter fixed across a model
+> set). See `phenoplier-cli` `docs/development/trait-filtering-standard.md`.
 
 | Dataset | genes × LVs |
 |---|---|
