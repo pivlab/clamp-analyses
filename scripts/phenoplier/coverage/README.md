@@ -17,17 +17,22 @@ brought to phenoplier-cli **v0.5.2**. Every run uses **`--trait-filter biomedica
 
 | where | models | how |
 |---|---|---|
-| **local** (48c/251G) | 14: rs10×3, rs25×3, rs50×3, rs75×3, rs100×2 | `run_local_worklist.sh` — 2-wide, small→large |
+| **local** (24C/48T, 251G) | 14: rs10×3, rs25×3, rs50×3, rs75×3, rs100×2 | `run_local_worklist.sh` — **1-wide**, small→large |
 | **alpine** (acpu) | 6 smallest: rs1×3, rs5×3 | `alpine_coverage.sbatch` — `--array=0-5%6` backfill |
 | (reused) | rs100/seed1 | the finals archs4 result |
 
 ### Local: `run_local_worklist.sh` + `run_one_coverage.sh`
-Runs 2 models at a time, **each `taskset`-pinned to a disjoint set of physical
-cores** (`0-11,24-35` and `12-23,36-47`). This matters: a workstation has no SLURM
-cgroup, so phenoplier would otherwise size its step-6/7 pools from the *whole* box in
-each run and two concurrent runs would oversubscribe. `run_one_coverage.sh` streams
-each model from pico, runs GLS, then `store build`; it is idempotent (skips finished
-stages), so the worklist can be re-launched to resume.
+Runs models **one at a time**, each using the whole box (`--n-jobs 24`; step 7 gets
+~24 workers). `run_one_coverage.sh` streams each model from pico, runs GLS, then
+`store build`; it is idempotent (skips finished stages), so the worklist re-launches
+to resume.
+
+**Why 1-wide, not 2 concurrent:** a workstation has no *delegated* cpuset cgroup, and
+phenoplier's step-3/6/7 worker subprocesses **reset their own CPU affinity**, so
+`taskset` does not confine them. Two concurrent runs therefore each size their pools
+from the full box and oversubscribe it (observed load >100 on 24 cores → everything
+crawls). One model at a time avoids this and, since step 6/7 are the bottleneck and
+scale with cores, gives comparable throughput without the thrash.
 
 ```bash
 # local (env + workspace at /media/data already set up):
