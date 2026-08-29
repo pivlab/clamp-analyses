@@ -22,6 +22,16 @@ NJOBS="${CLAMP_NJOBS:-24}"
 export PATH="$ENVBIN:$PATH"
 export PHENOPLIER_HOME="$WS"
 export PHENOPLIER_ROOT_DIR="$WS"
+# Cap per-process BLAS/OpenMP threads to 1 so parallelism comes from the JOB
+# level (step 3 runs 22 chromosomes; step 6/7 run worker pools) rather than each
+# job also spawning a full set of BLAS threads. Without this, on a workstation
+# with no SLURM cgroup a single model oversubscribes the box (22 chroms x N BLAS
+# threads -> load >80 on 24 cores) and crawls. SLURM sites get this via -c.
+export OMP_NUM_THREADS="${CLAMP_BLAS_THREADS:-1}"
+export OPENBLAS_NUM_THREADS="${CLAMP_BLAS_THREADS:-1}"
+export MKL_NUM_THREADS="${CLAMP_BLAS_THREADS:-1}"
+export NUMEXPR_NUM_THREADS="${CLAMP_BLAS_THREADS:-1}"
+export VECLIB_MAXIMUM_THREADS="${CLAMP_BLAS_THREADS:-1}"
 
 name="cov_rs${rs}_seed${seed}_CLAMPfull_bp"
 stage="$BASEDIR/models/rs${rs}_seed${seed}"

@@ -27,12 +27,15 @@ Runs models **one at a time**, each using the whole box (`--n-jobs 24`; step 7 g
 `store build`; it is idempotent (skips finished stages), so the worklist re-launches
 to resume.
 
-**Why 1-wide, not 2 concurrent:** a workstation has no *delegated* cpuset cgroup, and
-phenoplier's step-3/6/7 worker subprocesses **reset their own CPU affinity**, so
-`taskset` does not confine them. Two concurrent runs therefore each size their pools
-from the full box and oversubscribe it (observed load >100 on 24 cores → everything
-crawls). One model at a time avoids this and, since step 6/7 are the bottleneck and
-scale with cores, gives comparable throughput without the thrash.
+**Two workstation-only fixes** (SLURM sites get both for free via `-c`/cgroups):
+- **`run_one_coverage.sh` caps BLAS/OpenMP threads to 1** (`OMP_NUM_THREADS` etc.). Step 3
+  runs the 22 chromosomes in parallel; without the cap each also spawns a full set of BLAS
+  threads → 22 × N threads → load >80 on 24 cores, and a small model took ~12 h instead of
+  a few. With the cap, parallelism is job-level and one model fills the box (~22–24 threads).
+- **1-wide, not 2 concurrent.** `taskset` does not confine phenoplier's workers (they reset
+  their own CPU affinity) and there is no delegated cpuset cgroup here, so two concurrent
+  runs each size their step-7 pool to the whole box (2 × 24 = 48 workers). Running one model
+  at a time keeps step 7 at ~24 workers. Same throughput without the thrash.
 
 ```bash
 # local (env + workspace at /media/data already set up):
