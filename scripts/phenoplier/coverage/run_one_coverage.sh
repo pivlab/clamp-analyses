@@ -48,6 +48,12 @@ mkdir -p "$stage" "$BASEDIR/stores" "$BASEDIR/logs"
     ssh "$SRC_SSH" "cat ${SRC_ROOT}/rs${rs}/seed${seed}/CLAMPfull_bp/CLAMPfull_bp.rds" > "$rds"
   fi
   if [ ! -s "$summary" ]; then
+    # Resume-safe: a previous killed/timed-out run leaves a Snakemake lock that
+    # would otherwise abort this with "Directory locked". Clearing it lets the
+    # pipeline resume from its last completed step (the per-step sentinels),
+    # not from scratch. Safe here because we only (re)run after the prior
+    # process is gone.
+    rm -f "$WS/projects/$name/.snakemake/locks/"*.lock 2>/dev/null || true
     echo "[gls] $(date -Is)  --trait-filter ${TRAIT_FILTER} --n-jobs ${NJOBS}"
     phenoplier shortcut gls --input "$rds" --name "$name" --model-namespace clamp \
       --trait-filter "$TRAIT_FILTER" --lv-percentile 0.01 --executor local --n-jobs "$NJOBS"

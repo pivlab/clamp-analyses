@@ -36,6 +36,9 @@ NJOBS="${SLURM_CPUS_PER_TASK:-16}"
 mkdir -p "$BASE/stores"
 
 echo "[start] $(date -Is)  $name  njobs=$NJOBS  ver=$(phenoplier -v 2>&1 | tail -1)"
+# Resume-safe: clear a stale Snakemake lock from a prior timed-out run so a
+# re-submitted task resumes from its last completed step, not from scratch.
+[ -s "$summary" ] || rm -f "$WS/projects/$name/.snakemake/locks/"*.lock 2>/dev/null || true
 [ -s "$summary" ] || phenoplier shortcut gls --input "$rds" --name "$name" \
   --model-namespace clamp --trait-filter biomedical --lv-percentile 0.01 \
   --executor local --n-jobs "$NJOBS"
