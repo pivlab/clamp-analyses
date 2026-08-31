@@ -51,5 +51,15 @@ __pycache__/
 
 # Pseudobulk scratch/papermill output copies
 **/tmp_pseudobulk/
-*.executed.ipynb
-**/*.executed.ipynb
+
+# Site-specific execution settings: cluster aliases, accounts, partitions and
+# absolute paths. The committed profiles stay generic.
+workflow/profiles/site-*/
+
+# Editor settings
+.vscode/
+
+# Stray R graphics device output and local agent logs
+Rplots.pdf
+**/Rplots.pdf
+logs_claude/

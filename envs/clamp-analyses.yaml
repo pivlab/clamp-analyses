@@ -26,6 +26,7 @@ dependencies:
   - r-jsonlite
   - r-readxl
   - r-ggplot2
+  - r-ggrepel
   - r-devtools
   - r-irkernel
   - r-pkgdown

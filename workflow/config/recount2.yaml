@@ -1,0 +1,25 @@
+# recount2 inputs for the GO:BP coverage comparison.
+#
+# Values ported from config$recount2 in config.R, which is what built the
+# models currently on disk. Only CLAMPbase is produced here: recount2's
+# CLAMPfull is fitted by the coverage study with the shared GO:BP prior.
+recount2:
+  url: https://ndownloader.figshare.com/files/10881866
+  plier_rds: data/recount2/recount2_PLIER_data/recount_data_prep_PLIER.RDS
+  rpkm_rds: data/recount2/recount2_PLIER_data/recount_rpkm.RDS
+  paths:
+    production: output/01_model_building/03_recount2/00_recount2
+  preprocess:
+    mean_cutoff: 0.5
+    var_cutoff: 0.1
+    block_size: 100
+    seed: 123
+  svd:
+    n_cores: 16
+    seed: 123
+  clamp:
+    seed: 123
+  resources:
+    preprocess_mem_mb: 200000
+    svd_mem_mb: 200000
+    clampbase_mem_mb: 200000
