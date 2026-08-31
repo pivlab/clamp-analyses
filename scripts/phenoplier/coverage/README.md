@@ -19,6 +19,7 @@ brought to phenoplier-cli **v0.5.2**. Every run uses **`--trait-filter biomedica
 |---|---|---|
 | **local** (24C/48T, 251G) | 14: rs10×3, rs25×3, rs50×3, rs75×3, rs100×2 | `run_local_worklist.sh` — **1-wide**, small→large |
 | **alpine** (acpu) | 6 smallest: rs1×3, rs5×3 | `alpine_coverage.sbatch` — `--array=0-5%6` backfill |
+| **pico** (defq) | the 7 big models moved off local (rs50 s2/s3, rs75×3, rs100 s2/s3) | `pico_coverage.sbatch` — `--array=0-6%2`, backfills around the saturation run |
 | (reused) | rs100/seed1 | the finals archs4 result |
 
 ### Local: `run_local_worklist.sh` + `run_one_coverage.sh`
