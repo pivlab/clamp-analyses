@@ -1,0 +1,65 @@
+phenoplier:
+  # Isolated conda env for pivlab/phenoplier-cli. Kept separate from
+  # envs/clamp-analyses.yaml and envs/snakemake.yaml: phenoplier-cli requires
+  # snakemake>=9,<10 on Python >=3.12, while this repo's own Snakemake runs on
+  # snakemake=8.* / Python 3.11. See scripts/phenoplier/setup_env.sh.
+  conda_env: phenoplier-cli-neo
+  namespace: clamp
+  # Top percentile of genes per LV used to binarize the Z matrix for GLS.
+  # Matches archs4.yaml: ora.top_pct, so the LV gene sets scored here are the
+  # same ones scored for pathway overlap.
+  lv_percentile: 0.01
+  output_root: output/03_model_biology/00_phenoplier
+
+  # Final production models -- one CLAMPfull_bp per dataset, built outside this
+  # repo's coverage/saturation matrix (Marc's coverage-bp output tree). These
+  # are the models item 0 of PR #28 runs GLS for. `final_models_root` is the
+  # directory holding <dataset>/CLAMPfull_bp.rds; override it per cluster to a
+  # local staging copy (e.g. on Alpine the models are streamed to
+  # /pl/active/pivlab/projects/hzhang/clamp_final_models). See rule
+  # phenoplier_final and scripts/phenoplier/final_models/.
+  final_models_root: /pividori_lab/marc_projects/clamp-analyses-coverage-bp/output/98_final_models
+  final_datasets:
+    - archs4
+    - gtex
+    - recount2
+
+  # Which of phenoplier-cli's built-in cluster profiles (see its
+  # phenoplier/workflow/clusters.py) to submit to. Account/partition specifics
+  # stay inside phenoplier-cli's own profiles, not here -- same reasoning as
+  # workflow/profiles/site-slurm/ being kept out of this repo.
+  clusters:
+    local:
+      executor: local
+    server_cu:
+      executor: slurm
+      cluster: cu-pico
+    alpine:
+      executor: slurm
+      cluster: cu-alpine
+
+  # Which entry in `clusters` to submit to. Override per invocation, e.g.:
+  #   snakemake phenoplier_traits --config phenoplier_target=server_cu
+  target: local
+
+  # Which traits to test. Passed straight to `phenoplier shortcut gls
+  # --trait-filter`, so the excluded traits are never computed rather than
+  # filtered out afterwards.
+  #
+  # `biomedical` drops the 1,683 of 4,049 phenotypes that are not biomedical
+  # traits -- 709 occupational codes ("Job SOC coding: ..."), 576
+  # medication/treatment codes, 187 24-hour dietary-recall items, 117
+  # household/administrative fields, 58 food-frequency items, 36
+  # residence-level exposures -- keeping 2,366. Behavioural-but-heritable
+  # phenotypes (smoking, alcohol, physical activity, sleep, family history,
+  # death register, cognitive tests) are deliberately KEPT.
+  #
+  # The standard, its decision record, and the FDR-comparability rules live in
+  # phenoplier-cli: docs/development/trait-filtering-standard.md. Audit what a
+  # preset does with `phenoplier pipeline filter-traits`.
+  #
+  # NOTE: filtering shrinks the Benjamini-Hochberg test count, so numbers
+  # produced with a filter are not comparable to unfiltered runs. Keep this
+  # setting fixed across a whole coverage/saturation sweep.
+  # Use `all` to reproduce the historical unfiltered behaviour.
+  trait_filter: biomedical

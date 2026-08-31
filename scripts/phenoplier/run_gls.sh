@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Run `phenoplier shortcut gls` for one CLAMP model and copy its result back
+# into this repo's output tree.
+#
+# phenoplier-cli lives in its own conda env (see setup_env.sh) and its
+# `shortcut gls` names the project directory itself (date-prefixed stem, see
+# its docs/tutorials/tutorial-custom-model.md); rather than reproducing that
+# naming logic here, this script passes an explicit --name and then finds the
+# resulting project directory by that name, so a change to phenoplier-cli's
+# naming scheme doesn't silently break this wrapper.
+set -euo pipefail
+
+rds="$1"
+model_key="$2"
+conda_env="$3"
+namespace="$4"
+lv_percentile="$5"
+executor="$6"
+cluster="$7"
+n_jobs="$8"
+trait_filter="$9"
+summary_out="${10}"
+
+name="$(printf '%s' "$model_key" | tr '/' '_')"
+workspace="${PHENOPLIER_HOME:-$HOME/phenoplier}"
+
+source "$(conda info --base)/etc/profile.d/conda.sh"
+conda activate "$conda_env"
+
+# `phenoplier` shells out to a bare `snakemake`, and each Snakemake rule shells
+# out to a bare `phenoplier`, so the env's bin has to be ON PATH -- `conda
+# activate` does that, but keep it explicit so a non-interactive shell that
+# skips conda's hooks still works.
+export PATH="${CONDA_PREFIX:-}/bin:${PATH}"
+
+cluster_args=()
+if [[ -n "$cluster" ]]; then
+  cluster_args=(--cluster "$cluster")
+fi
+
+phenoplier shortcut gls \
+  --input "$rds" \
+  --name "$name" \
+  --model-namespace "$namespace" \
+  --lv-percentile "$lv_percentile" \
+  --trait-filter "$trait_filter" \
+  --executor "$executor" \
+  --n-jobs "$n_jobs" \
+  "${cluster_args[@]}"
+
+project_dir="$(
+  find "$workspace/projects" -maxdepth 1 -type d -name "*${name}*" \
+    -printf '%T@ %p\n' | sort -rn | head -n1 | cut -d' ' -f2-
+)"
+if [[ -z "$project_dir" ]]; then
+  echo "No project directory matching '*${name}*' found under $workspace/projects" >&2
+  exit 1
+fi
+
+mkdir -p "$(dirname "$summary_out")"
+
+# The summary is written under results/gls/phenoplier/, named after the cohort
+# (`gls-summary-<cohort-slug>.tsv.gz`); for the default phenomexcan cohort a
+# `gls-summary-phenomexcan.*` alias is kept for backwards compatibility. Take
+# the alias when present and fall back to whatever cohort-named summary exists,
+# so a non-default --cohort still works.
+summary_dir="$project_dir/results/gls/phenoplier"
+src="$summary_dir/gls-summary-phenomexcan.tsv.gz"
+if [[ ! -f "$src" ]]; then
+  src="$(ls -1 "$summary_dir"/gls-summary-*.tsv.gz 2>/dev/null | head -n1 || true)"
+fi
+if [[ -z "$src" || ! -f "$src" ]]; then
+  echo "No gls-summary-*.tsv.gz found in $summary_dir" >&2
+  exit 1
+fi
+cp "$src" "$summary_out"
+cp "${src%.tsv.gz}.pkl.gz" "$(dirname "$summary_out")/" 2>/dev/null || true
+
+# The filter's exclusion log travels with the results: which traits were
+# dropped, and why, is part of the provenance of these numbers.
+cp "$project_dir/trait_filter_excluded.tsv" "$(dirname "$summary_out")/" 2>/dev/null || true

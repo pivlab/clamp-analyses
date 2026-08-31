@@ -7,6 +7,7 @@ configfile: "workflow/config/runtime_benchmark.yaml"
 configfile: "workflow/config/runtime_benchmark_gtex.yaml"
 configfile: "workflow/config/donor_bulk.yaml"
 configfile: "workflow/config/archs4.yaml"
+configfile: "workflow/config/phenoplier.yaml"
 
 REPO_ROOT = os.path.dirname(workflow.basedir)
 
@@ -18,6 +19,7 @@ include: "rules/donor_bulk.smk"
 include: "rules/archs4.smk"
 include: "rules/archs4_coverage.smk"
 include: "rules/archs4_saturation.smk"
+include: "rules/phenoplier.smk"
 include: "rules/panels.smk"
 
 rule all:
@@ -38,3 +40,4 @@ rule all:
         rules.archs4_models.input,
         rules.archs4_coverage.input,
         rules.archs4_saturation.input,
+        rules.phenoplier_traits.input,
