@@ -6,6 +6,8 @@ configfile: "workflow/config/gtex.yaml"
 configfile: "workflow/config/runtime_benchmark.yaml"
 configfile: "workflow/config/runtime_benchmark_gtex.yaml"
 configfile: "workflow/config/donor_bulk.yaml"
+configfile: "workflow/config/archs4.yaml"
+configfile: "workflow/config/recount2.yaml"
 
 REPO_ROOT = os.path.dirname(workflow.basedir)
 
@@ -14,6 +16,9 @@ include: "rules/gtex.smk"
 include: "rules/computational_timing.smk"
 include: "rules/computational_timing_gtex.smk"
 include: "rules/donor_bulk.smk"
+include: "rules/recount2.smk"
+include: "rules/archs4.smk"
+include: "rules/archs4_coverage.smk"
 include: "rules/panels.smk"
 
 rule pseudobulk_complete:
@@ -43,3 +48,5 @@ rule all:
         rules.model_building_qc_gtex.output.complete,
         rules.computational_timing_analysis_gtex.input,
         rules.biology_gtex.input,
+        rules.archs4_models.input,
+        rules.archs4_coverage.input,

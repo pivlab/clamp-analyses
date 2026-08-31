@@ -76,18 +76,93 @@ snakemake --cores 4 --use-conda --snakefile workflow/Snakefile biology_gtex
 ## ARCHS4
 
 CLAMP fit across the full ARCHS4 human RNA-seq compendium (~605k samples). Its largest
-fits need ~500 GB RAM and run on Slurm, not a workstation. The coverage analysis retrains
-with a GO:BP prior and measures pathway recovery (Reactome, canonical non-Reactome,
-CellMarker) as more studies enter training, compared against GTEx and recount2.
-Configuration: `workflow/config/archs4.yaml`.
+fits need ~500 GB RAM and run on Slurm, not a workstation.
+
+The coverage analysis retrains CLAMPfull with a pinned GO:BP prior and measures pathway
+recovery (Reactome, canonical non-Reactome, CellMarker) as more studies enter training,
+compared against GTEx and recount2. Subsampling is at the level of GEO series, not
+individual samples, and one model is fit per coverage level. The three full-data GO:BP
+models are published seed-free under `output/98_models/bp_models/`.
+
+Configuration: `workflow/config/archs4.yaml` and `workflow/config/recount2.yaml`.
+
+### Cluster setup
+
+The heavy stages do not fit on a workstation. Run them on a cluster through a **site
+profile**: a copy of the committed generic Slurm profile with your account and partition
+filled in. `.gitignore` excludes `workflow/profiles/site-*/`, so site-specific settings
+never get committed.
 
 ```bash
-# Full-compendium model fits (Slurm only, multi-day) -- see
-# workflow/profiles/slurm/config.yaml for the generic profile to copy and fill in
-snakemake --profile /path/to/user/slurm-profile archs4_models
+mkdir -p workflow/profiles/site-mycluster
+cp workflow/profiles/slurm/config.yaml workflow/profiles/site-mycluster/config.yaml
+```
+
+Then add your scheduler details under `default-resources` in that copy:
+
+```yaml
+default-resources:
+  - slurm_account="my_account"      # sacctmgr show assoc user=$USER format=account
+  - slurm_partition="my_partition"  # sinfo -s
+  - mem_mb=8000
+  - runtime=5760
+  - tasks=1
+```
+
+Run with `--profile workflow/profiles/site-mycluster`. The profile already carries the
+per-rule memory and thread requests, so nothing else needs changing.
+
+**Memory floors.** These are requests, not suggestions: the fits die without them.
+
+| Stage | RAM | Notes |
+| --- | --- | --- |
+| `preprocess_archs4` | 200 GB | 30 cores; streams the 45 GB HDF5 |
+| `svd_archs4` | 200 GB | 30 cores |
+| `clampbase_archs4`, `clampfull_archs4` | 500 GB | multi-day |
+| coverage fits | 32 GB (1%) to 320 GB (100%) | escalates to 800 GB on OOM retry |
+| `preprocess_recount2`, `svd_recount2`, `clampbase_recount2` | 200 GB | |
+| ORA | 64 GB | |
+| aggregation, `bp_models`, report notebook | 16 GB | runs fine on a laptop |
+
+### What is reproducible from scratch
+
+Everything, given the raw inputs and enough cluster time. In practice the model fits are
+adopted rather than recomputed, because they take days:
+
+```bash
+# Adopt model outputs that already exist on disk, so the expensive rules never fire.
+# --touch fails loudly if anything is missing, so this doubles as a completeness check.
+snakemake --touch archs4_precomputed
+snakemake --touch recount2_precomputed
+
+# Check what is actually present, without running or refitting anything. This
+# also checks that each coverage cell's saved sample labels align with the
+# filtered ARCHS4 universe used to construct its FBM.
+snakemake --profile workflow/profiles/local coverage_validate
+```
+
+`coverage_validate` writes a read-only provenance and artifact report to
+`output/03_model_biology/02_archs4/00_coverage/audit/` listing every coverage cell, model
+and ORA directory, and what is missing from each. It never repairs or rebuilds anything.
+Cells marked `raw_indexed_misaligned` were produced by the old, uncommitted
+subsampling procedure and must be regenerated before they can support a fully
+reproducible coverage curve.
+
+### Running it
+
+```bash
+# Full-compendium model fits (Slurm only, multi-day)
+snakemake --profile workflow/profiles/site-mycluster archs4_models
+
+# GO:BP coverage sweep: one model per coverage level, 1% to 100% (Slurm, multi-day)
+snakemake --profile workflow/profiles/site-mycluster coverage_bp_models
 
 # Coverage report, once fits/ORA outputs exist (local, cheap)
 snakemake --profile workflow/profiles/local archs4_coverage
+
+# Publish the three GO:BP models (ARCHS4, GTEx, recount2) to output/98_models/bp_models/.
+# Hardlinks the existing fits, so this costs no extra disk.
+snakemake --profile workflow/profiles/local bp_models
 ```
 
 ## Running a single notebook

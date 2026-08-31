@@ -1,0 +1,146 @@
+archs4:
+  raw_url: https://s3.dev.maayanlab.cloud/archs4/files/human_gene_v2.5.h5
+  raw_h5: data/archs4/human_gene_v2.5.h5
+  # Max transcript length per HGNC symbol, pulled once from Ensembl 107. The
+  # preprocessing notebook fetched this with biomaRt behind a commented-out
+  # cell because the compute node has no internet; it is a tracked input here.
+  gene_lengths: data/archs4/gene_lengths.rds
+  ensembl_version: 107
+
+  paths:
+    production: output/01_model_building/02_archs4
+    biology: output/03_model_biology/02_archs4
+    model_notebooks: nbs/01_model_building/02_archs4
+    biology_notebooks: nbs/03_model_biology/02_archs4
+
+  raw_data:
+    # Block size for streaming /data/expression out of the HDF5 file. Kept at
+    # 100 rather than config.R's CHUNK_SIZE: at least one block in ARCHS4 v2.5
+    # cannot be read, and a small block keeps the damage from that fallback
+    # (a near-zero dummy block) contained.
+    block_size: 100
+    n_cores: 10
+
+  preprocess:
+    mean_cutoff: 0.5
+    var_cutoff: 0.1
+    # Drop libraries ARCHS4 flags as probably single-cell.
+    single_cell_probability_max: 0.5
+    seed: 123
+
+  svd:
+    n_cores: 30
+    seed: 123
+
+  clamp:
+    k_multiplier: 2
+    multiplier: 100
+    max_iter: 5000
+    seed: 123
+
+  prior:
+    gmts:
+      HALL: data/pathways/h.all.v2026.1.Hs.symbols.gmt
+      REACTOME: data/pathways/c2.cp.reactome.v2026.1.Hs.symbols.gmt
+      GOCC: data/pathways/c5.go.cc.v2026.1.Hs.symbols.gmt
+      C8: data/pathways/c8.all.v2026.1.Hs.symbols.gmt
+
+  final_model:
+    dir: output/01_model_building/02_archs4/01_final_model
+    seeds: [1, 2, 3]
+    reference_seed: 1
+    leaf: seed{seed}
+    model_name: CLAMPfull
+
+  # Coverage-only BP rebuild.  The model-fitting inputs are the existing
+  # study-level subsamples, SVDs, inferred ranks, and CLAMPbase fits.  Keeping
+  # this map explicit prevents a missing or renamed fraction from silently
+  # triggering a new subsample.
+  coverage:
+    prior_gmt: data/pathways/go_bp.Hs.symbols.gmt
+    model_root: output/01_model_building/02_archs4/02_coverage_study/models
+    ora_root: output/01_model_building/02_archs4/02_coverage_study/ora
+    assignments: output/03_model_biology/02_archs4/00_coverage/assignments
+    databases: [canonical, cellmarker]
+    seeds: [1, 2, 3]
+    rng_seeds: [123, 456, 789]
+    levels:
+      "1": 00_bp_coverage_study_01
+      "5": 01_bp_coverage_study_05
+      "10": 02_bp_coverage_study_10
+      "25": 03_bp_coverage_study_25
+      "50": 04_bp_coverage_study_50
+      "75": 05_bp_coverage_study_75
+      "100": 06_bp_coverage_study_100
+    input_root: output/01_model_building/02_archs4/02_coverage_study
+    model_name: CLAMPfull_bp
+    resources:
+      "1": {mem_mb: 32000, runtime: 5760}
+      "5": {mem_mb: 64000, runtime: 8640}
+      "10": {mem_mb: 96000, runtime: 14400}
+      "25": {mem_mb: 224000, runtime: 24000}
+      "50": {mem_mb: 192000, runtime: 36000}
+      "75": {mem_mb: 288000, runtime: 48000}
+      "100": {mem_mb: 320000, runtime: 54000}
+    comparators:
+      gtex:
+        label: GTEx
+        fbm_rds: output/01_model_building/01_gtex/gtex_fbm_filt.rds
+        genes_rds: output/01_model_building/01_gtex/gtex_genes.rds
+        samples_rds: output/01_model_building/01_gtex/gtex_samples.rds
+        svd: output/01_model_building/01_gtex/gtex_svdRes.rds
+        k: output/01_model_building/01_gtex/CLAMP_K_gtex.rds
+        base: output/01_model_building/01_gtex/CLAMPbase.rds
+        base_z: output/01_model_building/01_gtex/CLAMPbase/Z.csv
+        max_iter: 500
+      recount2:
+        label: recount2
+        fbm_rds: output/01_model_building/03_recount2/00_recount2/recount2_fbm_filt.rds
+        genes_rds: output/01_model_building/03_recount2/00_recount2/recount2_genes.rds
+        samples_rds: output/01_model_building/03_recount2/00_recount2/recount2_samples.rds
+        svd: output/01_model_building/03_recount2/00_recount2/recount2_svdRes.rds
+        k: output/01_model_building/03_recount2/00_recount2/CLAMP_K_recount2.rds
+        base: output/01_model_building/03_recount2/00_recount2/CLAMPbase.rds
+        base_z: output/01_model_building/03_recount2/00_recount2/CLAMPbase/Z.csv
+        max_iter: 500
+    # Seed-free publication path for the three headline CLAMPfull_bp models.
+    bp_models_root: output/98_models/bp_models
+    bp_model_datasets: [archs4, gtex, recount2]
+    colors:
+      model:
+        CLAMPfull: "#0072B2"
+        CLAMPbase: "#777777"
+      dataset:
+        ARCHS4: "#0072B2"
+        GTEx: "#E69F00"
+        recount2: "#009E73"
+    # Attempt-indexed memory escalation for CLAMPfull fits that hit OOM.
+    routing:
+      retry_mem_factors: [1.0, 1.5, 2.0]
+      retry_mem_cap_mb: 800000
+
+  ora:
+    databases:
+      reactome:
+        type: gmt
+        path: data/pathways/c2.cp.reactome.v2026.1.Hs.symbols.gmt
+        label: Reactome
+      canonical:
+        type: gmt
+        path: data/pathways/c2.cp.v2026.1.Hs.symbols.gmt
+        exclude_term_regex: ^REACTOME_
+        label: Canonical non-Reactome
+      cellmarker:
+        type: cellmarker_xlsx
+        path: data/pathways/Cell_marker_Human.xlsx
+        sheet: human
+        term_column: cell_name
+        gene_column: Symbol
+        label: CellMarker
+    top_pct: 0.01
+    min_size: 10
+    max_size: 500
+    pvalue_cutoff: 0.05
+    qvalue_cutoff: 0.2
+    fdr: [0.05]
+    resources: {mem_mb: 8000, runtime: 5760}
