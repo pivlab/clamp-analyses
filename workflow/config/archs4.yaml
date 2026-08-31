@@ -33,11 +33,18 @@ archs4:
     seed: 123
 
   clamp:
+    # CLAMP_K = num.pc(svd$d) * k_multiplier
     k_multiplier: 2
+    # The values that actually produced the shipped model. config.R's
+    # CLAMP_PARAMS (MAX_ITER 350, MULTICLAMP 3) belonged to the earlier
+    # 04_archs4_CLAMPfull chain, which is superseded.
     multiplier: 100
     max_iter: 5000
     seed: 123
 
+  # Prior used by the existing production ARCHS4 model.  The coverage-only BP
+  # campaign below has its own prior and does not silently invalidate this
+  # production rule.
   prior:
     gmts:
       HALL: data/pathways/h.all.v2026.1.Hs.symbols.gmt
@@ -46,11 +53,17 @@ archs4:
       C8: data/pathways/c8.all.v2026.1.Hs.symbols.gmt
 
   final_model:
+    # The shipped ARCHS4 model (K = 1728), fit on the full sample set. Three
+    # seeds exist; seed 1 is what every downstream analysis projects into.
+    # Each seed directory is self-contained: its own svd.rds, CLAMP_K.rds,
+    # CLAMPbase.rds and CLAMPfull_hall.rds.
     dir: output/01_model_building/02_archs4/01_final_model
     seeds: [1, 2, 3]
     reference_seed: 1
-    leaf: seed{seed}
-    model_name: CLAMPfull
+    # Leaf directory name inside `dir`, formatted with the seed. Renaming these
+    # to something less coverage-flavoured is deliberately deferred.
+    leaf: hall_coverage_rs100_seed_{seed}
+    model_name: CLAMPfull_hall
 
   # Coverage-only BP rebuild.  The model-fitting inputs are the existing
   # study-level subsamples, SVDs, inferred ranks, and CLAMPbase fits.  Keeping
@@ -58,12 +71,14 @@ archs4:
   # triggering a new subsample.
   coverage:
     prior_gmt: data/pathways/go_bp.Hs.symbols.gmt
+    # Models and ORA sit beside the subsamples that produced them: everything
+    # computational is under 01_model_building, while 03_model_biology keeps
+    # only the report tables and the notebook.
     model_root: output/01_model_building/02_archs4/02_coverage_study/models
     ora_root: output/01_model_building/02_archs4/02_coverage_study/ora
     assignments: output/03_model_biology/02_archs4/00_coverage/assignments
-    databases: [canonical, cellmarker]
     seeds: [1, 2, 3]
-    rng_seeds: [123, 456, 789]
+    rng_seeds: [123, 124, 125]
     levels:
       "1": 00_bp_coverage_study_01
       "5": 01_bp_coverage_study_05
@@ -75,6 +90,16 @@ archs4:
     input_root: output/01_model_building/02_archs4/02_coverage_study
     model_name: CLAMPfull_bp
     resources:
+      # runtime is in minutes, as expected by the Slurm executor plugin.
+      #
+      # The 50-100% requests are sized from measured peak RSS rather than from
+      # the conservative first-pass estimates, so that more than one large fit
+      # fits on a 900 GB node at once.  Observed peaks: 11.9 GB at 1%, 19.0 at
+      # 5%, 28.0 at 10%, 54.6 at 25%, 223 at 100%; growth above 25% is roughly
+      # 2.25 GB per percentage point, giving ~111 GB at 50% and ~167 GB at 75%.
+      # Each request below is about 1.7x its predicted peak (1.4x at 100%,
+      # where the peak is measured, not predicted), and the retry ladder still
+      # adds 1.5x and 2x on failure.
       "1": {mem_mb: 32000, runtime: 5760}
       "5": {mem_mb: 64000, runtime: 8640}
       "10": {mem_mb: 96000, runtime: 14400}
@@ -103,9 +128,6 @@ archs4:
         base: output/01_model_building/03_recount2/00_recount2/CLAMPbase.rds
         base_z: output/01_model_building/03_recount2/00_recount2/CLAMPbase/Z.csv
         max_iter: 500
-    # Seed-free publication path for the three headline CLAMPfull_bp models.
-    bp_models_root: output/98_models/bp_models
-    bp_model_datasets: [archs4, gtex, recount2]
     colors:
       model:
         CLAMPfull: "#0072B2"
@@ -114,11 +136,109 @@ archs4:
         ARCHS4: "#0072B2"
         GTEx: "#E69F00"
         recount2: "#009E73"
-    # Attempt-indexed memory escalation for CLAMPfull fits that hit OOM.
     routing:
+      remote_min_free_cpus: 2
+      remote_min_free_mem_mb: 16000
+      remote_max_ora_jobs: 8
+      local_total_mem_mb: 96000
+      retries: 2
       retry_mem_factors: [1.0, 1.5, 2.0]
       retry_mem_cap_mb: 800000
 
+  # Saturation: pathway recovery against model rank K, at several study
+  # subsampling levels.
+  saturation:
+    prior_gmt: data/pathways/go_bp.Hs.symbols.gmt
+    model_root: output/01_model_building/02_archs4/01_saturation/models
+    ora_root: output/01_model_building/02_archs4/01_saturation/ora
+    seeds: [1, 2, 3]
+    rng_seeds: [123, 124, 125]
+    fractions: [1, 5, 10, 25, 50, 75]
+    k_values: [86, 173, 432, 864, 1296, 1728]
+    # Cells that cannot be fit, as [fraction, k, seed]: rs1/k1728/seed1's SVD
+    # rank (1,527) is below the 1,728 components K requires.
+    exclude_cells:
+      - [1, 1728, 1]
+    # Inputs come from the coverage cells, one per (fraction, seed), shared
+    # across all six K values.
+    input_root: output/01_model_building/02_archs4/02_coverage_study
+    input_levels:
+      "1": 00_bp_coverage_study_01
+      "5": 01_bp_coverage_study_05
+      "10": 02_bp_coverage_study_10
+      "25": 03_bp_coverage_study_25
+      "50": 04_bp_coverage_study_50
+      "75": 05_bp_coverage_study_75
+    input_leaf: study_coverage_rs{fraction}_seed_{seed}
+    # CLAMPbase cells produced by the earlier sweep, reused as-is.
+    base_root: output/01_model_building/02_archs4/01_saturation
+    base_leaf: study_saturation_rs{fraction}_k{k}_seed_{seed}
+    model_name: CLAMPfull_bp
+    max_iter: 5000
+    # Study-subsampled sample counts, read from each cell's run_info.rds.
+    n_samples:
+      "1": 6109
+      "5": 30308
+      "10": 60645
+      "25": 152860
+      "50": 303309
+      "75": 454404
+    # mem_mb/runtime per (fraction, K), from measured peak RSS and wall time.
+    resources:
+      "1":
+        "86": {mem_mb: 24000, runtime: 360}
+        "173": {mem_mb: 24000, runtime: 360}
+        "432": {mem_mb: 24000, runtime: 420}
+        "864": {mem_mb: 24000, runtime: 420}
+        "1296": {mem_mb: 24000, runtime: 600}
+        "1728": {mem_mb: 24000, runtime: 900}
+      "5":
+        "86": {mem_mb: 24000, runtime: 420}
+        "173": {mem_mb: 24000, runtime: 420}
+        "432": {mem_mb: 32000, runtime: 420}
+        "864": {mem_mb: 32000, runtime: 480}
+        "1296": {mem_mb: 32000, runtime: 480}
+        "1728": {mem_mb: 32000, runtime: 540}
+      "10":
+        "86": {mem_mb: 32000, runtime: 420}
+        "173": {mem_mb: 40000, runtime: 420}
+        "432": {mem_mb: 40000, runtime: 480}
+        "864": {mem_mb: 40000, runtime: 540}
+        "1296": {mem_mb: 48000, runtime: 600}
+        "1728": {mem_mb: 48000, runtime: 720}
+      "25":
+        "86": {mem_mb: 64000, runtime: 420}
+        "173": {mem_mb: 64000, runtime: 480}
+        "432": {mem_mb: 72000, runtime: 600}
+        "864": {mem_mb: 80000, runtime: 780}
+        "1296": {mem_mb: 88000, runtime: 960}
+        "1728": {mem_mb: 96000, runtime: 1200}
+      "50":
+        "86": {mem_mb: 104000, runtime: 480}
+        "173": {mem_mb: 112000, runtime: 540}
+        "432": {mem_mb: 120000, runtime: 780}
+        "864": {mem_mb: 144000, runtime: 1200}
+        "1296": {mem_mb: 160000, runtime: 1560}
+        "1728": {mem_mb: 184000, runtime: 1980}
+      "75":
+        "86": {mem_mb: 152000, runtime: 480}
+        "173": {mem_mb: 160000, runtime: 600}
+        "432": {mem_mb: 176000, runtime: 960}
+        "864": {mem_mb: 200000, runtime: 1560}
+        "1296": {mem_mb: 232000, runtime: 2160}
+        "1728": {mem_mb: 264000, runtime: 2760}
+    # Capped at 75% of the shared 168-CPU / 900 GB node.
+    routing:
+      total_mem_mb: 675000
+      fit_slots: 10
+      ora_slots: 24
+      threads_per_fit: 8
+      retries: 2
+      retry_mem_factors: [1.0, 1.5, 2.0]
+      retry_mem_cap_mb: 675000
+
+  # ORA collections are tested independently, shared by the coverage and
+  # saturation campaigns.
   ora:
     databases:
       reactome:
@@ -143,4 +263,12 @@ archs4:
     pvalue_cutoff: 0.05
     qvalue_cutoff: 0.2
     fdr: [0.05]
-    resources: {mem_mb: 8000, runtime: 5760}
+    # Measured across the 150 coverage ORAs: median 122 s, max 407 s at K = 1728.
+    resources: {mem_mb: 8000, runtime: 60}
+
+  # Independently built CLAMP models on other compendia, for the cross-dataset
+  # comparison. These live under their own dataset trees, not under ARCHS4.
+  comparators:
+    GTEx: output/01_model_building/02_gtex/10_CLAMP_hall/CLAMPfull_hall.rds
+    Recount2: output/01_model_building/03_recount2/01_recount2_hall/CLAMPfull_hall.rds
+
