@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+
 # Aggregate per-cell saturation ORA summaries into long/panel-ready tables.
 
 suppressPackageStartupMessages({
@@ -28,8 +29,6 @@ panel_out <- required_arg(args, "panel_out")
 summary_files <- list.files(ora_root, pattern = "^summary\\.csv$", recursive = TRUE, full.names = TRUE)
 canonical <- "/rs[0-9]+/k[0-9]+/seed[0-9]+/[^./]+/[^./]+/summary\\.csv$"
 summary_files <- grep(canonical, summary_files, value = TRUE)
-# Saturation scores against canonical + CellMarker only; drop any Reactome
-# directories left on disk from earlier runs.
 summary_files <- summary_files[!grepl("/reactome/", summary_files, fixed = TRUE)]
 if (!length(summary_files)) stop("No published ORA summaries found below ", ora_root)
 complete_files <- file.path(dirname(summary_files), "complete")
@@ -39,7 +38,6 @@ if (any(!file.exists(complete_files))) {
 
 saturation <- rbindlist(lapply(summary_files, function(path) {
   row <- fread(path)
-  # K is recovered from the path: .../rs{f}/k{K}/seed{s}/{model}/{database}/summary.csv
   parts <- strsplit(path, "/", fixed = TRUE)[[1]]
   k_part <- parts[length(parts) - 4L]
   if (!grepl("^k[0-9]+$", k_part)) stop("Cannot read K from path: ", path)

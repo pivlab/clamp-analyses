@@ -6,10 +6,6 @@ A4_COV_ORA_ROOT = A4_COV_CFG["ora_root"]
 A4_COV_INPUT_ROOT = A4_COV_CFG["input_root"]
 A4_COV_LEVELS = [int(level) for level in A4_COV_CFG["levels"]]
 A4_COV_SEEDS = [int(seed) for seed in A4_COV_CFG["seeds"]]
-# At 100% there is no subsampling, so every seed's SVD/CLAMPbase (and, for the
-# comparators, CLAMPbase itself) is identical or not seed-varied to begin
-# with -- only this one seed's CLAMPfull is ever used downstream. Fitting and
-# scoring the other seeds there would just recompute discarded data.
 A4_COV_REFERENCE_SEED = 1
 A4_COV_RNG_SEEDS = [int(seed) for seed in A4_COV_CFG["rng_seeds"]]
 A4_COV_DATABASES = list(A4_CFG["ora"]["databases"])
@@ -128,6 +124,10 @@ A4_COV_FULL_ORA = A4_COV_ARCH_FULL_ORA + A4_COV_COMPARATOR_FULL_ORA
 A4_COV_BASE_ORA = A4_COV_ARCH_BASE_ORA + A4_COV_COMPARATOR_BASE_ORA
 
 
+# ============================================================
+# Step 1: fit CLAMPfull with the GO:BP prior (ARCHS4 + comparators)
+# ============================================================
+
 rule fit_bp_archs4_coverage:
     input:
         metadata=f"{A4_PROD}/00_preprocess/metadata_filtered.rds",
@@ -227,6 +227,10 @@ rule fit_bp_comparator_coverage:
         "--out-dir {output.model_dir} > {log} 2>&1"
 
 
+# ============================================================
+# Step 2: validate the fitted models
+# ============================================================
+
 rule validate_bp_coverage_model:
     input:
         model_dir=lambda wc: a4_cov_model_dir(wc.dataset, wc.fraction, wc.seed),
@@ -244,6 +248,10 @@ rule validate_bp_coverage_model:
     shell:
         "python {input.script} --model-dir {input.model_dir} --output {output}"
 
+
+# ============================================================
+# Step 3: score against the ORA databases
+# ============================================================
 
 rule ora_bp_full_coverage:
     input:
@@ -340,6 +348,10 @@ rule ora_bp_base_coverage:
         "> {log} 2>&1"
 
 
+# ============================================================
+# Step 4: aggregate ORA summaries and render the report notebook
+# ============================================================
+
 rule aggregate_bp_coverage:
     input:
         A4_COV_FULL_ORA + A4_COV_BASE_ORA,
@@ -381,6 +393,10 @@ rule coverage_report_archs4:
         f"{A4_COV_NB}/00_coverage.ipynb"
 
 
+# ============================================================
+# Step 5: convenience targets for partial/aggregate runs
+# ============================================================
+
 rule coverage_bp_archs4_models:
     input:
         A4_COV_ARCH_VALIDATED,
@@ -414,11 +430,6 @@ rule coverage_bp_comparator_ora:
 rule coverage_bp_comparator_base_ora:
     input:
         A4_COV_COMPARATOR_BASE_ORA,
-
-
-rule coverage_bp:
-    input:
-        rules.coverage_report_archs4.output.complete,
 
 
 rule archs4_coverage:

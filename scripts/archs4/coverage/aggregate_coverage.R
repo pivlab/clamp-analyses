@@ -25,11 +25,6 @@ coverage_out <- required_arg(args, "coverage_out")
 cross_out <- required_arg(args, "cross_out")
 panel_out <- required_arg(args, "panel_out")
 
-# Only published ORA directories count.  run_ora.R builds a complete result set,
-# `complete` marker included, inside `<out>.tmp.<pid>` and publishes it with an
-# atomic rename, so an interrupted run leaves behind a directory that looks
-# finished.  Matching the canonical <dataset>/rs<fraction>/seed<seed>/<model>/
-# <database> layout skips those instead of double-counting them.
 summary_files <- list.files(ora_root, pattern = "^summary\\.csv$", recursive = TRUE, full.names = TRUE)
 canonical <- "/[^/]+/rs[0-9]+/seed[0-9]+/[^./]+/[^./]+/summary\\.csv$"
 summary_files <- grep(canonical, summary_files, value = TRUE)

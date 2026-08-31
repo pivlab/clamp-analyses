@@ -9,7 +9,6 @@ A4_SAT_FRACTIONS = [int(f) for f in A4_SAT_CFG["fractions"]]
 A4_SAT_KS = [int(k) for k in A4_SAT_CFG["k_values"]]
 A4_SAT_SEEDS = [int(s) for s in A4_SAT_CFG["seeds"]]
 A4_SAT_RNG_SEEDS = [int(s) for s in A4_SAT_CFG["rng_seeds"]]
-# Saturation scores against canonical + CellMarker only; Reactome is coverage-only.
 A4_SAT_DATABASES = [db for db in A4_CFG["ora"]["databases"] if db != "reactome"]
 A4_SAT_FRACTION_PATTERN = "|".join(map(str, A4_SAT_FRACTIONS))
 A4_SAT_K_PATTERN = "|".join(map(str, A4_SAT_KS))
@@ -18,13 +17,6 @@ A4_SAT_DATABASE_PATTERN = "|".join(A4_SAT_DATABASES)
 A4_SAT_RETRY_FACTORS = [float(v) for v in A4_SAT_CFG["routing"]["retry_mem_factors"]]
 A4_SAT_RETRY_CAP = int(A4_SAT_CFG["routing"]["retry_mem_cap_mb"])
 A4_SAT_THREADS = int(A4_SAT_CFG["routing"]["threads_per_fit"])
-
-
-# ============================================================
-# Pathway recovery against model rank K, at several study-subsampling levels.
-# Reuses coverage's SVD/FBM and CLAMPbase fits per (fraction, seed); only
-# CLAMPfull is refit, with the same GO:BP prior coverage trains on.
-# ============================================================
 
 
 def a4_sat_input_cell(fraction, seed):
@@ -79,7 +71,6 @@ def a4_sat_db(wildcards):
     return A4_CFG["ora"]["databases"][wildcards.database]
 
 
-# Cells excluded because the data cannot support them (see archs4.yaml).
 A4_SAT_EXCLUDED = {
     (int(f), int(k), int(s))
     for f, k, s in A4_SAT_CFG.get("exclude_cells", [])
@@ -121,6 +112,10 @@ A4_SAT_FULL_ORA = [
 ]
 A4_SAT_VALIDATED = [a4_sat_validated(*c) for c in A4_SAT_CELLS]
 
+
+# ============================================================
+# Step 1: fit CLAMPbase/CLAMPfull at a forced K
+# ============================================================
 
 rule fit_bp_saturation_base:
     """CLAMPbase at a forced K, for the cells the earlier sweep never produced."""
@@ -215,6 +210,10 @@ rule fit_bp_saturation_full:
         "--out-dir {output.model_dir} > {log} 2>&1"
 
 
+# ============================================================
+# Step 2: validate the fitted models
+# ============================================================
+
 rule validate_bp_saturation_model:
     input:
         model_dir=lambda wc: a4_sat_model_dir(wc.fraction, wc.k, wc.seed),
@@ -232,6 +231,10 @@ rule validate_bp_saturation_model:
     shell:
         "python {input.script} --model-dir {input.model_dir} --output {output}"
 
+
+# ============================================================
+# Step 3: score against the ORA databases
+# ============================================================
 
 rule ora_bp_saturation_base:
     """Score a CLAMPbase.  No prior involved, so no refit is ever needed."""
@@ -329,6 +332,10 @@ rule ora_bp_saturation_full:
         "> {log} 2>&1"
 
 
+# ============================================================
+# Step 4: aggregate ORA summaries and render the report notebook
+# ============================================================
+
 rule aggregate_bp_saturation:
     input:
         A4_SAT_FULL_ORA + A4_SAT_BASE_ORA_ALL,
@@ -368,16 +375,16 @@ rule saturation_report_archs4:
         f"{A4_SAT_NB}/00_saturation.ipynb"
 
 
-# ---- aggregate targets ----
+# ============================================================
+# Step 5: convenience targets for partial/aggregate runs
+# ============================================================
 
 rule saturation_bp_base_ora:
-    """Phase 1: score every CLAMPbase already on disk.  No fitting."""
     input:
         A4_SAT_BASE_ORA_PRESENT,
 
 
 rule saturation_bp_base_models:
-    """Phase 2: fill in the CLAMPbase cells the earlier sweep never produced."""
     input:
         [a4_sat_base_rds(*c) for c in a4_sat_base_missing()],
 
@@ -390,11 +397,6 @@ rule saturation_bp_models:
 rule saturation_bp_ora:
     input:
         A4_SAT_FULL_ORA + A4_SAT_BASE_ORA_ALL,
-
-
-rule saturation_bp:
-    input:
-        rules.saturation_report_archs4.output.complete,
 
 
 rule archs4_saturation:
