@@ -1,0 +1,339 @@
+# ============================================================
+# Small local CLAMP models vs projection into the ARCHS4 model
+# ============================================================
+# Every dataset here is analysed twice: once through a CLAMP model fit on its
+# own RNA-seq ("local"), and once by projecting it into the big ARCHS4
+# CLAMPfull model ("ARCHS4") with CLAMP::projectCLAMP. The two are then scored
+# against the same pathway/marker evidence so the transfer can be judged.
+#
+# The frozen reference is the adopted canonical ARCHS4 CLAMPfull model.  Keep
+# its three artifacts explicit here: this projection workflow must not silently
+# fall back to the older seed-based ARCHS4 model-building outputs.
+
+projections:
+  paths:
+    production: output/01_model_building/02_archs4/03_projections
+    biology: output/03_model_biology/02_archs4/03_projections
+    notebooks: nbs/03_model_biology/02_archs4/03_projections
+    raw_data: data/projections
+
+  archs4_model:
+    root: output/98_final_models/clampfull/canonical/archs4
+    rds: CLAMPfull_canonical.rds
+    z: Z.csv
+    summary: summary.csv
+    provenance: output/98_final_models/clampfull/canonical/archs4/adoption_validation.json
+
+  # Local CLAMPfull fits use the same canonical prior collections as the frozen
+  # ARCHS4 reference: C2-all, Reactome and CellMarker.  The CellMarker workbook
+  # is converted to TERM2GENE in fit_local_clamp.R before fitting.
+  local_model:
+    prior:
+      gmts:
+        C2ALL: data/pathways/c2.all.v2026.1.Hs.symbols.gmt
+        REACTOME: data/pathways/c2.cp.reactome.v2026.1.Hs.symbols.gmt
+      cellmarker:
+        path: data/pathways/Cell_marker_Human.xlsx
+        sheet: human
+        term_column: cell_name
+        gene_column: Symbol
+    # scripts/gtex/clamp.R sizes K with rsvd + PCAtools::chooseGavishDonoho,
+    # which needs many samples to mean anything. These datasets have 8-30, so
+    # they use the rule the cytokine notebook documented instead: take every
+    # available dimension, K = min(n_genes, n_samples) - 1. That reproduces the
+    # cached local models (9 LVs for 10 samples, 29 for 30).
+    k_rule: n_samples_minus_1
+    max_iter: 200
+    seed: 123
+
+  thresholds:
+    lv_fdr: 0.05
+    lv_logfc: 0.05
+    pathway_fdr: 0.05
+    pathway_auc: 0.70
+
+  ora:
+    top_pct: 0.01
+    min_size: 10
+    max_size: 500
+    # clusterProfiler::enricher reports terms with a single overlapping gene;
+    # require three. Canonical pathways, Hallmark, and CellMarker are retained
+    # so paper-defined programmes can be evaluated against their named source.
+    min_count: 3
+    pvalue_cutoff: 0.05
+    qvalue_cutoff: 0.2
+    fdr: 0.05
+    lv_subset: significant
+    resources: {mem_mb: 16000, runtime: 720}
+    databases:
+      canonical:
+        type: gmt
+        path: data/pathways/c2.cp.v2026.1.Hs.symbols.gmt
+        label: Canonical (C2:CP)
+      hallmark:
+        type: gmt
+        path: data/pathways/h.all.v2026.1.Hs.symbols.gmt
+        label: Hallmark
+      cellmarker:
+        type: cellmarker_xlsx
+        path: data/pathways/Cell_marker_Human.xlsx
+        sheet: human
+        term_column: cell_name
+        gene_column: Symbol
+        label: CellMarker
+
+  benchmarks:
+    pseudobulk:
+      projection: output/03_model_biology/02_archs4/03_projections/04_pseudobulk_recovery_archs4/pb_canon_dim.csv
+      null: output/03_model_biology/02_archs4/03_projections/04_pseudobulk_recovery_archs4/pb_dimcontrol.csv
+    gtex:
+      projection: output/03_model_biology/02_archs4/03_projections/05_gtex_ari_archs4/gtex_canon_dim.csv
+      null: output/03_model_biology/02_archs4/03_projections/05_gtex_ari_archs4/dim_control.csv
+
+  datasets:
+
+    # ---- cytokines -------------------------------------------------------
+    # Colli et al. 2020 Nat Commun (PMID 32444597): EndoC-betaH1 beta cells,
+    # IFN-alpha 2000 U/ml, 2/8/24 h, 5 replicates per group (30 samples).
+    cyt_ifna_GSE133218:
+      group: cytokines
+      label: "EndoC-betaH1, IFN-alpha time course"
+      accession: GSE133218
+      kind: geo_gtf_tar
+      id_type: ensembl
+      gene_level: true
+      unpack: {tar: GSE133218_RAW.tar}
+      downloads:
+      - name: GSE133218_RAW.tar
+        url: https://ftp.ncbi.nlm.nih.gov/geo/series/GSE133nnn/GSE133218/suppl/GSE133218_RAW.tar
+        sha256: 086186d5e15e9c7a8666306cb2da3b019edf84275e7e85b6aef31b12b9683ca9
+      sample_annotation:
+        source: gtf_filenames
+        id: "{gsm}_{group}"
+        rules:
+          gsm: {extract: ".*/(GSM[0-9]+)_.*"}
+          condition: {pattern: "_Ctl_", match: Control, nomatch: IFNa}
+          timepoint: {extract: ".*(2h|8h|24h).*"}
+          group: {join: [condition, timepoint], sep: "_"}
+      contrasts:
+        - {name: pooled, type: limma_groups, factor: condition,
+           levels: [Control, IFNa], contrast: "IFNa-Control"}
+        - {name: tp_2h, type: limma_groups, factor: group,
+           levels: [Control_2h, Control_8h, Control_24h, IFNa_2h, IFNa_8h, IFNa_24h],
+           contrast: "IFNa_2h-Control_2h"}
+        - {name: tp_8h, type: limma_groups, factor: group,
+           levels: [Control_2h, Control_8h, Control_24h, IFNa_2h, IFNa_8h, IFNa_24h],
+           contrast: "IFNa_8h-Control_8h"}
+        - {name: tp_24h, type: limma_groups, factor: group,
+           levels: [Control_2h, Control_8h, Control_24h, IFNa_2h, IFNa_8h, IFNa_24h],
+           contrast: "IFNa_24h-Control_24h"}
+
+    # ---- monocyte --------------------------------------------------------
+    mono_lps_GSE193336:
+      group: monocyte
+      label: "Monocyte-derived macrophages, +/- LPS"
+      accession: GSE193336
+      kind: geo_matrix
+      id_type: ensembl
+      gene_level: false
+      downloads:
+      - name: GSE193336_GEO_Processed_Data_Raw_Count_Macrophage.csv.gz
+        url: https://ftp.ncbi.nlm.nih.gov/geo/series/GSE193nnn/GSE193336/suppl/GSE193336_GEO_Processed_Data_Raw_Count_Macrophage.csv.gz
+        sha256: 2fe82f9b39abd3e4826c74b9280d20fbd3a175d0110b875a35cb84210c7bb98d
+      sample_annotation:
+        source: colnames
+        rules:
+          condition: {pattern: "_LPS$", match: LPS, nomatch: Untreated}
+          donor: {extract: "^(donor [0-9]+)_.*$"}
+      contrasts:
+        - {name: lps_vs_untreated, type: limma_coef, factor: condition,
+           reference: Untreated, block: donor, coef: conditionLPS}
+
+    # ---- placenta --------------------------------------------------------
+    placenta_EMTAB6701:
+      group: placenta
+      label: "Placenta / decidua scRNA-seq (trophoblast)"
+      accession: E-MTAB-6701
+      kind: ebi_sc_atlas
+      id_type: ensembl
+      gene_level: false
+      pseudobulk: {min_cells: 20}
+      downloads:
+      - name: E-MTAB-6701.aggregated_filtered_counts.mtx.gz
+        url: https://ftp.ebi.ac.uk/pub/databases/microarray/data/atlas/sc_experiments/E-MTAB-6701/E-MTAB-6701.aggregated_filtered_counts.mtx.gz
+        sha256: 1a4705d169178245369fe53dbe5f4ce3af1d6e632cb24669aab7b97365e34fd6
+      - name: E-MTAB-6701.aggregated_filtered_counts.mtx_cols.gz
+        url: https://ftp.ebi.ac.uk/pub/databases/microarray/data/atlas/sc_experiments/E-MTAB-6701/E-MTAB-6701.aggregated_filtered_counts.mtx_cols.gz
+        sha256: 75c19dcd58239e5ae871f24878961317e18fc43f3be8b2a4d53a82e3b5c139e3
+      - name: E-MTAB-6701.aggregated_filtered_counts.mtx_rows.gz
+        url: https://ftp.ebi.ac.uk/pub/databases/microarray/data/atlas/sc_experiments/E-MTAB-6701/E-MTAB-6701.aggregated_filtered_counts.mtx_rows.gz
+        sha256: 52d86d88a0de4d8ed6baa545d0e27c20bac2ddf3ac64d0db85c4b95728ccb670
+      - name: E-MTAB-6701.cell_metadata.tsv
+        url: https://ftp.ebi.ac.uk/pub/databases/microarray/data/atlas/sc_experiments/E-MTAB-6701/E-MTAB-6701.cell_metadata.tsv
+        sha256: 6f4860414155858d90a4143f208b8c5e09c159f964dfb9d18a7a61926f145d43
+      metadata_file: E-MTAB-6701.cell_metadata.tsv
+      metadata_columns: {id: id, donor: individual, label: "inferred_cell_type_-_authors_labels"}
+      filter: {column: organism_part, equals: placenta}
+      cell_type_map:
+        - {pattern: "extravillous trophoblast|\\(evt\\)", label: Extravillous trophoblast}
+        - {pattern: "syncytiotrophoblast|\\(sct\\)", label: Syncytiotrophoblast}
+        - {pattern: "villous cytotrophoblast|\\(vct\\)", label: Villous cytotrophoblast}
+        - {pattern: "hofbauer", label: Hofbauer cell}
+        - {pattern: "fetal fibroblast.*ffb2", label: Fetal fibroblast 2}
+        - {pattern: "fetal fibroblast", label: Fetal fibroblast 1}
+        - {pattern: "fetal endothelial", label: Fetal endothelial}
+        - {pattern: "maternal endothelial", label: Maternal endothelial}
+        - {pattern: "decidual macrophage.*dm1", label: Decidual macrophage 1}
+        - {pattern: "decidual macrophage.*dm2", label: Decidual macrophage 2}
+        - {pattern: "decidual macrophage.*dm3", label: Decidual macrophage 3}
+        - {pattern: "glandular epithelial", label: Glandular epithelial}
+        - {pattern: "granulocyte", label: Granulocyte}
+        - {pattern: "monocyte", label: Monocyte}
+      condition_from:
+        column: cell_type
+        rules:
+          condition: {pattern: "trophoblast", match: Trophoblast, nomatch: Other}
+      contrasts:
+        - {name: trophoblast_vs_other, type: limma_coef, factor: condition,
+           reference: Other, block: donor, coef: conditionTrophoblast}
+
+
+  # ============================================================
+  # Mechanism recovery
+  # ============================================================
+  # Keyed by dataset id (kept out of the dataset blocks so the download
+  # checksums above stay readable). Mechanisms are defined by the paper and
+  # matched to ORA terms. Gene-level plots use every member of the selected
+  # ORA gene set, not a hand-curated marker subset.
+  mechanisms:
+
+    # Colli et al. explicitly report these IFN-alpha beta-cell mechanisms.
+    cyt_ifna_GSE133218:
+      ISG_core:
+        category: molecular_mechanism
+        source: "Colli et al. IFN-alpha IRF/STAT transcriptional response"
+        doi: "10.1038/s41467-020-16327-0"
+        contrast: pooled
+        database: hallmark
+        terms: ["HALLMARK_INTERFERON_ALPHA_RESPONSE"]
+      MHC_class_I:
+        category: molecular_mechanism
+        source: "Colli et al. MHC-I antigen presentation"
+        doi: "10.1038/s41467-020-16327-0"
+        contrast: pooled
+        terms: ["ANTIGEN_PROCESSING", "CROSS_PRESENTATION", "MHC_CLASS_I", "PEPTIDE_LOADING"]
+      ER_stress_UPR:
+        category: molecular_mechanism
+        source: "Colli et al. ER stress response"
+        doi: "10.1038/s41467-020-16327-0"
+        contrast: pooled
+        terms: ["HALLMARK_UNFOLDED_PROTEIN_RESPONSE", "UNFOLDED_PROTEIN", "IRE1",
+                "ATF4_ACTIVATES", "ATF6", "PERK", "ENDOPLASMIC_RETICULUM",
+                "ER_CHAPERONE", "N_LINKED_GLYCOSYLATION"]
+      proteasome_ubiquitination:
+        category: molecular_mechanism
+        source: "Colli et al. protein modification and degradation"
+        doi: "10.1038/s41467-020-16327-0"
+        contrast: pooled
+        terms: ["PROTEASOME", "UBIQUITIN", "SUMOYLATION", "NEDDYLATION"]
+      immune_crosstalk:
+        category: molecular_mechanism
+        source: "Colli et al. PD-L1/HLA-E protective immune checkpoints"
+        doi: "10.1038/s41467-020-16327-0"
+        contrast: pooled
+        terms: ["ALLOGRAFT_REJECTION", "NATURAL_KILLER", "T_CELL_RECEPTOR", "CYTOTOXIC"]
+      splicing_RBP:
+        category: molecular_mechanism
+        source: "Colli et al. alternative splicing and RNA-binding proteins"
+        doi: "10.1038/s41467-020-16327-0"
+        contrast: pooled
+        terms: ["SPLIC", "DESTABILIZ", "NONSENSE_MEDIATED", "MRNA_STABILITY"]
+
+    # GSE193336 is an auxiliary human LPS-macrophage RNA-seq subset. The
+    # predeclared SIRT1/NAD/metabolic canonical pathways are used to test the
+    # paper's immunometabolic mechanism in this RNA projection.
+    mono_lps_GSE193336:
+      SIRT1_NAD_axis:
+        category: molecular_mechanism
+        source: "Li et al. NAD depletion inhibits the SIRT1 metabolic sensor"
+        doi: "10.1038/s41598-022-16005-9"
+        terms: ["SIRT1", "NAD_BIOSYNTHESIS", "NAD_METABOLISM", "SIRTUIN"]
+      glycolytic_reprogramming:
+        category: molecular_mechanism
+        source: "Li et al. increased glucose transport and glycolysis in inflammatory innate cells"
+        doi: "10.1038/s41598-022-16005-9"
+        terms: ["GLYCOLYSIS", "GLUCOSE_METABOLISM", "GLUCOSE_TRANSPORT", "HIF1"]
+      oxidative_phosphorylation_shift:
+        category: molecular_mechanism
+        source: "Li et al. reduced OXPHOS and perturbed mitochondrial metabolism"
+        doi: "10.1038/s41598-022-16005-9"
+        terms: ["OXIDATIVE_PHOSPHORYLATION", "RESPIRATORY_ELECTRON_TRANSPORT", "MITOCHONDRIAL"]
+      oxidative_stress_response:
+        category: molecular_mechanism
+        source: "Li et al. ROS/oxidative stress during early inflammatory activation"
+        doi: "10.1038/s41598-022-16005-9"
+        terms: ["OXIDATIVE_STRESS", "REACTIVE_OXYGEN", "KEAP1", "NFE2L2", "NRF2"]
+      innate_inflammatory_feedback:
+        category: molecular_mechanism
+        source: "Li et al. HIF1A and NF-kB feed-forward inflammatory activation after SIRT1 inhibition"
+        doi: "10.1038/s41598-022-16005-9"
+        terms: ["NF_KB", "TOLL_LIKE", "TLR4", "TNF", "INFLAMMASOME", "HIF1"]
+      macrophage_identity:
+        category: cell_type
+        source: "GSE193336 experimental cell type"
+        contrast: lps_vs_untreated
+        terms: ["MACROPHAGE", "MONOCYTE", "MYELOID"]
+
+    # Trophoblast lineages in first-trimester placenta / decidua.
+    placenta_EMTAB6701:
+      trophoblast_identity:
+        category: cell_type
+        source: "Vento-Tormo et al. trophoblast lineages"
+        doi: "10.1038/s41586-018-0698-6"
+        contrast: trophoblast_vs_other
+        terms: ["TROPHOBLAST", "PLACENTA", "SYNCYTIOTROPHOBLAST", "CYTOTROPHOBLAST"]
+      extravillous_trophoblast:
+        category: molecular_mechanism
+        source: "Vento-Tormo et al. EVT invasion and spiral-artery remodelling"
+        doi: "10.1038/s41586-018-0698-6"
+        contrast: trophoblast_vs_other
+        terms: ["EXTRAVILLOUS", "INVASION", "EPITHELIAL_MESENCHYMAL", "EXTRACELLULAR_MATRIX", "ANGIOGENESIS"]
+      syncytiotrophoblast_endocrine_program:
+        category: molecular_mechanism
+        source: "Vento-Tormo et al. syncytiotrophoblast endocrine and exchange programme"
+        doi: "10.1038/s41586-018-0698-6"
+        contrast: trophoblast_vs_other
+        terms: ["SYNCYTIO", "PEPTIDE_HORMONE", "STEROID_HORMONE", "PLACENTAL_LACTOGEN", "HORMONE"]
+      decidual_stromal:
+        category: cell_type
+        source: "Vento-Tormo et al. decidual stromal cells"
+        doi: "10.1038/s41586-018-0698-6"
+        contrast: trophoblast_vs_other
+        terms: ["DECIDUA", "STROMAL", "EXTRACELLULAR_MATRIX"]
+      decidual_stromal_matrix_remodeling:
+        category: molecular_mechanism
+        source: "Vento-Tormo et al. decidual stromal extracellular-matrix remodelling"
+        doi: "10.1038/s41586-018-0698-6"
+        contrast: trophoblast_vs_other
+        terms: ["DECIDUA", "STROMAL", "EXTRACELLULAR_MATRIX", "COLLAGEN", "ANGIOGENESIS"]
+      maternal_immune:
+        category: cell_type
+        source: "Vento-Tormo et al. maternal immune cells"
+        doi: "10.1038/s41586-018-0698-6"
+        contrast: trophoblast_vs_other
+        terms: ["NATURAL_KILLER", "MACROPHAGE", "T_CELL_RECEPTOR", "IMMUNE"]
+      maternal_fetal_ligand_receptor_interactions:
+        category: molecular_mechanism
+        source: "Vento-Tormo et al. dNK-trophoblast HLA-C/E/G receptor-ligand interactions"
+        doi: "10.1038/s41586-018-0698-6"
+        terms: ["NATURAL_KILLER", "HLA", "CELL_CELL_INTERACTION"]
+      dNK_chemokine_immunomodulation:
+        category: molecular_mechanism
+        source: "Vento-Tormo et al. dNK subsets have distinct immunomodulatory and chemokine profiles"
+        doi: "10.1038/s41586-018-0698-6"
+        terms: ["CHEMOKINE", "CXCL", "CCL", "NATURAL_KILLER"]
+      dNK_metabolic_priming:
+        category: molecular_mechanism
+        source: "Vento-Tormo et al. dNK1 glycolytic metabolic priming"
+        doi: "10.1038/s41586-018-0698-6"
+        terms: ["GLYCOLYSIS", "GLUCOSE_METABOLISM", "GLUCOSE_TRANSPORT"]
