@@ -90,7 +90,7 @@ log "setup complete. Next steps:"
 cat <<'EOF'
 
   conda activate snakemake
-  snakemake --cores 4 --use-conda --snakefile workflow/Snakefile -n all
+  snakemake --cores 4 --use-conda --snakefile workflow/Snakefile --touch all
 
 To verify everything (envs, Snakemake, data files), run:
   nbs/00_setup/00_check_setup.ipynb

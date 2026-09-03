@@ -9,8 +9,8 @@ A4_SAT_FRACTIONS = [int(f) for f in A4_SAT_CFG["fractions"]]
 A4_SAT_KS = [int(k) for k in A4_SAT_CFG["k_values"]]
 A4_SAT_SEEDS = [int(s) for s in A4_SAT_CFG["seeds"]]
 A4_SAT_RNG_SEEDS = [int(s) for s in A4_SAT_CFG["rng_seeds"]]
-# Saturation scores against canonical + CellMarker only; Reactome is coverage-only.
-A4_SAT_DATABASES = [db for db in A4_CFG["ora"]["databases"] if db != "reactome"]
+# Saturation scores against canonical + CellMarker only.
+A4_SAT_DATABASES = ["canonical", "cellmarker"]
 A4_SAT_FRACTION_PATTERN = "|".join(map(str, A4_SAT_FRACTIONS))
 A4_SAT_K_PATTERN = "|".join(map(str, A4_SAT_KS))
 A4_SAT_SEED_PATTERN = "|".join(map(str, A4_SAT_SEEDS))

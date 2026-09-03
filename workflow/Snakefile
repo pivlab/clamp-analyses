@@ -18,7 +18,7 @@ include: "rules/computational_timing_gtex.smk"
 include: "rules/donor_bulk.smk"
 include: "rules/recount2.smk"
 include: "rules/archs4.smk"
-include: "rules/archs4_coverage.smk"
+include: "rules/archs4_canonical.smk"
 include: "rules/panels.smk"
 
 rule pseudobulk_complete:
@@ -48,5 +48,4 @@ rule all:
         rules.model_building_qc_gtex.output.complete,
         rules.computational_timing_analysis_gtex.input,
         rules.biology_gtex.input,
-        rules.archs4_models.input,
-        rules.archs4_coverage.input,
+        rules.archs4_canonical_ora.input,
