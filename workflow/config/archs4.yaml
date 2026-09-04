@@ -47,30 +47,13 @@ archs4:
   # production rule.
   prior:
     gmts:
-      HALL: data/pathways/h.all.v2026.1.Hs.symbols.gmt
       REACTOME: data/pathways/c2.cp.reactome.v2026.1.Hs.symbols.gmt
       GOCC: data/pathways/c5.go.cc.v2026.1.Hs.symbols.gmt
       C8: data/pathways/c8.all.v2026.1.Hs.symbols.gmt
 
-  final_model:
-    # The shipped ARCHS4 model (K = 1728), fit on the full sample set. Three
-    # seeds exist; seed 1 is what every downstream analysis projects into.
-    # Each seed directory is self-contained: its own svd.rds, CLAMP_K.rds,
-    # CLAMPbase.rds and CLAMPfull_hall.rds.
-    dir: output/01_model_building/02_archs4/01_final_model
-    seeds: [1, 2, 3]
-    reference_seed: 1
-    # Leaf directory name inside `dir`, formatted with the seed. Renaming these
-    # to something less coverage-flavoured is deliberately deferred.
-    leaf: hall_coverage_rs100_seed_{seed}
-    model_name: CLAMPfull_hall
-
-  # Coverage-only BP rebuild.  The model-fitting inputs are the existing
-  # study-level subsamples, SVDs, inferred ranks, and CLAMPbase fits.  Keeping
-  # this map explicit prevents a missing or renamed fraction from silently
-  # triggering a new subsample.
   coverage:
     prior_gmt: data/pathways/go_bp.Hs.symbols.gmt
+    databases: [canonical, cellmarker]
     # Models and ORA sit beside the subsamples that produced them: everything
     # computational is under 01_model_building, while 03_model_biology keeps
     # only the report tables and the notebook.
@@ -144,6 +127,23 @@ archs4:
       retries: 2
       retry_mem_factors: [1.0, 1.5, 2.0]
       retry_mem_cap_mb: 800000
+    bp_models_root: output/98_final_models/clampfull/bp
+    bp_model_datasets: [archs4, gtex, recount2]
+    clampbase_root: output/98_final_models/clampbase
+    clampbase_seed: {archs4: 1, gtex: 0, recount2: 0}
+    clampbase_source:
+      archs4:
+        model: output/98_final_models/clampbase/archs4/CLAMPbase.rds
+        z: output/98_final_models/clampbase/archs4/Z.csv
+        b: output/98_final_models/clampbase/archs4/B.csv
+      gtex:
+        model: output/01_model_building/01_gtex/CLAMPbase.rds
+        z: output/01_model_building/01_gtex/CLAMPbase/Z.csv
+        b: output/01_model_building/01_gtex/CLAMPbase/B.csv
+      recount2:
+        model: output/01_model_building/03_recount2/00_recount2/CLAMPbase.rds
+        z: output/01_model_building/03_recount2/00_recount2/CLAMPbase/Z.csv
+        b: output/01_model_building/03_recount2/00_recount2/CLAMPbase/B.csv
 
   # Saturation: pathway recovery against model rank K, at several study
   # subsampling levels.
@@ -237,10 +237,42 @@ archs4:
       retry_mem_factors: [1.0, 1.5, 2.0]
       retry_mem_cap_mb: 675000
 
-  # ORA collections are tested independently, shared by the coverage and
-  # saturation campaigns.
+  canonical:
+    model_name: CLAMPfull_canonical
+    final_root: output/98_final_models/clampfull/canonical
+    compendia: [archs4, gtex, recount2]
+    ora:
+      databases: [bp, canonical, reactome, cellmarker]
+
+  drug_diseases:
+    data_dir: data/drug_disease_associations
+    spredixcan_dir: data/phenomexcan/gene_assoc/spredixcan/pkl
+    prior:
+      c2_all: data/pathways/c2.all.v2026.1.Hs.symbols.gmt
+      reactome: data/pathways/c2.cp.reactome.v2026.1.Hs.symbols.gmt
+      cellmarker: data/pathways/Cell_marker_Human.xlsx
+      sheet: human
+      term_column: cell_name
+      gene_column: Symbol
+      output_gmt: output/01_model_building/02_archs4/03_drug_diseases_canonical/prior/canonical_reactome_cellmarker.gmt
+    compute_root: output/01_model_building/02_archs4/03_drug_diseases_canonical
+    report_root: output/03_model_biology/02_archs4/02_drug_diseases_canonical
+    n_top_lvs: [5, 10, 25, 50]
+    n_top_genes: [50, 100, 250, 500]
+    figure_n_top_genes: 100
+    figure_n_top_lvs: 10
+    bootstrap:
+      n_boot: 10000
+      seed: 42
+
+  # ORA collections. Coverage and saturation use canonical + CellMarker;
+  # canonical-model evaluation additionally uses BP and Reactome.
   ora:
     databases:
+      bp:
+        type: gmt
+        path: data/pathways/go_bp.Hs.symbols.gmt
+        label: GO Biological Process
       reactome:
         type: gmt
         path: data/pathways/c2.cp.reactome.v2026.1.Hs.symbols.gmt
@@ -266,9 +298,20 @@ archs4:
     # Measured across the 150 coverage ORAs: median 122 s, max 407 s at K = 1728.
     resources: {mem_mb: 8000, runtime: 60}
 
-  # Independently built CLAMP models on other compendia, for the cross-dataset
-  # comparison. These live under their own dataset trees, not under ARCHS4.
-  comparators:
-    GTEx: output/01_model_building/02_gtex/10_CLAMP_hall/CLAMPfull_hall.rds
-    Recount2: output/01_model_building/03_recount2/01_recount2_hall/CLAMPfull_hall.rds
 
+  # Published model contract. Root-level final-model files are legacy archives
+  # and must never be referenced by active rules or analyses.
+  final_models:
+    clampbase:
+      archs4: {root: output/98_final_models/clampbase/archs4, rds: CLAMPbase.rds, b: B.csv, z: Z.csv}
+      gtex: {root: output/98_final_models/clampbase/gtex, rds: CLAMPbase.rds, b: B.csv, z: Z.csv}
+      recount2: {root: output/98_final_models/clampbase/recount2, rds: CLAMPbase.rds, b: B.csv, z: Z.csv}
+    clampfull:
+      bp:
+        archs4: {root: output/98_final_models/clampfull/bp/archs4/CLAMPfull_bp, rds: CLAMPfull_bp.rds, b: B.csv, z: Z.csv, summary: summary.csv}
+        gtex: {root: output/98_final_models/clampfull/bp/gtex/CLAMPfull_bp, rds: CLAMPfull_bp.rds, b: B.csv, z: Z.csv, summary: summary.csv}
+        recount2: {root: output/98_final_models/clampfull/bp/recount2/CLAMPfull_bp, rds: CLAMPfull_bp.rds, b: B.csv, z: Z.csv, summary: summary.csv}
+      canonical:
+        archs4: {root: output/98_final_models/clampfull/canonical/archs4, rds: CLAMPfull_canonical.rds, b: B.csv, z: Z.csv, summary: summary.csv, provenance: adoption_validation.json}
+        gtex: {root: output/98_final_models/clampfull/canonical/gtex, rds: CLAMPfull_canonical.rds, b: B.csv, z: Z.csv, summary: summary.csv, provenance: adoption_validation.json}
+        recount2: {root: output/98_final_models/clampfull/canonical/recount2, rds: CLAMPfull_canonical.rds, b: B.csv, z: Z.csv, summary: summary.csv, provenance: adoption_validation.json}
