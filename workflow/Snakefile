@@ -8,6 +8,7 @@ configfile: "workflow/config/runtime_benchmark_gtex.yaml"
 configfile: "workflow/config/donor_bulk.yaml"
 configfile: "workflow/config/archs4.yaml"
 configfile: "workflow/config/recount2.yaml"
+configfile: "workflow/config/projections.yaml"
 
 REPO_ROOT = os.path.dirname(workflow.basedir)
 
@@ -20,6 +21,7 @@ include: "rules/recount2.smk"
 include: "rules/archs4.smk"
 include: "rules/archs4_canonical.smk"
 include: "rules/archs4_drug_diseases.smk"
+include: "rules/projections.smk"
 include: "rules/panels.smk"
 
 rule pseudobulk_complete:

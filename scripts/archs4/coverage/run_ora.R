@@ -130,6 +130,10 @@ max_size <- as.integer(args$max_size %||% 500L)
 pvalue_cutoff <- as.numeric(args$pvalue_cutoff %||% 0.05)
 qvalue_cutoff <- as.numeric(args$qvalue_cutoff %||% 0.2)
 fdr <- as.numeric(args$fdr %||% 0.05)
+# Optional: restrict the run to named LVs (one per line). Used by the
+# projections tree to score only the differentially active LVs; when absent
+# every LV in Z is tested, exactly as before.
+lv_subset_path <- args$lv_subset %||% ""
 
 if (dir.exists(out_dir)) stop("Refusing to overwrite ORA directory: ", out_dir)
 dir.create(dirname(out_dir), recursive = TRUE, showWarnings = FALSE)
@@ -167,6 +171,19 @@ loadings <- as.matrix(z[, -1L])
 storage.mode(loadings) <- "double"
 rownames(loadings) <- genes
 lv_names <- colnames(loadings)
+n_lv_total <- length(lv_names)
+if (nzchar(lv_subset_path)) {
+  requested <- readLines(lv_subset_path, warn = FALSE)
+  requested <- requested[nzchar(requested)]
+  keep <- intersect(requested, lv_names)
+  if (!length(keep)) stop("None of the LVs in --lv-subset are present in Z")
+  if (length(keep) < length(requested)) {
+    warning(length(requested) - length(keep), " requested LVs are absent from Z")
+  }
+  loadings <- loadings[, keep, drop = FALSE]
+  lv_names <- keep
+  message("Restricted to ", length(lv_names), " of ", n_lv_total, " LVs")
+}
 universe <- genes
 query_target <- max(1L, ceiling(length(universe) * top_pct))
 
@@ -257,6 +274,7 @@ summary <- data.table(
   effective_annotated_universe_size = length(effective_universe),
   query_target = query_target,
   latent_variables = ncol(loadings),
+  latent_variables_total = n_lv_total,
   tested_lvs = tested_lvs,
   eligible_pathways = length(eligible_terms),
   recovered_pathways = length(recovered),
@@ -297,7 +315,8 @@ manifest <- list(
     pAdjustMethod = "BH",
     qvalueCutoff = qvalue_cutoff,
     recovery_fdr = fdr,
-    across_lv_correction = FALSE
+    across_lv_correction = FALSE,
+    lv_subset = if (nzchar(lv_subset_path)) normalizePath(lv_subset_path) else NA_character_
   ),
   started_utc = format(started, tz = "UTC", usetz = TRUE),
   finished_utc = format(finished, tz = "UTC", usetz = TRUE),
