@@ -19,6 +19,7 @@ include: "rules/donor_bulk.smk"
 include: "rules/recount2.smk"
 include: "rules/archs4.smk"
 include: "rules/archs4_canonical.smk"
+include: "rules/archs4_drug_diseases.smk"
 include: "rules/panels.smk"
 
 rule pseudobulk_complete:
@@ -49,3 +50,4 @@ rule all:
         rules.computational_timing_analysis_gtex.input,
         rules.biology_gtex.input,
         rules.archs4_canonical_ora.input,
+        rules.archs4_drug_diseases.input,
