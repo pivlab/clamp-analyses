@@ -59,3 +59,9 @@ GREEN_SCALE: ["white", "#f7fbf7", "#a1d99b", "#007a33"]
 
 DIVERGING_COLORS: ["#b2182b", "#fdf7f7", "white", "#f7fbf7", "#007a33"]
 DIVERGING_VALUES: [0, 0.25, 0.5, 0.75, 1]
+
+DRUG_DISEASE_MODEL_COLORS:
+  ARCHS4: "#1B4D43"
+  recount2: "#2E9B8E"
+  GTEx: "#E8836B"
+  Gene-based: "#888888"

@@ -244,6 +244,27 @@ archs4:
     ora:
       databases: [bp, canonical, reactome, cellmarker]
 
+  drug_diseases:
+    data_dir: data/drug_disease_associations
+    spredixcan_dir: data/phenomexcan/gene_assoc/spredixcan/pkl
+    prior:
+      c2_all: data/pathways/c2.all.v2026.1.Hs.symbols.gmt
+      reactome: data/pathways/c2.cp.reactome.v2026.1.Hs.symbols.gmt
+      cellmarker: data/pathways/Cell_marker_Human.xlsx
+      sheet: human
+      term_column: cell_name
+      gene_column: Symbol
+      output_gmt: output/01_model_building/02_archs4/03_drug_diseases_canonical/prior/canonical_reactome_cellmarker.gmt
+    compute_root: output/01_model_building/02_archs4/03_drug_diseases_canonical
+    report_root: output/03_model_biology/02_archs4/02_drug_diseases_canonical
+    n_top_lvs: [5, 10, 25, 50]
+    n_top_genes: [50, 100, 250, 500]
+    figure_n_top_genes: 100
+    figure_n_top_lvs: 10
+    bootstrap:
+      n_boot: 10000
+      seed: 42
+
   # ORA collections. Coverage and saturation use canonical + CellMarker;
   # canonical-model evaluation additionally uses BP and Reactome.
   ora:
