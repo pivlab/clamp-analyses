@@ -199,7 +199,7 @@ fwrite(eligible, file.path(tmp_dir, "eligible_terms.csv"))
 
 results_path <- file.path(tmp_dir, "enrichment.csv.gz")
 connection <- gzfile(results_path, open = "wt")
-on.exit(if (isOpen(connection)) close(connection), add = TRUE)
+on.exit(try(if (isOpen(connection)) close(connection), silent = TRUE), add = TRUE)
 wrote_header <- FALSE
 result_rows <- 0L
 tested_lvs <- 0L
