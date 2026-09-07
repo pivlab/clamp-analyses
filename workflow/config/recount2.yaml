@@ -1,8 +1,3 @@
-# recount2 inputs for the GO:BP coverage comparison.
-#
-# Values ported from config$recount2 in config.R, which is what built the
-# models currently on disk. Only CLAMPbase is produced here: recount2's
-# CLAMPfull is fitted by the coverage study with the shared GO:BP prior.
 recount2:
   url: https://ndownloader.figshare.com/files/10881866
   plier_rds: data/recount2/recount2_PLIER_data/recount_data_prep_PLIER.RDS

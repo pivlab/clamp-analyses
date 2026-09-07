@@ -1,6 +1,3 @@
-# Canonical evaluation universe shared by every pseudobulk and donor-bulk
-# recovery analysis. Excluded annotations remain in expression mixtures and raw
-# composition tables; they are removed only as scored recovery targets.
 cell_type_analysis:
   excluded_targets:
     Brain_Mathys2023: [Vas]

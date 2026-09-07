@@ -122,6 +122,10 @@ A4_SAT_FULL_ORA = [
 A4_SAT_VALIDATED = [a4_sat_validated(*c) for c in A4_SAT_CELLS]
 
 
+# ============================================================
+# Step 1: fit and score saturation cells
+# ============================================================
+
 rule fit_bp_saturation_base:
     """CLAMPbase at a forced K, for the cells the earlier sweep never produced."""
     input:
@@ -329,6 +333,10 @@ rule ora_bp_saturation_full:
         "> {log} 2>&1"
 
 
+# ============================================================
+# Step 2: aggregate results and render the report notebook
+# ============================================================
+
 rule aggregate_bp_saturation:
     input:
         A4_SAT_FULL_ORA + A4_SAT_BASE_ORA_ALL,
@@ -368,7 +376,9 @@ rule saturation_report_archs4:
         f"{A4_SAT_NB}/00_saturation.ipynb"
 
 
-# ---- aggregate targets ----
+# ============================================================
+# Step 3: convenience aggregate targets
+# ============================================================
 
 rule saturation_bp_base_ora:
     """Phase 1: score every CLAMPbase already on disk.  No fitting."""
