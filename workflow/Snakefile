@@ -24,6 +24,7 @@ include: "rules/archs4_saturation.smk"
 include: "rules/archs4_traits.smk"
 include: "rules/archs4_canonical.smk"
 include: "rules/archs4_drug_diseases.smk"
+include: "rules/archs4_crispercas.smk"
 include: "rules/projections.smk"
 include: "rules/panels.smk"
 
@@ -56,3 +57,4 @@ rule all:
         rules.biology_gtex.input,
         rules.archs4_canonical_ora.input,
         rules.archs4_drug_diseases.input,
+        rules.biology_archs4_crispercas.input,

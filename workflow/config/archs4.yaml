@@ -239,6 +239,25 @@ archs4:
       n_boot: 10000
       seed: 42
 
+  crispercas:
+    lipid_deg: data/archs4/crispr_cas9/lipid_DEG.csv
+    compute_root: output/03_model_biology/02_archs4/04_crispercas
+    network_root: output/03_model_biology/02_archs4/04_crispercas/02_network/figures
+    notebooks: nbs/03_model_biology/02_archs4/04_crispercas
+    n_reps: 10
+    fdr: 0.05
+    archs4_cell_lines_gmt: data/pathways/archs4_cell_lines.gmt
+    archs4_cell_lines_url: "https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=ARCHS4_Cell-lines"
+    archs4_cell_lines_max_size: 3000
+    azimuth_gmt: data/pathways/Azimuth_2023.txt
+    azimuth_url: "https://maayanlab.cloud/Enrichr/geneSetLibrary?mode=text&libraryName=Azimuth_2023"
+    azimuth_min_size: 5
+    azimuth_max_size: 3000
+    canonical_gls: data/archs4/traits/archs4_canonical_prelim89/gls-summary-archs4_canonical_prelim89.tsv.gz
+    smultixcan_zscores: data/archs4/drug_diseases_associations/smultixcan-mashr-zscores.pkl
+    lincs_top_pct: 0.01
+    drug_names: data/drug_disease_associations/indications-verbose.tsv
+
   ora:
     databases:
       bp:
