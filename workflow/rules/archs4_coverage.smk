@@ -146,13 +146,15 @@ A4_COV_FULL_ORA = A4_COV_ARCH_FULL_ORA + A4_COV_COMPARATOR_FULL_ORA
 A4_COV_BASE_ORA = A4_COV_ARCH_BASE_ORA + A4_COV_COMPARATOR_BASE_ORA
 
 
-# Step 1: create coverage cells and their CLAMPbase inputs.
+# ============================================================
+# Step 1: create coverage cells and their CLAMPbase inputs
+# ============================================================
 
 rule subsample_bp_coverage_cell:
     input:
         h5=A4_CFG["raw_h5"],
-        metadata=rules.preprocess_archs4.output.metadata_filtered,
-        fbm=rules.preprocess_archs4.output.fbm_filtered,
+        metadata=f"{A4_PREP}/metadata_filtered.rds",
+        fbm=f"{A4_PREP}/fbm_filtered.bk",
         script="scripts/archs4/coverage/subsample_cells.R",
         common="scripts/archs4/common.R",
     output:
@@ -499,7 +501,9 @@ rule coverage_report_archs4:
         f"{A4_COV_NB}/00_coverage.ipynb"
 
 
-# Step 2: publish full-data GO:BP models.
+# ============================================================
+# Step 2: publish full-data GO:BP models
+# ============================================================
 
 rule publish_bp_model:
     input:
@@ -529,7 +533,9 @@ rule bp_models:
         A4_COV_BP_MANIFESTS,
 
 
-# Step 3: audit historical cells and published results.
+# ============================================================
+# Step 3: audit historical cells and published results
+# ============================================================
 
 rule audit_bp_coverage:
     input:
