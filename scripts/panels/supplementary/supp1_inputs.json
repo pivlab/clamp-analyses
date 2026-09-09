@@ -1,0 +1,21 @@
+{
+  "benchmark_long": "output/03_model_biology/00_pseudobulk/00_benchmark/benchmark_long.csv",
+  "bootstrap": "output/03_model_biology/00_pseudobulk/00_benchmark/bootstrap_winrate.csv",
+  "runtime_seed_totals": "output/02_model_performance/00_pseudobulk/00_computational_timing/runtime_seed_totals.csv",
+  "heatmap_long": "output/03_model_biology/00_pseudobulk/03_b_matrix_singlecell/heatmap_long.csv",
+  "pseudobulk_recovery": "output/03_model_biology/00_pseudobulk/03_b_matrix_singlecell/recovery_summary.csv",
+  "pseudobulk_overall": "output/03_model_biology/00_pseudobulk/03_b_matrix_singlecell/recovery_overall.csv",
+  "corr_full": "output/03_model_biology/00_pseudobulk/00_benchmark/clampfull_lv_ct_corr_full.csv",
+  "assignments": "output/03_model_biology/00_pseudobulk/00_benchmark/clampfull_lv_assignments.csv",
+  "related_corr": "output/03_model_biology/00_pseudobulk/04_hard_cell_types/related_lv_correlations.csv",
+  "ari_data": "output/03_model_biology/01_gtex/00_kmeans_clustering/ari_data.csv",
+  "ari_comparisons": "output/03_model_biology/01_gtex/00_kmeans_clustering/ari_comparisons.csv",
+  "gene_fraction_ari_data": "output/03_model_biology/01_gtex/00_kmeans_clustering/gene_fraction_ari_data.csv",
+  "gene_fraction_ari_comparisons": "output/03_model_biology/01_gtex/00_kmeans_clustering/gene_fraction_ari_comparisons.csv",
+  "tissue_subtissue_heatmap": "output/03_model_biology/01_gtex/02_LV_importance_rf_true_labels_biology/tissue_subtissue_heatmap.csv",
+  "z_matrix_subtissue": "output/03_model_biology/01_gtex/07_global_alignment_rf_true_labels/cumulative20/gtex_global_alignment_summary.csv",
+  "marker": "output/03_model_biology/00_pseudobulk/02_disentangle/module_panel_ready.csv",
+  "hard": "output/03_model_biology/00_pseudobulk/04_hard_cell_types/hard_group_dot_ready.csv",
+  "orthogonality_per_term": "output/03_model_biology/01_gtex/07_geneset_orthogonality/orthogonality_per_term.csv",
+  "orthogonality_summary": "output/03_model_biology/01_gtex/07_geneset_orthogonality/orthogonality_summary.csv"
+}

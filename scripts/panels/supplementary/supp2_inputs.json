@@ -1,0 +1,7 @@
+{
+  "purity": "output/03_model_biology/00_pseudobulk/06_donor_bulk_recovery/supp2_purity.csv",
+  "umap_cells": "output/03_model_biology/00_pseudobulk/06_donor_bulk_recovery/supp2_umap_cells.csv.gz",
+  "umap_lvs": "output/03_model_biology/00_pseudobulk/06_donor_bulk_recovery/supp2_umap_lvs.csv",
+  "donor_bulk_recovery": "output/03_model_biology/00_pseudobulk/06_donor_bulk_recovery/analysis/single_cell_recovery.csv",
+  "donor_bulk_overall": "output/03_model_biology/00_pseudobulk/06_donor_bulk_recovery/analysis/single_cell_recovery_overall.csv"
+}
