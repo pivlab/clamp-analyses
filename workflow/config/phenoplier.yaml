@@ -1,0 +1,119 @@
+phenoplier:
+  # Isolated conda env for pivlab/phenoplier-cli. Kept separate from
+  # envs/clamp-analyses.yaml and envs/snakemake.yaml: phenoplier-cli requires
+  # snakemake>=9,<10 on Python >=3.12, while this repo's own Snakemake runs on
+  # snakemake=8.* / Python 3.11. Built once per machine by
+  # scripts/phenoplier/setup_env.sh.
+  conda_env: phenoplier-cli-neo
+
+  # phenoplier-cli release every GLS job must run on. The 86 as-run models
+  # (scripts/phenoplier/RUN_SUMMARY.md) were produced with this release; it
+  # carries the GLS standard-error fix (#85) and the trait filter (#99/#100).
+  # run_gls.sh / store_build.sh refuse to run if `phenoplier --version`
+  # reports anything else, and setup_env.sh installs this tag. Bump here and
+  # in setup_env.sh together, and re-run the whole model set: results from
+  # different releases are not comparable.
+  version: 0.5.2
+
+  # Workspace namespace the CLAMP models are registered under
+  # (`phenoplier model register --namespace`).
+  namespace: clamp
+
+  # GWAS cohort the GLS regresses against. Also names the per-phenotype results
+  # directory that `phenoplier store build` reads.
+  cohort: phenomexcan_rapid_gwas
+
+  # Top percentile of genes per LV used to binarize the Z matrix for GLS.
+  # Matches archs4.yaml: ora.top_pct, so the LV gene sets scored here are the
+  # same ones scored for pathway overlap.
+  lv_percentile: 0.01
+
+  # Which traits to test. Passed straight to `phenoplier shortcut gls
+  # --trait-filter`, so the excluded traits are never computed rather than
+  # filtered out afterwards.
+  #
+  # `biomedical` drops the 1,683 of 4,049 phenotypes that are not biomedical
+  # traits -- 709 occupational codes ("Job SOC coding: ..."), 576
+  # medication/treatment codes, 187 24-hour dietary-recall items, 117
+  # household/administrative fields, 58 food-frequency items, 36
+  # residence-level exposures -- keeping 2,366. Behavioural-but-heritable
+  # phenotypes (smoking, alcohol, physical activity, sleep, family history,
+  # death register, cognitive tests) are deliberately KEPT.
+  #
+  # The standard, its decision record, and the FDR-comparability rules live in
+  # phenoplier-cli: docs/development/trait-filtering-standard.md. Audit what a
+  # preset does with `phenoplier pipeline filter-traits`.
+  #
+  # NOTE: filtering shrinks the Benjamini-Hochberg test count, so numbers
+  # produced with a filter are not comparable to unfiltered runs. Keep this
+  # setting fixed across a whole coverage/saturation sweep.
+  # Use `all` to reproduce the historical unfiltered behaviour.
+  trait_filter: biomedical
+
+  # Unique phenotypes a COMPLETE summary must contain under each trait filter.
+  # `phenoplier pipeline summarize` concatenates whatever per-phenotype results
+  # exist, so an interrupted step 7 yields a smaller but valid-looking summary;
+  # scripts/phenoplier/verify_summary.py refuses to publish one.
+  expected_phenotypes:
+    biomedical: 2366
+    all: 4049
+
+  # Saturation ranks to run through GLS (a subset of archs4.yaml:
+  # saturation.k_values). scripts/archs4/traits/aggregate_saturation_traits.R
+  # reports K=1728 only, so that is all the trait-recovery report needs.
+  saturation_k_values: [1728]
+
+  # Cross-model long table (every LV x trait row of every summary; target
+  # phenoplier_long_table, tens of GB gzipped) lives here; the per-model
+  # summaries themselves go to the archs4.yaml `traits.*` directories that
+  # archs4_traits.smk consumes.
+  report_root: output/03_model_biology/02_archs4/05_traits
+
+  # phenoplier-cli's own step-6 / step-7 process pools, pinned so each GLS job
+  # uses exactly the cores Snakemake gives it (resources.gls.threads below).
+  #   step 6 serial: the forked ProcessPoolExecutor otherwise deadlocks
+  #     (workers parked in futex at 0% CPU);
+  #   step 7 capped: un-pinned, phenoplier sizes the pool from the whole node
+  #     and spawns ~29 threads per job (node load ~380, ~10x slowdown).
+  # step7 * blas_step7 should equal resources.gls.threads. On a host with no
+  # cgroup (a workstation), prefer many single-threaded workers, e.g.
+  # step7: 12, blas_step7: 1.
+  workers:
+    step6: 1
+    blas_step6: 8
+    step7: 6
+    blas_step7: 2
+
+  # Which of phenoplier-cli's built-in cluster profiles (see its
+  # phenoplier/workflow/clusters.py) `shortcut gls` submits its OWN pipeline
+  # to. This is independent of how THIS workflow is executed: with the
+  # `local` target each gls_* job runs its whole pipeline inside the
+  # allocation this repo's profile gives it (workflow/profiles/slurm), which
+  # is the validated path (scripts/phenoplier/RUN_SUMMARY.md). Account /
+  # partition specifics stay inside phenoplier-cli's own profiles, not here.
+  clusters:
+    local:
+      executor: local
+    server_cu:
+      executor: slurm
+      cluster: cu-pico
+    alpine:
+      executor: slurm
+      cluster: cu-alpine
+
+  # Which entry in `clusters` to use. Override per invocation, e.g.:
+  #   snakemake phenoplier_traits --config phenoplier_target=server_cu
+  target: local
+
+  # Per-job requests for this workflow's scheduler. A GLS run scales with the
+  # model's GENE count, not its LV count: the archs4 / gtex finals (~18k /
+  # 21k genes) took ~20 h / ~15 h on 32 cores, recount2 (~6k genes) ~2.7 h;
+  # the archs4 final .rds alone needs ~88 GB to load.
+  resources:
+    gls:
+      threads: 12
+      mem_mb: 100000
+      runtime: 4320
+    store:
+      mem_mb: 32000
+      runtime: 120

@@ -89,6 +89,25 @@ from their dedicated workflows. See [Canonical model + ORA](#canonical-model--or
 
 Configuration: `workflow/config/archs4.yaml` and `workflow/config/recount2.yaml`.
 
+### Trait recovery (PhenoPLIER GLS)
+
+LV–trait association runs `pivlab/phenoplier-cli` GLS on the coverage, saturation
+and final CLAMP models, and the trait-recovery reports aggregate the per-model
+summaries. phenoplier-cli is pinned to **v0.5.2** and runs in its own conda env
+(`scripts/phenoplier/setup_env.sh`, once per machine; every job checks the installed
+version); `workflow/rules/phenoplier.smk` drives it one model at a time from this
+DAG. Configuration: `workflow/config/phenoplier.yaml`; details in
+`scripts/phenoplier/README.md`.
+
+```bash
+snakemake -n --snakefile workflow/Snakefile archs4_traits      # models -> GLS -> reports
+snakemake -n --snakefile workflow/Snakefile phenoplier_finals  # GLS on the published finals
+```
+
+Dry-run first: a GLS job takes hours to a day per model, and any model that is not
+already published under `output/98_final_models` is fitted first (the ARCHS4 fits
+need a cluster, see above).
+
 ### Canonical model + ORA
 
 The canonical workflow is evaluation-only: it consumes the published model RDS,

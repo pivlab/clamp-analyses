@@ -9,10 +9,13 @@ A4_TRAIT_CFG = A4_CFG["traits"]
 
 rule aggregate_archs4_coverage_traits:
     input:
-        clampfull_dir=A4_TRAIT_CFG["coverage"]["clampfull_bp_dir"],
-        clampbase_dir=A4_TRAIT_CFG["coverage"]["clampbase_dir"],
-        finals_clampfull_dir=A4_TRAIT_CFG["finals"]["clampfull_bp_dir"],
-        finals_clampbase_dir=A4_TRAIT_CFG["finals"]["clampbase_dir"],
+        # The per-model GLS summaries phenoplier.smk writes into the
+        # `traits.*` directories below (one per coverage cell / final model),
+        # so aggregating pulls the GLS runs, and behind them the model fits.
+        clampfull=PHENOPLIER_COV_FULL,
+        clampbase=PHENOPLIER_COV_BASE,
+        finals_clampfull=PHENOPLIER_FIN_FULL,
+        finals_clampbase=PHENOPLIER_FIN_BASE,
         script="scripts/archs4/traits/aggregate_coverage_traits.R",
     output:
         traits_long=f"{A4_COV_BIO}/coverage_trait_recovery.csv",
@@ -20,16 +23,22 @@ rule aggregate_archs4_coverage_traits:
     log:
         f"{A4_COV_BIO}/traits_aggregate.log"
     params:
+        # The R scripts scan a directory; it is the one the summaries above
+        # live in (archs4.yaml: traits.*).
+        clampfull_dir=lambda wc, input: os.path.dirname(input.clampfull[0]),
+        clampbase_dir=lambda wc, input: os.path.dirname(input.clampbase[0]),
+        finals_clampfull_dir=lambda wc, input: os.path.dirname(input.finals_clampfull[0]),
+        finals_clampbase_dir=lambda wc, input: os.path.dirname(input.finals_clampbase[0]),
         fdr=A4_TRAIT_CFG["fdr"],
     resources:
         mem_mb=8000,
         runtime=30,
     conda: "clamp-analyses"
     shell:
-        "Rscript {input.script} --clampfull-dir {input.clampfull_dir} "
-        "--clampbase-dir {input.clampbase_dir} "
-        "--finals-clampfull-dir {input.finals_clampfull_dir} "
-        "--finals-clampbase-dir {input.finals_clampbase_dir} --fdr {params.fdr} "
+        "Rscript {input.script} --clampfull-dir {params.clampfull_dir} "
+        "--clampbase-dir {params.clampbase_dir} "
+        "--finals-clampfull-dir {params.finals_clampfull_dir} "
+        "--finals-clampbase-dir {params.finals_clampbase_dir} --fdr {params.fdr} "
         "--traits-out {output.traits_long} --finals-out {output.finals_long} > {log} 2>&1"
 
 
@@ -58,22 +67,24 @@ rule coverage_traits_report_archs4:
 
 rule aggregate_archs4_saturation_traits:
     input:
-        clampfull_dir=A4_TRAIT_CFG["saturation"]["clampfull_bp_dir"],
-        clampbase_dir=A4_TRAIT_CFG["saturation"]["clampbase_dir"],
+        clampfull=PHENOPLIER_SAT_FULL,
+        clampbase=PHENOPLIER_SAT_BASE,
         script="scripts/archs4/traits/aggregate_saturation_traits.R",
     output:
         traits_long=f"{A4_SAT_BIO}/saturation_trait_recovery_k1728.csv",
     log:
         f"{A4_SAT_BIO}/traits_aggregate.log"
     params:
+        clampfull_dir=lambda wc, input: os.path.dirname(input.clampfull[0]),
+        clampbase_dir=lambda wc, input: os.path.dirname(input.clampbase[0]),
         fdr=A4_TRAIT_CFG["fdr"],
     resources:
         mem_mb=8000,
         runtime=30,
     conda: "clamp-analyses"
     shell:
-        "Rscript {input.script} --clampfull-dir {input.clampfull_dir} "
-        "--clampbase-dir {input.clampbase_dir} --fdr {params.fdr} "
+        "Rscript {input.script} --clampfull-dir {params.clampfull_dir} "
+        "--clampbase-dir {params.clampbase_dir} --fdr {params.fdr} "
         "--traits-out {output.traits_long} > {log} 2>&1"
 
 

@@ -9,6 +9,7 @@ configfile: "workflow/config/donor_bulk.yaml"
 configfile: "workflow/config/archs4.yaml"
 configfile: "workflow/config/recount2.yaml"
 configfile: "workflow/config/projections.yaml"
+configfile: "workflow/config/phenoplier.yaml"
 
 REPO_ROOT = os.path.dirname(workflow.basedir)
 
@@ -21,8 +22,12 @@ include: "rules/recount2.smk"
 include: "rules/archs4.smk"
 include: "rules/archs4_coverage.smk"
 include: "rules/archs4_saturation.smk"
-include: "rules/archs4_traits.smk"
 include: "rules/archs4_canonical.smk"
+# phenoplier.smk runs GLS on the coverage / saturation / final / canonical
+# models above and produces the per-model summaries archs4_traits.smk
+# aggregates, so it sits between them.
+include: "rules/phenoplier.smk"
+include: "rules/archs4_traits.smk"
 include: "rules/archs4_drug_diseases.smk"
 include: "rules/archs4_crispercas.smk"
 include: "rules/projections.smk"
